@@ -5,8 +5,8 @@ POG予測に重要な特徴量を生成する（デビュー前に入手可能�
 - 血統スコア（父馬の産駒EI、母父馬の産駒EI、母馬の獲得賞金）
 - 生まれ月（早生まれほど有利）
 - 親年齢（父・母の産駒時年齢）
-- 祖父母年齢（父父・父母・母父・母母の産駒時年齢）
-- 曾祖父母年齢（3世代目、8頭分の産駒時年齢）
+- 祖父母年齢の集約統計量（平均・最小・散布度）
+- 曾祖父母年齢の集約統計量（平均・最小・散布度）
 """
 
 import json
@@ -234,6 +234,7 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
         row["dam_dam_age"] = dam_dam_age if dam_dam_age is not None else 21.0
 
         # 曾祖父母年齢（3世代目、8頭分の産駒時年齢）
+        ggp_ages = []
         for ggp in [
             "sire_sire_sire", "sire_sire_dam",
             "sire_dam_sire", "sire_dam_dam",
@@ -241,7 +242,23 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
             "dam_dam_sire", "dam_dam_dam",
         ]:
             age = get_parent_age(hid, birth_year, ggp)
-            row[f"{ggp}_age"] = age if age is not None else 33.0
+            ggp_ages.append(age if age is not None else 33.0)
+
+        # --- 集約特徴量（世代別の統計量） ---
+        # 母馬賞金の対数変換
+        row["dam_prize_log"] = np.log1p(row["dam_prize"])
+
+        # 祖父母年齢の集約（平均・最小・散布度）
+        gp_ages = [row["sire_sire_age"], row["sire_dam_age"],
+                   row["dam_sire_age"], row["dam_dam_age"]]
+        row["gp_age_mean"] = np.mean(gp_ages)
+        row["gp_age_min"] = np.min(gp_ages)
+        row["gp_age_std"] = np.std(gp_ages)
+
+        # 曾祖父母年齢の集約（平均・最小・散布度）
+        row["ggp_age_mean"] = np.mean(ggp_ages)
+        row["ggp_age_min"] = np.min(ggp_ages)
+        row["ggp_age_std"] = np.std(ggp_ages)
 
         feature_rows.append(row)
 

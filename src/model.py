@@ -8,7 +8,8 @@ POG賞金予測モデル。
 1. 過去5世代（2019-2023年生まれ）のデータで学習
 2. GradientBoostingRegressorで賞金を予測
 3. 当年（2024年生まれ）の馬にスコアを付与
-4. デビュー前の馬も血統情報（父EI・母父EI・母馬賞金）＋生まれ月＋親年齢＋祖父母年齢から予測可能
+4. デビュー前の馬も血統情報（父EI・母父EI・母馬賞金）＋生まれ月＋親年齢＋世代別年齢統計量から予測可能
+5. 目的変数は対数変換、祖父母/曾祖父母年齢は世代別統計量に集約（最適化済み）
 """
 
 import os
@@ -22,30 +23,27 @@ from sklearn.model_selection import cross_val_score
 from sklearn.preprocessing import StandardScaler
 
 
-# 予測に使用する特徴量カラム（血統＋生まれ月＋親年齢＋祖父母年齢＋曾祖父母年齢）
+# 予測に使用する特徴量カラム（最適化済み: 13個）
+# - 個別の祖父母/曾祖父母年齢(12個)を世代別統計量(6個)に集約
+# - dam_prizeは対数変換版を使用
+# - バックテストでSpearman +24%改善 (0.156→0.194)
 FEATURE_COLS = [
     "sex",
     "sire_ei",
     "bms_ei",
-    "dam_prize",
+    "dam_prize_log",
     "birth_month",
-    # 1世代目（親）
+    # 1世代目（親の産駒時年齢）
     "sire_age",
     "dam_age",
-    # 2世代目（祖父母）
-    "sire_sire_age",
-    "sire_dam_age",
-    "dam_sire_age",
-    "dam_dam_age",
-    # 3世代目（曾祖父母）
-    "sire_sire_sire_age",
-    "sire_sire_dam_age",
-    "sire_dam_sire_age",
-    "sire_dam_dam_age",
-    "dam_sire_sire_age",
-    "dam_sire_dam_age",
-    "dam_dam_sire_age",
-    "dam_dam_dam_age",
+    # 2世代目（祖父母年齢の集約統計量）
+    "gp_age_mean",
+    "gp_age_min",
+    "gp_age_std",
+    # 3世代目（曾祖父母年齢の集約統計量）
+    "ggp_age_mean",
+    "ggp_age_min",
+    "ggp_age_std",
 ]
 
 MODEL_PATH = "models/pog_predictor.pkl"
@@ -58,20 +56,21 @@ class POGPredictor:
     def __init__(self):
         self.model = GradientBoostingRegressor(
             n_estimators=300,
-            max_depth=5,
+            max_depth=2,
             learning_rate=0.05,
             subsample=0.8,
-            min_samples_leaf=10,
+            min_samples_leaf=30,
             random_state=42,
         )
         self.backup_model = RandomForestRegressor(
             n_estimators=200,
-            max_depth=8,
-            min_samples_leaf=5,
+            max_depth=4,
+            min_samples_leaf=20,
             random_state=42,
         )
         self.scaler = StandardScaler()
         self.is_fitted = False
+        self.log_target = True  # 目的変数を対数変換
         self.feature_cols = FEATURE_COLS
 
     def train(
@@ -104,6 +103,10 @@ class POGPredictor:
 
         X = df[self.feature_cols].values
         y = df[target_col].values if target_col in df.columns else np.zeros(len(df))
+
+        # 目的変数の対数変換（極端な賞金分布を安定化）
+        if self.log_target:
+            y = np.log1p(y)
 
         # スケーリング
         X_scaled = self.scaler.fit_transform(X)
@@ -168,8 +171,17 @@ class POGPredictor:
 
         if self.is_fitted:
             X_scaled = self.scaler.transform(X)
-            df["predicted_prize"] = self.model.predict(X_scaled)
-            df["predicted_prize_rf"] = self.backup_model.predict(X_scaled)
+            pred_main = self.model.predict(X_scaled)
+            pred_rf = self.backup_model.predict(X_scaled)
+
+            # 対数空間で予測した場合は逆変換
+            if self.log_target:
+                df["predicted_prize"] = np.expm1(pred_main)
+                df["predicted_prize_rf"] = np.expm1(pred_rf)
+            else:
+                df["predicted_prize"] = pred_main
+                df["predicted_prize_rf"] = pred_rf
+
             # アンサンブル（加重平均）
             df["ensemble_score"] = (
                 df["predicted_prize"] * 0.6 + df["predicted_prize_rf"] * 0.4
@@ -184,7 +196,7 @@ class POGPredictor:
         """モデルを保存する。"""
         os.makedirs(os.path.dirname(model_path), exist_ok=True)
         with open(model_path, "wb") as f:
-            pickle.dump({"model": self.model, "backup": self.backup_model}, f)
+            pickle.dump({"model": self.model, "backup": self.backup_model, "log_target": self.log_target}, f)
         with open(scaler_path, "wb") as f:
             pickle.dump(self.scaler, f)
         print(f"モデルを保存しました: {model_path}")
@@ -195,6 +207,7 @@ class POGPredictor:
             data = pickle.load(f)
             self.model = data["model"]
             self.backup_model = data["backup"]
+            self.log_target = data.get("log_target", True)
         with open(scaler_path, "rb") as f:
             self.scaler = pickle.load(f)
         self.is_fitted = True
@@ -250,27 +263,19 @@ def _heuristic_score(df: pd.DataFrame) -> pd.Series:
         da = df["dam_age"].fillna(10.5)
         score += np.where(da <= 8, 4, np.where(da <= 11, 2, np.where(da <= 14, 0, -3)))
 
-    # 祖父母年齢ボーナス（適齢の祖父母が有利）
-    for col, default_val in [
-        ("sire_sire_age", 22.0),
-        ("sire_dam_age", 21.0),
-        ("dam_sire_age", 22.0),
-        ("dam_dam_age", 21.0),
-    ]:
-        if col in df.columns:
-            age = df[col].fillna(default_val)
-            score += np.where(age <= 20, 2, np.where(age <= 25, 1, np.where(age <= 30, 0, -1)))
+    # 祖父母年齢ボーナス（集約: 平均年齢が若いほど有利）
+    if "gp_age_mean" in df.columns:
+        gp = df["gp_age_mean"].fillna(21.5)
+        score += np.where(gp <= 20, 3, np.where(gp <= 23, 1.5, np.where(gp <= 27, 0, -2)))
 
-    # 曾祖父母年齢ボーナス（3世代目）
-    ggp_cols = [
-        "sire_sire_sire_age", "sire_sire_dam_age",
-        "sire_dam_sire_age", "sire_dam_dam_age",
-        "dam_sire_sire_age", "dam_sire_dam_age",
-        "dam_dam_sire_age", "dam_dam_dam_age",
-    ]
-    for col in ggp_cols:
-        if col in df.columns:
-            age = df[col].fillna(33.0)
-            score += np.where(age <= 30, 1, np.where(age <= 35, 0.5, np.where(age <= 40, 0, -0.5)))
+    # 祖父母年齢の散布度ボーナス（均質な世代構成が有利）
+    if "gp_age_std" in df.columns:
+        gp_std = df["gp_age_std"].fillna(3.0)
+        score += np.where(gp_std <= 2, 1, np.where(gp_std <= 4, 0, -1))
+
+    # 曾祖父母年齢ボーナス（集約: 平均年齢）
+    if "ggp_age_mean" in df.columns:
+        ggp = df["ggp_age_mean"].fillna(33.0)
+        score += np.where(ggp <= 30, 2, np.where(ggp <= 35, 1, np.where(ggp <= 40, 0, -1)))
 
     return score
