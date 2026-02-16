@@ -122,7 +122,6 @@ def predict_top10(
         "sire_ei",
         "bms_ei",
         "dam_prize",
-        "trainer_score",
     ]
     available_cols = [c for c in display_cols if c in top.columns]
     display_df = top[available_cols].copy()
@@ -136,7 +135,6 @@ def predict_top10(
         "sire_ei": "父EI",
         "bms_ei": "母父EI",
         "dam_prize": "母馬賞金(万)",
-        "trainer_score": "調教師スコア",
     }
     display_df = display_df.rename(columns=col_rename)
 

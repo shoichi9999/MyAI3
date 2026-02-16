@@ -3,7 +3,6 @@
 
 POG予測に重要な特徴量を生成する（デビュー前に入手可能な情報のみ）:
 - 血統スコア（父馬の産駒EI、母父馬の産駒EI、母馬の獲得賞金）
-- 調教師スコア（2歳戦・クラシック実績）
 """
 
 import json
@@ -75,12 +74,12 @@ ELITE_BREEDERS = {
     "コスモヴューファーム": 72,
 }
 
-# ヒューリスティックスコアの重み配分
-WEIGHT_SIRE_EI = 0.20
-WEIGHT_DAM_PRIZE = 0.30
-WEIGHT_BMS_EI = 0.10
-WEIGHT_TRAINER = 0.25
-WEIGHT_BREEDER = 0.05
+# ヒューリスティックスコアの重み配分（血統特化）
+WEIGHT_SIRE_EI = 0.40
+WEIGHT_DAM_PRIZE = 0.40
+WEIGHT_BMS_EI = 0.20
+WEIGHT_TRAINER = 0.00
+WEIGHT_BREEDER = 0.00
 
 
 def get_sire_ei(sire_name: str) -> float:
@@ -162,12 +161,6 @@ def build_feature_matrix(horses_df: pd.DataFrame) -> pd.DataFrame:
         # 母馬の獲得賞金（0の場合は中央値で補完）
         raw_dam_prize = get_dam_prize(horse.get("dam", ""))
         row["dam_prize"] = raw_dam_prize if raw_dam_prize > 0 else dam_median
-
-        # 調教師スコア
-        row["trainer_score"] = calc_trainer_score(horse.get("trainer", ""))
-
-        # 生産牧場スコア
-        row["breeder_score"] = calc_breeder_score(horse.get("breeder", ""))
 
         feature_rows.append(row)
 
