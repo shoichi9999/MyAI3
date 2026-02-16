@@ -23,25 +23,23 @@ from sklearn.model_selection import cross_val_score
 from sklearn.preprocessing import StandardScaler
 
 
-# 予測に使用する特徴量カラム（最適化済み: 16個）
+# 予測に使用する特徴量カラム（最適化済み: 12個）
+# Ablation分析で除外: birth_month(ノイズ), dam_age(微弱),
+#   ggp_age_mean(gp_age_meanと相関0.91で冗長), breeder_score(owner_scoreと相関0.52で冗長)
 FEATURE_COLS = [
     "sex",
     "sire_ei",
     "bms_ei",
     "dam_prize_log",
-    "birth_month",
     "trainer_score",
     "owner_score",
-    "breeder_score",
-    # 1世代目（親の産駒時年齢）
+    # 親の産駒時年齢
     "sire_age",
-    "dam_age",
-    # 2世代目（祖父母年齢の集約統計量）
+    # 祖父母年齢の集約統計量
     "gp_age_mean",
     "gp_age_min",
     "gp_age_std",
-    # 3世代目（曾祖父母年齢の集約統計量）
-    "ggp_age_mean",
+    # 曾祖父母年齢の集約統計量（meanは祖父母と冗長なので除外）
     "ggp_age_min",
     "ggp_age_std",
 ]
@@ -57,7 +55,7 @@ class POGPredictor:
         self.model = GradientBoostingRegressor(
             n_estimators=300,
             max_depth=2,
-            learning_rate=0.05,
+            learning_rate=0.03,
             subsample=0.8,
             min_samples_leaf=30,
             random_state=42,
@@ -249,11 +247,6 @@ def _heuristic_score(df: pd.DataFrame) -> pd.Series:
         os_val = df["owner_score"].fillna(50)
         score += (os_val - 50) * 0.2
 
-    # 生産者スコアボーナス
-    if "breeder_score" in df.columns:
-        bs = df["breeder_score"].fillna(50)
-        score += (bs - 50) * 0.15
-
     # 母馬獲得賞金（対数正規化）
     if "dam_prize" in df.columns:
         dp = np.log1p(df["dam_prize"].fillna(0))
@@ -261,22 +254,10 @@ def _heuristic_score(df: pd.DataFrame) -> pd.Series:
         if max_dp > 0:
             score += (dp / max_dp) * 100 * WEIGHT_DAM_PRIZE
 
-    # 生まれ月ボーナス（早生まれほど有利）
-    if "birth_month" in df.columns:
-        month_bonus = df["birth_month"].map({
-            1: 8, 2: 5, 3: 2, 4: 0, 5: -4, 6: -6,
-        }).fillna(-2)
-        score += month_bonus
-
     # 父年齢ボーナス（若い父ほど有利）
     if "sire_age" in df.columns:
         sa = df["sire_age"].fillna(11)
         score += np.where(sa <= 10, 4, np.where(sa <= 13, 2, np.where(sa <= 16, 0, -3)))
-
-    # 母年齢ボーナス（若い母ほど有利）
-    if "dam_age" in df.columns:
-        da = df["dam_age"].fillna(10.5)
-        score += np.where(da <= 8, 4, np.where(da <= 11, 2, np.where(da <= 14, 0, -3)))
 
     # 祖父母年齢ボーナス（集約: 平均年齢が若いほど有利）
     if "gp_age_mean" in df.columns:
@@ -288,9 +269,9 @@ def _heuristic_score(df: pd.DataFrame) -> pd.Series:
         gp_std = df["gp_age_std"].fillna(3.0)
         score += np.where(gp_std <= 2, 1, np.where(gp_std <= 4, 0, -1))
 
-    # 曾祖父母年齢ボーナス（集約: 平均年齢）
-    if "ggp_age_mean" in df.columns:
-        ggp = df["ggp_age_mean"].fillna(33.0)
-        score += np.where(ggp <= 30, 2, np.where(ggp <= 35, 1, np.where(ggp <= 40, 0, -1)))
+    # 曾祖父母年齢ボーナス（最小年齢）
+    if "ggp_age_min" in df.columns:
+        ggp_min = df["ggp_age_min"].fillna(25.0)
+        score += np.where(ggp_min <= 22, 2, np.where(ggp_min <= 28, 1, np.where(ggp_min <= 35, 0, -1)))
 
     return score
