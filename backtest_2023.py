@@ -261,20 +261,42 @@ def main():
     print(f"  Spearman順位相関:       {corr:.4f} (p={pval:.2e})")
     print("=" * 70)
 
-    # 旧モデルとの比較用データも出力
-    from src.features import calc_sire_score, build_feature_matrix
+    # 新モデル（EI + 母馬賞金）との比較
+    from src.features import build_feature_matrix, get_sire_ei, get_bms_ei, get_dam_prize
+    from src.features import WEIGHT_SIRE_EI, WEIGHT_DAM_PRIZE, WEIGHT_BMS_EI, WEIGHT_TRAINER
     from src.model import POGPredictor
 
-    horses_blind = horses.copy()
-    horses_blind["total_prize"] = "0"
-    features = build_feature_matrix(horses_blind, pd.DataFrame())
-    predictor = POGPredictor()
-    old_pred = predictor.predict(features)
-    old_corr, _ = spearmanr(old_pred["ensemble_score"], horses["prize_num"])
+    horses["sire_ei"] = horses["sire"].apply(lambda x: get_sire_ei(str(x)) if pd.notna(x) else 0)
+    horses["bms_ei"] = horses["sire_of_dam"].apply(lambda x: get_bms_ei(str(x)) if pd.notna(x) else 0)
+    horses["dam_prize_val"] = horses["dam"].apply(lambda x: get_dam_prize(str(x)) if pd.notna(x) else 0)
 
-    print(f"\n  [参考] 旧モデル Spearman: {old_corr:.4f}")
-    print(f"  [参考] 新モデル Spearman: {corr:.4f}")
-    print(f"  改善率: {(corr - old_corr) / abs(old_corr) * 100:+.1f}%")
+    # EIの正規化
+    sire_ei_max = horses["sire_ei"].max()
+    bms_ei_max = horses["bms_ei"].max()
+    dam_log = np.log1p(horses["dam_prize_val"])
+    dam_log_max = dam_log.max()
+
+    horses["ei_score"] = (
+        (horses["sire_ei"] / sire_ei_max * 100 if sire_ei_max > 0 else 0) * WEIGHT_SIRE_EI +
+        (horses["bms_ei"] / bms_ei_max * 100 if bms_ei_max > 0 else 0) * WEIGHT_BMS_EI +
+        (dam_log / dam_log_max * 100 if dam_log_max > 0 else 0) * WEIGHT_DAM_PRIZE +
+        horses["trainer_score"] * WEIGHT_TRAINER
+    )
+
+    ei_corr, _ = spearmanr(horses["ei_score"], horses["prize_num"])
+
+    # EIモデルの TOP30 一致
+    ei_top30 = horses.nlargest(30, "ei_score")
+    ei_top30_ids = set(ei_top30["horse_id"].values)
+    ei_overlap_30 = len(ei_top30_ids & actual_top30_ids)
+
+    ei_top30_avg = horses.loc[horses["horse_id"].isin(ei_top30_ids), "prize_num"].mean()
+
+    print(f"\n  [比較] 先祖賞金モデル Spearman: {corr:.4f},  TOP30一致: {overlap_30}/30")
+    print(f"  [比較] EI＋母馬賞金モデル Spearman: {ei_corr:.4f},  TOP30一致: {ei_overlap_30}/30")
+    print(f"  [比較] EIモデル TOP30平均賞金: {ei_top30_avg:>10,.0f}万 ({ei_top30_avg / overall_avg:.1f}x)")
+    if abs(corr) > 0:
+        print(f"  Spearman改善率: {(ei_corr - corr) / abs(corr) * 100:+.1f}%")
 
 
 if __name__ == "__main__":

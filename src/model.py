@@ -25,8 +25,9 @@ from sklearn.preprocessing import StandardScaler
 # 予測に使用する特徴量カラム
 FEATURE_COLS = [
     "sex",
-    "sire_score",
-    "dam_sire_score",
+    "sire_ei",
+    "bms_ei",
+    "dam_prize",
     "trainer_score",
     "sale_price",
     "num_races",
@@ -47,8 +48,9 @@ FEATURE_COLS = [
 # デビュー前（戦績なし）の馬にも使える特徴量
 PRE_DEBUT_FEATURE_COLS = [
     "sex",
-    "sire_score",
-    "dam_sire_score",
+    "sire_ei",
+    "bms_ei",
+    "dam_prize",
     "trainer_score",
     "sale_price",
 ]
@@ -209,45 +211,41 @@ class POGPredictor:
 def _heuristic_score(df: pd.DataFrame) -> pd.Series:
     """
     モデル未学習時のヒューリスティックスコア。
-    POGで重要な要素を重み付けして算出する。
+    バックテスト最良のE2構成の重み配分を使用。
 
     重み配分:
-    - 血統（父）: 30%
-    - 戦績（既走馬の場合）: 25%
-    - 調教師: 20%
-    - セリ価格: 15%
-    - 血統（母父）: 10%
+    - 母馬獲得賞金: 30%
+    - 調教師: 30%
+    - 父EI: 25%
+    - 母父EI: 15%
     """
+    from src.features import WEIGHT_SIRE_EI, WEIGHT_DAM_PRIZE, WEIGHT_BMS_EI, WEIGHT_TRAINER
+
     score = pd.Series(0.0, index=df.index)
 
-    # 血統スコア（父）
-    if "sire_score" in df.columns:
-        score += df["sire_score"].fillna(50) * 0.30
+    # 父EI（正規化）
+    if "sire_ei" in df.columns:
+        ei = df["sire_ei"].fillna(0)
+        max_ei = ei.max()
+        if max_ei > 0:
+            score += (ei / max_ei) * 100 * WEIGHT_SIRE_EI
 
-    # 血統スコア（母父）
-    if "dam_sire_score" in df.columns:
-        score += df["dam_sire_score"].fillna(50) * 0.10
+    # 母父EI（正規化）
+    if "bms_ei" in df.columns:
+        ei = df["bms_ei"].fillna(0)
+        max_ei = ei.max()
+        if max_ei > 0:
+            score += (ei / max_ei) * 100 * WEIGHT_BMS_EI
+
+    # 母馬獲得賞金（対数正規化）
+    if "dam_prize" in df.columns:
+        dp = np.log1p(df["dam_prize"].fillna(0))
+        max_dp = dp.max()
+        if max_dp > 0:
+            score += (dp / max_dp) * 100 * WEIGHT_DAM_PRIZE
 
     # 調教師スコア
     if "trainer_score" in df.columns:
-        score += df["trainer_score"].fillna(50) * 0.20
-
-    # セリ価格（正規化して加算）
-    if "sale_price" in df.columns:
-        prices = df["sale_price"].fillna(0)
-        max_price = prices.max()
-        if max_price > 0:
-            score += (prices / max_price) * 100 * 0.15
-        else:
-            score += 50 * 0.15
-
-    # 戦績スコア
-    if "total_earned" in df.columns:
-        earned = df["total_earned"].fillna(0)
-        max_earned = earned.max()
-        if max_earned > 0:
-            score += (earned / max_earned) * 100 * 0.25
-        else:
-            score += 50 * 0.25
+        score += df["trainer_score"].fillna(50) * WEIGHT_TRAINER
 
     return score
