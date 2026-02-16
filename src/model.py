@@ -22,19 +22,30 @@ from sklearn.model_selection import cross_val_score
 from sklearn.preprocessing import StandardScaler
 
 
-# 予測に使用する特徴量カラム（血統＋生まれ月＋親年齢＋祖父母年齢）
+# 予測に使用する特徴量カラム（血統＋生まれ月＋親年齢＋祖父母年齢＋曾祖父母年齢）
 FEATURE_COLS = [
     "sex",
     "sire_ei",
     "bms_ei",
     "dam_prize",
     "birth_month",
+    # 1世代目（親）
     "sire_age",
     "dam_age",
+    # 2世代目（祖父母）
     "sire_sire_age",
     "sire_dam_age",
     "dam_sire_age",
     "dam_dam_age",
+    # 3世代目（曾祖父母）
+    "sire_sire_sire_age",
+    "sire_sire_dam_age",
+    "sire_dam_sire_age",
+    "sire_dam_dam_age",
+    "dam_sire_sire_age",
+    "dam_sire_dam_age",
+    "dam_dam_sire_age",
+    "dam_dam_dam_age",
 ]
 
 MODEL_PATH = "models/pog_predictor.pkl"
@@ -249,5 +260,17 @@ def _heuristic_score(df: pd.DataFrame) -> pd.Series:
         if col in df.columns:
             age = df[col].fillna(default_val)
             score += np.where(age <= 20, 2, np.where(age <= 25, 1, np.where(age <= 30, 0, -1)))
+
+    # 曾祖父母年齢ボーナス（3世代目）
+    ggp_cols = [
+        "sire_sire_sire_age", "sire_sire_dam_age",
+        "sire_dam_sire_age", "sire_dam_dam_age",
+        "dam_sire_sire_age", "dam_sire_dam_age",
+        "dam_dam_sire_age", "dam_dam_dam_age",
+    ]
+    for col in ggp_cols:
+        if col in df.columns:
+            age = df[col].fillna(33.0)
+            score += np.where(age <= 30, 1, np.where(age <= 35, 0.5, np.where(age <= 40, 0, -0.5)))
 
     return score

@@ -6,6 +6,7 @@ POG予測に重要な特徴量を生成する（デビュー前に入手可能�
 - 生まれ月（早生まれほど有利）
 - 親年齢（父・母の産駒時年齢）
 - 祖父母年齢（父父・父母・母父・母母の産駒時年齢）
+- 曾祖父母年齢（3世代目、8頭分の産駒時年齢）
 """
 
 import json
@@ -231,6 +232,16 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
         row["sire_dam_age"] = sire_dam_age if sire_dam_age is not None else 21.0
         row["dam_sire_age"] = dam_sire_age if dam_sire_age is not None else 22.0
         row["dam_dam_age"] = dam_dam_age if dam_dam_age is not None else 21.0
+
+        # 曾祖父母年齢（3世代目、8頭分の産駒時年齢）
+        for ggp in [
+            "sire_sire_sire", "sire_sire_dam",
+            "sire_dam_sire", "sire_dam_dam",
+            "dam_sire_sire", "dam_sire_dam",
+            "dam_dam_sire", "dam_dam_dam",
+        ]:
+            age = get_parent_age(hid, birth_year, ggp)
+            row[f"{ggp}_age"] = age if age is not None else 33.0
 
         feature_rows.append(row)
 
