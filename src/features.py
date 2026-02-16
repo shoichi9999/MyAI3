@@ -5,6 +5,7 @@ POG予測に重要な特徴量を生成する（デビュー前に入手可能�
 - 血統スコア（父馬の産駒EI、母父馬の産駒EI、母馬の獲得賞金）
 - 生まれ月（早生まれほど有利）
 - 親年齢（父・母の産駒時年齢）
+- 調教師スコア（有力調教師の実績ベース）
 - 祖父母年齢の集約統計量（平均・最小・散布度）
 - 曾祖父母年齢の集約統計量（平均・最小・散布度）
 """
@@ -213,6 +214,9 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
         # 母馬の獲得賞金（0の場合は中央値で補完）
         raw_dam_prize = get_dam_prize(horse.get("dam", ""))
         row["dam_prize"] = raw_dam_prize if raw_dam_prize > 0 else dam_median
+
+        # 調教師スコア
+        row["trainer_score"] = calc_trainer_score(horse.get("trainer", ""))
 
         # 生まれ月（1-12、小さいほど有利）
         row["birth_month"] = get_birth_month(hid, birth_year)

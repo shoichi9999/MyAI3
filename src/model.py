@@ -23,16 +23,14 @@ from sklearn.model_selection import cross_val_score
 from sklearn.preprocessing import StandardScaler
 
 
-# 予測に使用する特徴量カラム（最適化済み: 13個）
-# - 個別の祖父母/曾祖父母年齢(12個)を世代別統計量(6個)に集約
-# - dam_prizeは対数変換版を使用
-# - バックテストでSpearman +24%改善 (0.156→0.194)
+# 予測に使用する特徴量カラム（最適化済み: 14個）
 FEATURE_COLS = [
     "sex",
     "sire_ei",
     "bms_ei",
     "dam_prize_log",
     "birth_month",
+    "trainer_score",
     # 1世代目（親の産駒時年齢）
     "sire_age",
     "dam_age",
@@ -238,6 +236,11 @@ def _heuristic_score(df: pd.DataFrame) -> pd.Series:
         max_ei = ei.max()
         if max_ei > 0:
             score += (ei / max_ei) * 100 * WEIGHT_BMS_EI
+
+    # 調教師スコアボーナス
+    if "trainer_score" in df.columns:
+        ts = df["trainer_score"].fillna(50)
+        score += (ts - 50) * 0.2  # 50基準で加減算
 
     # 母馬獲得賞金（対数正規化）
     if "dam_prize" in df.columns:
