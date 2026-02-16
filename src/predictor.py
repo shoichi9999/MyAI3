@@ -56,7 +56,7 @@ def train_model(training_years: list[int]) -> POGPredictor:
             continue
 
         horses_df = pd.read_csv(horses_path)
-        features = build_feature_matrix(horses_df)
+        features = build_feature_matrix(horses_df, birth_year=year)
         features["birth_year"] = year
         all_features.append(features)
 
@@ -108,7 +108,7 @@ def predict_top10(
         return pd.DataFrame()
 
     horses_df = pd.read_csv(horses_path)
-    features = build_feature_matrix(horses_df)
+    features = build_feature_matrix(horses_df, birth_year=target_year)
     predictions = predictor.predict(features)
 
     # スコアでソートしてTOP N
@@ -122,6 +122,9 @@ def predict_top10(
         "sire_ei",
         "bms_ei",
         "dam_prize",
+        "birth_month",
+        "sire_age",
+        "dam_age",
     ]
     available_cols = [c for c in display_cols if c in top.columns]
     display_df = top[available_cols].copy()
@@ -135,6 +138,9 @@ def predict_top10(
         "sire_ei": "父EI",
         "bms_ei": "母父EI",
         "dam_prize": "母馬賞金(万)",
+        "birth_month": "生月",
+        "sire_age": "父年齢",
+        "dam_age": "母年齢",
     }
     display_df = display_df.rename(columns=col_rename)
 

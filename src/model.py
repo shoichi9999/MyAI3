@@ -8,7 +8,7 @@ POG賞金予測モデル。
 1. 過去5世代（2019-2023年生まれ）のデータで学習
 2. GradientBoostingRegressorで賞金を予測
 3. 当年（2024年生まれ）の馬にスコアを付与
-4. デビュー前の馬も血統情報（父EI・母父EI・母馬賞金）から予測可能
+4. デビュー前の馬も血統情報（父EI・母父EI・母馬賞金）＋生まれ月＋親年齢から予測可能
 """
 
 import os
@@ -22,12 +22,15 @@ from sklearn.model_selection import cross_val_score
 from sklearn.preprocessing import StandardScaler
 
 
-# 予測に使用する特徴量カラム（血統特化: デビュー前に入手可能な情報のみ）
+# 予測に使用する特徴量カラム（血統＋生まれ月＋親年齢）
 FEATURE_COLS = [
     "sex",
     "sire_ei",
     "bms_ei",
     "dam_prize",
+    "birth_month",
+    "sire_age",
+    "dam_age",
 ]
 
 MODEL_PATH = "models/pog_predictor.pkl"
@@ -185,12 +188,10 @@ class POGPredictor:
 
 def _heuristic_score(df: pd.DataFrame) -> pd.Series:
     """
-    モデル未学習時のヒューリスティックスコア（血統特化）。
+    モデル未学習時のヒューリスティックスコア。
 
-    重み配分:
-    - 父EI: 40%
-    - 母馬獲得賞金: 40%
-    - 母父EI: 20%
+    血統スコア（父EI 40% + 母馬賞金 40% + 母父EI 20%）に
+    生まれ月ボーナスと親年齢ボーナスを加算する。
     """
     from src.features import WEIGHT_SIRE_EI, WEIGHT_DAM_PRIZE, WEIGHT_BMS_EI
 
@@ -216,5 +217,22 @@ def _heuristic_score(df: pd.DataFrame) -> pd.Series:
         max_dp = dp.max()
         if max_dp > 0:
             score += (dp / max_dp) * 100 * WEIGHT_DAM_PRIZE
+
+    # 生まれ月ボーナス（早生まれほど有利）
+    if "birth_month" in df.columns:
+        month_bonus = df["birth_month"].map({
+            1: 8, 2: 5, 3: 2, 4: 0, 5: -4, 6: -6,
+        }).fillna(-2)
+        score += month_bonus
+
+    # 父年齢ボーナス（若い父ほど有利）
+    if "sire_age" in df.columns:
+        sa = df["sire_age"].fillna(11)
+        score += np.where(sa <= 10, 4, np.where(sa <= 13, 2, np.where(sa <= 16, 0, -3)))
+
+    # 母年齢ボーナス（若い母ほど有利）
+    if "dam_age" in df.columns:
+        da = df["dam_age"].fillna(10.5)
+        score += np.where(da <= 8, 4, np.where(da <= 11, 2, np.where(da <= 14, 0, -3)))
 
     return score

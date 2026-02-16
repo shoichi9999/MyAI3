@@ -3,10 +3,13 @@
 
 POG予測に重要な特徴量を生成する（デビュー前に入手可能な情報のみ）:
 - 血統スコア（父馬の産駒EI、母父馬の産駒EI、母馬の獲得賞金）
+- 生まれ月（早生まれほど有利）
+- 親年齢（父・母の産駒時年齢）
 """
 
 import json
 import os
+import re
 
 import numpy as np
 import pandas as pd
@@ -28,6 +31,24 @@ SIRE_LEADING = _load_json("data/sire_leading_2024.json")
 BMS_LEADING = _load_json("data/bms_leading_2024.json")
 # 母馬の獲得賞金
 DAM_PRIZES = _load_json("data/dam_prizes.json")
+# 生年月日キャッシュ（世代別）
+BIRTH_DATES_CACHE = {}
+# 親年齢キャッシュ（世代別）
+PARENT_AGES_CACHE = {}
+
+
+def _load_birth_dates(birth_year: int) -> dict:
+    """生年月日キャッシュを読み込む。"""
+    if birth_year not in BIRTH_DATES_CACHE:
+        BIRTH_DATES_CACHE[birth_year] = _load_json(f"data/birth_dates_{birth_year}.json")
+    return BIRTH_DATES_CACHE[birth_year]
+
+
+def _load_parent_ages(birth_year: int) -> dict:
+    """親年齢キャッシュを読み込む。"""
+    if birth_year not in PARENT_AGES_CACHE:
+        PARENT_AGES_CACHE[birth_year] = _load_json(f"data/parent_ages_{birth_year}.json")
+    return PARENT_AGES_CACHE[birth_year]
 
 
 # 有力調教師スコア（2歳戦〜クラシック実績ベース）
@@ -133,18 +154,47 @@ def calc_breeder_score(breeder_name: str) -> float:
 
 
 
-def build_feature_matrix(horses_df: pd.DataFrame) -> pd.DataFrame:
+def get_birth_month(horse_id: str, birth_year: int) -> int:
+    """馬の生まれ月を返す（1-12）。取得できない場合は3（中央値）。"""
+    bd_cache = _load_birth_dates(birth_year)
+    bd = bd_cache.get(str(horse_id), "")
+    if bd:
+        m = re.search(r"(\d+)月", bd)
+        if m:
+            return int(m.group(1))
+    return 3  # デフォルト: 3月
+
+
+def get_parent_age(horse_id: str, birth_year: int, parent: str = "sire") -> float:
+    """親の産駒時年齢を返す。取得できない場合はNone。"""
+    pa_cache = _load_parent_ages(birth_year)
+    data = pa_cache.get(str(horse_id), {})
+    by = data.get(f"{parent}_birth_year")
+    if by:
+        return birth_year - by
+    return None
+
+
+def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.DataFrame:
     """
     全馬の特徴量マトリクスを構築する。
 
-    産駒成績ベースの血統スコア（父EI、母父EI、母馬獲得賞金）と
-    調教師スコアを使って予測に使える特徴量を生成する。
+    血統スコア（父EI、母父EI、母馬獲得賞金）、生まれ月、親年齢を
+    使って予測に使える特徴量を生成する。
     """
     feature_rows = []
 
     # 母馬賞金の中央値（賞金0の馬への補完用）
     dam_prizes_list = [v for v in DAM_PRIZES.values() if v > 0]
     dam_median = np.median(dam_prizes_list) if dam_prizes_list else 0.0
+
+    # birth_yearの推定（horse_idの先頭4桁 or DataFrameから）
+    if birth_year is None:
+        sample_id = str(horses_df.iloc[0].get("horse_id", ""))
+        if sample_id[:4].isdigit():
+            birth_year = int(sample_id[:4])
+        else:
+            birth_year = 2024
 
     for _, horse in horses_df.iterrows():
         hid = horse.get("horse_id", "")
@@ -161,6 +211,15 @@ def build_feature_matrix(horses_df: pd.DataFrame) -> pd.DataFrame:
         # 母馬の獲得賞金（0の場合は中央値で補完）
         raw_dam_prize = get_dam_prize(horse.get("dam", ""))
         row["dam_prize"] = raw_dam_prize if raw_dam_prize > 0 else dam_median
+
+        # 生まれ月（1-12、小さいほど有利）
+        row["birth_month"] = get_birth_month(hid, birth_year)
+
+        # 親年齢（父・母の産駒時年齢）
+        sire_age = get_parent_age(hid, birth_year, "sire")
+        dam_age = get_parent_age(hid, birth_year, "dam")
+        row["sire_age"] = sire_age if sire_age is not None else 11.0  # 平均値で補完
+        row["dam_age"] = dam_age if dam_age is not None else 10.5
 
         feature_rows.append(row)
 
