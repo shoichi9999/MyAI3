@@ -262,7 +262,7 @@ def main():
     print("=" * 70)
 
     # 新モデル（EI + 母馬賞金）との比較
-    from src.features import build_feature_matrix, get_sire_ei, get_bms_ei, get_dam_prize
+    from src.features import get_sire_ei, get_bms_ei, get_dam_prize
     from src.features import WEIGHT_SIRE_EI, WEIGHT_DAM_PRIZE, WEIGHT_BMS_EI, WEIGHT_TRAINER
     from src.model import POGPredictor
 

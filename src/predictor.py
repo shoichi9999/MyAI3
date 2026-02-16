@@ -50,18 +50,13 @@ def train_model(training_years: list[int]) -> POGPredictor:
 
     for year in training_years:
         horses_path = f"data/horses_{year}.csv"
-        results_path = f"data/results_{year}.csv"
 
         if not os.path.exists(horses_path):
             print(f"[WARN] {horses_path} が見つかりません。スキップします。")
             continue
 
         horses_df = pd.read_csv(horses_path)
-        results_df = (
-            pd.read_csv(results_path) if os.path.exists(results_path) else pd.DataFrame()
-        )
-
-        features = build_feature_matrix(horses_df, results_df)
+        features = build_feature_matrix(horses_df)
         features["birth_year"] = year
         all_features.append(features)
 
@@ -107,18 +102,13 @@ def predict_top10(
     print(f"{'='*60}")
 
     horses_path = f"data/horses_{target_year}.csv"
-    results_path = f"data/results_{target_year}.csv"
 
     if not os.path.exists(horses_path):
         print(f"[ERROR] {horses_path} が見つかりません。先にデータを収集してください。")
         return pd.DataFrame()
 
     horses_df = pd.read_csv(horses_path)
-    results_df = (
-        pd.read_csv(results_path) if os.path.exists(results_path) else pd.DataFrame()
-    )
-
-    features = build_feature_matrix(horses_df, results_df)
+    features = build_feature_matrix(horses_df)
     predictions = predictor.predict(features)
 
     # スコアでソートしてTOP N
@@ -129,13 +119,10 @@ def predict_top10(
     display_cols = [
         "horse_name",
         "ensemble_score",
-        "sire_score",
+        "sire_ei",
+        "bms_ei",
+        "dam_prize",
         "trainer_score",
-        "sale_price",
-        "num_races",
-        "num_wins",
-        "total_earned",
-        "speed_rating",
     ]
     available_cols = [c for c in display_cols if c in top.columns]
     display_df = top[available_cols].copy()
@@ -146,13 +133,10 @@ def predict_top10(
     col_rename = {
         "horse_name": "馬名",
         "ensemble_score": "予測スコア",
-        "sire_score": "父スコア",
+        "sire_ei": "父EI",
+        "bms_ei": "母父EI",
+        "dam_prize": "母馬賞金(万)",
         "trainer_score": "調教師スコア",
-        "sale_price": "セリ価格(万)",
-        "num_races": "出走数",
-        "num_wins": "勝利数",
-        "total_earned": "獲得賞金(万)",
-        "speed_rating": "スピード指数",
     }
     display_df = display_df.rename(columns=col_rename)
 
