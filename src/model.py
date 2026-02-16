@@ -23,18 +23,19 @@ from sklearn.model_selection import cross_val_score
 from sklearn.preprocessing import StandardScaler
 
 
-# 予測に使用する特徴量カラム（最適化済み: 12個）
-# Ablation分析で除外: birth_month(ノイズ), dam_age(微弱),
-#   ggp_age_mean(gp_age_meanと相関0.91で冗長), breeder_score(owner_scoreと相関0.52で冗長)
+# 予測に使用する特徴量カラム（最適化済み: 14個）
+# Ablation分析で除外: ggp_age_mean(gp_age_meanと相関0.91), breeder_score(owner_scoreと相関0.52)
 FEATURE_COLS = [
     "sex",
     "sire_ei",
     "bms_ei",
     "dam_prize_log",
+    "birth_month",
     "trainer_score",
     "owner_score",
     # 親の産駒時年齢
     "sire_age",
+    "dam_age",
     # 祖父母年齢の集約統計量
     "gp_age_mean",
     "gp_age_min",
