@@ -8,7 +8,7 @@ POG賞金予測モデル。
 1. 過去5世代（2019-2023年生まれ）のデータで学習
 2. GradientBoostingRegressorで賞金を予測
 3. 当年（2024年生まれ）の馬にスコアを付与
-4. デビュー前の馬も血統情報（父EI・母父EI・母馬賞金）＋生まれ月＋親年齢から予測可能
+4. デビュー前の馬も血統情報（父EI・母父EI・母馬賞金）＋生まれ月＋親年齢＋祖父母年齢から予測可能
 """
 
 import os
@@ -22,7 +22,7 @@ from sklearn.model_selection import cross_val_score
 from sklearn.preprocessing import StandardScaler
 
 
-# 予測に使用する特徴量カラム（血統＋生まれ月＋親年齢）
+# 予測に使用する特徴量カラム（血統＋生まれ月＋親年齢＋祖父母年齢）
 FEATURE_COLS = [
     "sex",
     "sire_ei",
@@ -31,6 +31,10 @@ FEATURE_COLS = [
     "birth_month",
     "sire_age",
     "dam_age",
+    "sire_sire_age",
+    "sire_dam_age",
+    "dam_sire_age",
+    "dam_dam_age",
 ]
 
 MODEL_PATH = "models/pog_predictor.pkl"
@@ -234,5 +238,16 @@ def _heuristic_score(df: pd.DataFrame) -> pd.Series:
     if "dam_age" in df.columns:
         da = df["dam_age"].fillna(10.5)
         score += np.where(da <= 8, 4, np.where(da <= 11, 2, np.where(da <= 14, 0, -3)))
+
+    # 祖父母年齢ボーナス（適齢の祖父母が有利）
+    for col, default_val in [
+        ("sire_sire_age", 22.0),
+        ("sire_dam_age", 21.0),
+        ("dam_sire_age", 22.0),
+        ("dam_dam_age", 21.0),
+    ]:
+        if col in df.columns:
+            age = df[col].fillna(default_val)
+            score += np.where(age <= 20, 2, np.where(age <= 25, 1, np.where(age <= 30, 0, -1)))
 
     return score

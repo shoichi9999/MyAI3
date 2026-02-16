@@ -5,6 +5,7 @@ POG予測に重要な特徴量を生成する（デビュー前に入手可能�
 - 血統スコア（父馬の産駒EI、母父馬の産駒EI、母馬の獲得賞金）
 - 生まれ月（早生まれほど有利）
 - 親年齢（父・母の産駒時年齢）
+- 祖父母年齢（父父・父母・母父・母母の産駒時年齢）
 """
 
 import json
@@ -220,6 +221,16 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
         dam_age = get_parent_age(hid, birth_year, "dam")
         row["sire_age"] = sire_age if sire_age is not None else 11.0  # 平均値で補完
         row["dam_age"] = dam_age if dam_age is not None else 10.5
+
+        # 祖父母年齢（父父・父母・母父・母母の産駒時年齢）
+        sire_sire_age = get_parent_age(hid, birth_year, "sire_sire")
+        sire_dam_age = get_parent_age(hid, birth_year, "sire_dam")
+        dam_sire_age = get_parent_age(hid, birth_year, "dam_sire")
+        dam_dam_age = get_parent_age(hid, birth_year, "dam_dam")
+        row["sire_sire_age"] = sire_sire_age if sire_sire_age is not None else 22.0
+        row["sire_dam_age"] = sire_dam_age if sire_dam_age is not None else 21.0
+        row["dam_sire_age"] = dam_sire_age if dam_sire_age is not None else 22.0
+        row["dam_dam_age"] = dam_dam_age if dam_dam_age is not None else 21.0
 
         feature_rows.append(row)
 
