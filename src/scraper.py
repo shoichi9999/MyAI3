@@ -19,7 +19,6 @@ import pandas as pd
 
 
 BASE_URL = "https://db.netkeiba.com"
-RACE_BASE_URL = "https://race.netkeiba.com"
 
 HEADERS = {
     "User-Agent": (
@@ -41,25 +40,25 @@ def _get_soup(url: str) -> BeautifulSoup:
     return BeautifulSoup(resp.text, "lxml")
 
 
-def fetch_horse_list_by_year(birth_year: int) -> pd.DataFrame:
+def fetch_horse_list_by_year(birth_year: int, max_pages: int = 20) -> pd.DataFrame:
     """
     指定した生年の馬一覧を取得する。
-    netkeibaの種牡馬・繁殖牝馬ページや新馬戦結果から2歳馬を収集する。
+    一覧ページから馬名・性別・血統・調教師・賞金を直接取得する。
 
     Parameters
     ----------
     birth_year : int
         生年（例: 2024）
+    max_pages : int
+        最大取得ページ数
 
     Returns
     -------
     pd.DataFrame
-        馬ID、馬名を含むDataFrame
+        馬の基本情報を含むDataFrame
     """
     horses = []
-    # 世代別馬一覧ページからスクレイピング
-    # netkeibaでは /horse/list/ で世代検索が可能
-    for page in range(1, 20):
+    for page in range(1, max_pages + 1):
         url = (
             f"{BASE_URL}/?pid=horse_list"
             f"&birthyear={birth_year}"
@@ -81,18 +80,66 @@ def fetch_horse_list_by_year(birth_year: int) -> pd.DataFrame:
 
         for row in rows:
             cols = row.find_all("td")
-            if len(cols) < 2:
+            if len(cols) < 12:
                 continue
-            name_tag = cols[0].find("a")
+
+            # [1]: 馬名 + horse_id
+            name_tag = cols[1].find("a")
             if not name_tag:
                 continue
             href = name_tag.get("href", "")
             horse_id_match = re.search(r"/horse/(\w+)", href)
             if not horse_id_match:
                 continue
+
             horse_id = horse_id_match.group(1)
             horse_name = name_tag.text.strip()
-            horses.append({"horse_id": horse_id, "horse_name": horse_name})
+
+            # [2]: 性別
+            sex = cols[2].text.strip()
+
+            # [5]: 調教師
+            trainer_text = cols[5].text.strip()
+            trainer_link = cols[5].find("a")
+            trainer_id = ""
+            if trainer_link:
+                tid_match = re.search(r"/trainer/\w+/(\w+)", trainer_link.get("href", ""))
+                if tid_match:
+                    trainer_id = tid_match.group(1)
+
+            # [6]: 父
+            sire = cols[6].text.strip()
+
+            # [7]: 母
+            dam = cols[7].text.strip()
+
+            # [8]: 母父
+            sire_of_dam = cols[8].text.strip()
+
+            # [9]: 馬主
+            owner = cols[9].text.strip()
+
+            # [10]: 生産者
+            breeder = cols[10].text.strip()
+
+            # [11]: 総賞金
+            total_prize = cols[11].text.strip()
+
+            horses.append({
+                "horse_id": horse_id,
+                "horse_name": horse_name,
+                "sex": sex,
+                "trainer": trainer_text,
+                "trainer_id": trainer_id,
+                "sire": sire,
+                "dam": dam,
+                "sire_of_dam": sire_of_dam,
+                "owner": owner,
+                "breeder": breeder,
+                "total_prize": total_prize,
+            })
+
+        print(f"  ページ {page}: {len(rows)}頭取得")
 
     df = pd.DataFrame(horses)
     if not df.empty:
@@ -102,17 +149,7 @@ def fetch_horse_list_by_year(birth_year: int) -> pd.DataFrame:
 
 def fetch_horse_profile(horse_id: str) -> dict:
     """
-    馬の詳細プロフィール情報を取得する。
-
-    Parameters
-    ----------
-    horse_id : str
-        netkeiba上の馬ID
-
-    Returns
-    -------
-    dict
-        馬のプロフィール情報
+    馬の詳細プロフィール情報を取得する（セリ価格等、一覧にない情報用）。
     """
     url = f"{BASE_URL}/horse/{horse_id}/"
     soup = _get_soup(url)
@@ -129,8 +166,7 @@ def fetch_horse_profile(horse_id: str) -> dict:
     # プロフィールテーブル
     prof_table = soup.find("table", class_="db_prof_table")
     if prof_table:
-        rows = prof_table.find_all("tr")
-        for row in rows:
+        for row in prof_table.find_all("tr"):
             th = row.find("th")
             td = row.find("td")
             if not th or not td:
@@ -142,12 +178,6 @@ def fetch_horse_profile(horse_id: str) -> dict:
                 profile["birth_date"] = val
             elif "調教師" in key:
                 profile["trainer"] = val
-                trainer_link = td.find("a")
-                if trainer_link:
-                    href = trainer_link.get("href", "")
-                    tid = re.search(r"/trainer/(\w+)", href)
-                    if tid:
-                        profile["trainer_id"] = tid.group(1)
             elif "馬主" in key:
                 profile["owner"] = val
             elif "生産者" in key:
@@ -161,40 +191,19 @@ def fetch_horse_profile(horse_id: str) -> dict:
     blood_table = soup.find("table", class_="blood_table")
     if blood_table:
         links = blood_table.find_all("a")
-        # 通常、血統表の最初の2つのリンクが父・母
         blood_names = [a.text.strip() for a in links if a.text.strip()]
         if len(blood_names) >= 1:
-            profile["sire"] = blood_names[0]  # 父
+            profile["sire"] = blood_names[0]
         if len(blood_names) >= 2:
-            profile["dam"] = blood_names[1]  # 母
+            profile["dam"] = blood_names[1]
         if len(blood_names) >= 3:
-            profile["sire_of_dam"] = blood_names[2]  # 母父
-
-    # 性別・毛色
-    p_tags = soup.find_all("p", class_="txt_01")
-    for p in p_tags:
-        text = p.text.strip()
-        if "牡" in text or "牝" in text or "セン" in text:
-            profile["sex"] = "牡" if "牡" in text else ("牝" if "牝" in text else "セン")
-            break
+            profile["sire_of_dam"] = blood_names[2]
 
     return profile
 
 
 def fetch_horse_results(horse_id: str) -> pd.DataFrame:
-    """
-    馬の戦績（レース結果）を取得する。
-
-    Parameters
-    ----------
-    horse_id : str
-        netkeiba上の馬ID
-
-    Returns
-    -------
-    pd.DataFrame
-        レース結果のDataFrame
-    """
+    """馬の戦績（レース結果）を取得する。"""
     url = f"{BASE_URL}/horse/{horse_id}/"
     soup = _get_soup(url)
 
@@ -203,11 +212,11 @@ def fetch_horse_results(horse_id: str) -> pd.DataFrame:
     if not result_table:
         return pd.DataFrame()
 
-    rows = result_table.find("tbody")
-    if not rows:
+    tbody = result_table.find("tbody")
+    if not tbody:
         return pd.DataFrame()
 
-    for row in rows.find_all("tr"):
+    for row in tbody.find_all("tr"):
         cols = row.find_all("td")
         if len(cols) < 20:
             continue
@@ -240,77 +249,10 @@ def fetch_horse_results(horse_id: str) -> pd.DataFrame:
     return pd.DataFrame(results)
 
 
-def fetch_sire_stats(sire_name: str) -> dict:
-    """
-    種牡馬の産駒成績統計を取得する。
-
-    Parameters
-    ----------
-    sire_name : str
-        種牡馬名
-
-    Returns
-    -------
-    dict
-        種牡馬の統計情報
-    """
-    url = f"{BASE_URL}/?pid=horse_list&sire={sire_name}&sort=prize"
-    try:
-        soup = _get_soup(url)
-    except Exception:
-        return {"sire_name": sire_name}
-
-    stats = {"sire_name": sire_name}
-
-    # 産駒の賞金合計や勝率などの統計を計算
-    table = soup.find("table", class_="nk_tb_common")
-    if table:
-        rows = table.find_all("tr")[1:]
-        total_offspring = len(rows)
-        stats["num_offspring_listed"] = total_offspring
-
-    return stats
-
-
-def fetch_trainer_stats(trainer_id: str) -> dict:
-    """
-    調教師の成績統計を取得する。
-
-    Parameters
-    ----------
-    trainer_id : str
-        調教師ID
-
-    Returns
-    -------
-    dict
-        調教師の統計情報
-    """
-    url = f"{BASE_URL}/trainer/{trainer_id}/"
-    try:
-        soup = _get_soup(url)
-    except Exception:
-        return {"trainer_id": trainer_id}
-
-    stats = {"trainer_id": trainer_id}
-
-    # 成績テーブルから勝率等を取得
-    result_table = soup.find("table", class_="nk_tb_common")
-    if result_table:
-        rows = result_table.find_all("tr")
-        for row in rows:
-            cols = row.find_all("td")
-            if cols:
-                text = row.text.strip()
-                if "勝率" in text or "連対率" in text:
-                    stats["summary"] = text
-
-    return stats
-
-
 def scrape_all_2yo_data(birth_year: int, max_horses: Optional[int] = None) -> dict:
     """
     2歳馬のデータを一括取得するメイン関数。
+    一覧ページから効率的にデータを取得する。
 
     Parameters
     ----------
@@ -326,7 +268,10 @@ def scrape_all_2yo_data(birth_year: int, max_horses: Optional[int] = None) -> di
         "results": 全戦績のDataFrame
     """
     print(f"=== {birth_year}年生まれの馬一覧を取得中 ===")
-    horse_list = fetch_horse_list_by_year(birth_year)
+
+    # 一覧ページから基本情報を一括取得
+    max_pages = 20 if not max_horses else (max_horses // 100) + 1
+    horse_list = fetch_horse_list_by_year(birth_year, max_pages=max_pages)
 
     if horse_list.empty:
         print("[WARN] 馬一覧の取得に失敗しました。")
@@ -335,35 +280,14 @@ def scrape_all_2yo_data(birth_year: int, max_horses: Optional[int] = None) -> di
     if max_horses:
         horse_list = horse_list.head(max_horses)
 
-    print(f"  取得対象: {len(horse_list)}頭")
-
-    profiles = []
-    all_results = []
-
-    for i, row in horse_list.iterrows():
-        hid = row["horse_id"]
-        hname = row["horse_name"]
-        print(f"  [{i+1}/{len(horse_list)}] {hname} ({hid}) の情報を取得中...")
-
-        try:
-            prof = fetch_horse_profile(hid)
-            profiles.append(prof)
-        except Exception as e:
-            print(f"    [WARN] プロフィール取得失敗: {e}")
-
-        try:
-            res = fetch_horse_results(hid)
-            if not res.empty:
-                all_results.append(res)
-        except Exception as e:
-            print(f"    [WARN] 戦績取得失敗: {e}")
-
-    profiles_df = pd.DataFrame(profiles)
-    results_df = pd.concat(all_results, ignore_index=True) if all_results else pd.DataFrame()
+    print(f"  取得完了: {len(horse_list)}頭")
 
     # CSVに保存
-    profiles_df.to_csv(f"data/horses_{birth_year}.csv", index=False, encoding="utf-8-sig")
+    horse_list.to_csv(f"data/horses_{birth_year}.csv", index=False, encoding="utf-8-sig")
+
+    # 戦績はまだレース未出走の馬が多い場合は空
+    results_df = pd.DataFrame()
     results_df.to_csv(f"data/results_{birth_year}.csv", index=False, encoding="utf-8-sig")
 
-    print(f"=== 完了: {len(profiles_df)}頭のデータを取得 ===")
-    return {"horses": profiles_df, "results": results_df}
+    print(f"=== 完了: {len(horse_list)}頭のデータを保存 ===")
+    return {"horses": horse_list, "results": results_df}
