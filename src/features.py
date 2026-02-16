@@ -82,6 +82,42 @@ ELITE_TRAINERS = {
 }
 
 
+# 有力馬主スコア（クラシック・重賞実績ベース）
+ELITE_OWNERS = {
+    "サンデーレーシング": 90,
+    "金子真人ホールディングス": 88,
+    "社台レースホース": 85,
+    "シルクレーシング": 82,
+    "キャロットファーム": 82,
+    "ダノックス": 78,
+    "藤田晋": 78,
+    "前田晋二": 80,
+    "近藤利一": 78,
+    "近藤旬子": 78,
+    "近藤英子": 75,
+    "吉田勝己": 85,
+    "吉田千津": 80,
+    "吉田照哉": 80,
+    "大塚亮一": 75,
+    "石川達絵": 75,
+    "前田幸治": 75,
+    "前田葉子": 75,
+    "三木正浩": 75,
+    "窪田芳郎": 74,
+    "キャピタル・システム": 74,
+    "Ｇリビエール・レーシング": 74,
+    "ＫＲジャパン": 76,
+    "国本哲秀": 73,
+    "岡田牧雄": 73,
+    "寺田千代乃": 73,
+    "西川光一": 75,
+    "八木良司": 74,
+    "土井肇": 76,
+    "タマモ": 73,
+    "ＴＯＲＡＣＩＮＧ": 78,
+}
+
+
 # 生産牧場スコア（POG上位輩出実績ベース）
 ELITE_BREEDERS = {
     "ノーザンファーム": 95,
@@ -141,6 +177,16 @@ def calc_trainer_score(trainer_name: str) -> float:
         return 50.0
     for key, score in ELITE_TRAINERS.items():
         if key in str(trainer_name):
+            return score
+    return 50.0
+
+
+def calc_owner_score(owner_name: str) -> float:
+    """馬主スコアを返す。"""
+    if not owner_name:
+        return 50.0
+    for key, score in ELITE_OWNERS.items():
+        if key in str(owner_name):
             return score
     return 50.0
 
@@ -215,8 +261,9 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
         raw_dam_prize = get_dam_prize(horse.get("dam", ""))
         row["dam_prize"] = raw_dam_prize if raw_dam_prize > 0 else dam_median
 
-        # 調教師スコア
+        # 調教師・馬主スコア
         row["trainer_score"] = calc_trainer_score(horse.get("trainer", ""))
+        row["owner_score"] = calc_owner_score(horse.get("owner", ""))
 
         # 生まれ月（1-12、小さいほど有利）
         row["birth_month"] = get_birth_month(hid, birth_year)
