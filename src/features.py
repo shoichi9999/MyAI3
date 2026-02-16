@@ -59,11 +59,28 @@ ELITE_TRAINERS = {
 }
 
 
-# ヒューリスティックスコアの重み配分（バックテスト最良の E2 構成）
-WEIGHT_SIRE_EI = 0.25
-WEIGHT_DAM_PRIZE = 0.30
-WEIGHT_BMS_EI = 0.15
-WEIGHT_TRAINER = 0.30
+# 生産牧場スコア（POG上位輩出実績ベース）
+ELITE_BREEDERS = {
+    "ノーザンファーム": 95,
+    "社台ファーム": 88,
+    "社台コーポレーション白老ファーム": 85,
+    "追分ファーム": 82,
+    "ノースヒルズ": 80,
+    "下河辺牧場": 78,
+    "ダーレー・ジャパン・ファーム": 80,
+    "レイクヴィラファーム": 75,
+    "ケイアイファーム": 74,
+    "岡田スタッド": 74,
+    "ビッグレッドファーム": 73,
+    "コスモヴューファーム": 72,
+}
+
+# ヒューリスティックスコアの重み配分
+WEIGHT_SIRE_EI = 0.20
+WEIGHT_DAM_PRIZE = 0.25
+WEIGHT_BMS_EI = 0.10
+WEIGHT_TRAINER = 0.25
+WEIGHT_BREEDER = 0.20
 
 
 def get_sire_ei(sire_name: str) -> float:
@@ -105,6 +122,18 @@ def calc_trainer_score(trainer_name: str) -> float:
     return 50.0
 
 
+def calc_breeder_score(breeder_name: str) -> float:
+    """生産牧場スコアを返す。"""
+    if not breeder_name:
+        return 50.0
+    for key, score in ELITE_BREEDERS.items():
+        if key in str(breeder_name):
+            return score
+    return 50.0
+
+
+
+
 def build_feature_matrix(horses_df: pd.DataFrame) -> pd.DataFrame:
     """
     全馬の特徴量マトリクスを構築する。
@@ -136,6 +165,9 @@ def build_feature_matrix(horses_df: pd.DataFrame) -> pd.DataFrame:
 
         # 調教師スコア
         row["trainer_score"] = calc_trainer_score(horse.get("trainer", ""))
+
+        # 生産牧場スコア
+        row["breeder_score"] = calc_breeder_score(horse.get("breeder", ""))
 
         feature_rows.append(row)
 

@@ -29,6 +29,7 @@ FEATURE_COLS = [
     "bms_ei",
     "dam_prize",
     "trainer_score",
+    "breeder_score",
 ]
 
 MODEL_PATH = "models/pog_predictor.pkl"
@@ -187,15 +188,15 @@ class POGPredictor:
 def _heuristic_score(df: pd.DataFrame) -> pd.Series:
     """
     モデル未学習時のヒューリスティックスコア。
-    バックテスト最良のE2構成の重み配分を使用。
 
     重み配分:
-    - 母馬獲得賞金: 30%
-    - 調教師: 30%
-    - 父EI: 25%
-    - 母父EI: 15%
+    - 母馬獲得賞金: 25%
+    - 調教師: 25%
+    - 父EI: 20%
+    - 生産牧場: 20%
+    - 母父EI: 10%
     """
-    from src.features import WEIGHT_SIRE_EI, WEIGHT_DAM_PRIZE, WEIGHT_BMS_EI, WEIGHT_TRAINER
+    from src.features import WEIGHT_SIRE_EI, WEIGHT_DAM_PRIZE, WEIGHT_BMS_EI, WEIGHT_TRAINER, WEIGHT_BREEDER
 
     score = pd.Series(0.0, index=df.index)
 
@@ -223,5 +224,9 @@ def _heuristic_score(df: pd.DataFrame) -> pd.Series:
     # 調教師スコア
     if "trainer_score" in df.columns:
         score += df["trainer_score"].fillna(50) * WEIGHT_TRAINER
+
+    # 生産牧場スコア
+    if "breeder_score" in df.columns:
+        score += df["breeder_score"].fillna(50) * WEIGHT_BREEDER
 
     return score
