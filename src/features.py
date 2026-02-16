@@ -306,18 +306,6 @@ def build_feature_matrix(
         # 調教師スコア
         row["trainer_score"] = calc_trainer_score(horse.get("trainer", ""))
 
-        # セリ価格
-        row["sale_price"] = parse_sale_price(horse.get("sale_price", ""))
-
-        # 戦績ベースの特徴量
-        if not results_df.empty:
-            horse_results = results_df[results_df["horse_id"] == hid]
-            perf = calc_race_performance_features(horse_results, hid)
-        else:
-            perf = calc_race_performance_features(pd.DataFrame(), hid)
-
-        row.update({k: v for k, v in perf.items() if k != "horse_id"})
-
         feature_rows.append(row)
 
     return pd.DataFrame(feature_rows)

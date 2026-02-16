@@ -22,37 +22,13 @@ from sklearn.model_selection import cross_val_score
 from sklearn.preprocessing import StandardScaler
 
 
-# 予測に使用する特徴量カラム
+# 予測に使用する特徴量カラム（デビュー前に入手可能な情報のみ）
 FEATURE_COLS = [
     "sex",
     "sire_ei",
     "bms_ei",
     "dam_prize",
     "trainer_score",
-    "sale_price",
-    "num_races",
-    "num_wins",
-    "win_rate",
-    "top3_rate",
-    "total_earned",
-    "avg_finish",
-    "best_finish",
-    "avg_odds",
-    "max_distance",
-    "latest_weight",
-    "weight_trend",
-    "graded_race_wins",
-    "speed_rating",
-]
-
-# デビュー前（戦績なし）の馬にも使える特徴量
-PRE_DEBUT_FEATURE_COLS = [
-    "sex",
-    "sire_ei",
-    "bms_ei",
-    "dam_prize",
-    "trainer_score",
-    "sale_price",
 ]
 
 MODEL_PATH = "models/pog_predictor.pkl"
