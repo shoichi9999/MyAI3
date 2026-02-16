@@ -1,0 +1,134 @@
+"""母馬の獲得賞金を一括取得するスクリプト。"""
+import json
+import os
+import time
+import re
+import urllib.parse
+
+import pandas as pd
+from src.scraper import _get_soup, BASE_URL
+
+CACHE_FILE = "data/dam_prizes.json"
+# 母馬は数が多いのでリクエスト間隔を少し短縮
+REQUEST_INTERVAL = 1.0
+
+
+def parse_prize_text(text: str) -> float:
+    """賞金テキスト(例: '1億4,545万円')を万円単位のfloatに変換。"""
+    if not text:
+        return 0.0
+    text = text.replace(" ", "").replace(",", "").replace("円", "")
+    total = 0.0
+    m = re.search(r"(\d+)億", text)
+    if m:
+        total += int(m.group(1)) * 10000
+    m = re.search(r"(\d+)万", text)
+    if m:
+        total += int(m.group(1))
+    return total
+
+
+def fetch_horse_prize_by_name(name: str) -> float:
+    """netkeiba の名前検索で馬の獲得賞金(万円)を取得する。"""
+    if not name or name.strip() == "":
+        return 0.0
+
+    time.sleep(REQUEST_INTERVAL)
+    encoded = urllib.parse.quote(name.strip())
+    url = f"{BASE_URL}/?pid=horse_list&word={encoded}&sort=prize&list=100"
+
+    try:
+        import requests
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            )
+        }
+        resp = requests.get(url, headers=headers, timeout=30)
+        resp.encoding = "EUC-JP"
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(resp.text, "lxml")
+    except Exception as e:
+        print(f"  [WARN] {name}: {e}")
+        return 0.0
+
+    # パターン1: プロフィールページに直接遷移
+    prof_table = soup.find("table", class_="db_prof_table")
+    if prof_table:
+        for row in prof_table.find_all("tr"):
+            th = row.find("th")
+            td = row.find("td")
+            if th and td and "賞金" in th.text and "中央" in th.text:
+                return parse_prize_text(td.text)
+        for row in prof_table.find_all("tr"):
+            th = row.find("th")
+            td = row.find("td")
+            if th and td and "賞金" in th.text:
+                return parse_prize_text(td.text)
+
+    # パターン2: 一覧テーブル
+    list_table = soup.find("table", class_="nk_tb_common")
+    if list_table:
+        rows = list_table.find_all("tr")[1:]
+        best_prize = 0.0
+        for row in rows:
+            cols = row.find_all("td")
+            if len(cols) >= 12:
+                horse_name = cols[1].text.strip()
+                if horse_name == name:
+                    prize_text = cols[11].text.strip()
+                    try:
+                        prize = float(prize_text.replace(",", ""))
+                    except ValueError:
+                        prize = 0.0
+                    best_prize = max(best_prize, prize)
+        return best_prize
+
+    return 0.0
+
+
+def main():
+    horses = pd.read_csv("data/horses_2023.csv")
+    dams = horses["dam"].dropna().unique()
+    dams = [d for d in dams if d.strip()]
+    print(f"ユニーク母馬: {len(dams)}頭")
+
+    # キャッシュ読み込み
+    cache = {}
+    if os.path.exists(CACHE_FILE):
+        with open(CACHE_FILE, "r", encoding="utf-8") as f:
+            cache = json.load(f)
+
+    to_fetch = [d for d in dams if d not in cache]
+    print(f"キャッシュ済: {len(dams) - len(to_fetch)}頭, 新規: {len(to_fetch)}頭")
+    print(f"推定所要時間: {len(to_fetch) * REQUEST_INTERVAL / 60:.0f}分")
+
+    for i, name in enumerate(to_fetch):
+        if (i + 1) % 100 == 0 or i == 0:
+            print(f"  [{i+1}/{len(to_fetch)}] {name}")
+        prize = fetch_horse_prize_by_name(name)
+        cache[name] = prize
+
+        # 100件ごとにキャッシュ保存
+        if (i + 1) % 100 == 0:
+            with open(CACHE_FILE, "w", encoding="utf-8") as f:
+                json.dump(cache, f, ensure_ascii=False, indent=2)
+
+    # 最終保存
+    with open(CACHE_FILE, "w", encoding="utf-8") as f:
+        json.dump(cache, f, ensure_ascii=False, indent=2)
+
+    print(f"\n完了: {len(cache)}頭の母馬賞金を保存")
+
+    # 統計
+    prizes = [v for v in cache.values() if v > 0]
+    print(f"賞金 > 0の母馬: {len(prizes)}頭 ({len(prizes)/len(cache)*100:.1f}%)")
+    if prizes:
+        import numpy as np
+        print(f"平均: {np.mean(prizes):,.0f}万  中央値: {np.median(prizes):,.0f}万  最大: {max(prizes):,.0f}万")
+
+
+if __name__ == "__main__":
+    main()
