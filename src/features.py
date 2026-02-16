@@ -261,9 +261,10 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
         raw_dam_prize = get_dam_prize(horse.get("dam", ""))
         row["dam_prize"] = raw_dam_prize if raw_dam_prize > 0 else dam_median
 
-        # 調教師・馬主スコア
+        # 調教師・馬主・生産者スコア
         row["trainer_score"] = calc_trainer_score(horse.get("trainer", ""))
         row["owner_score"] = calc_owner_score(horse.get("owner", ""))
+        row["breeder_score"] = calc_breeder_score(horse.get("breeder", ""))
 
         # 生まれ月（1-12、小さいほど有利）
         row["birth_month"] = get_birth_month(hid, birth_year)

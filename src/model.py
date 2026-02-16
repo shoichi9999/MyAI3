@@ -23,7 +23,7 @@ from sklearn.model_selection import cross_val_score
 from sklearn.preprocessing import StandardScaler
 
 
-# 予測に使用する特徴量カラム（最適化済み: 15個）
+# 予測に使用する特徴量カラム（最適化済み: 16個）
 FEATURE_COLS = [
     "sex",
     "sire_ei",
@@ -32,6 +32,7 @@ FEATURE_COLS = [
     "birth_month",
     "trainer_score",
     "owner_score",
+    "breeder_score",
     # 1世代目（親の産駒時年齢）
     "sire_age",
     "dam_age",
@@ -247,6 +248,11 @@ def _heuristic_score(df: pd.DataFrame) -> pd.Series:
     if "owner_score" in df.columns:
         os_val = df["owner_score"].fillna(50)
         score += (os_val - 50) * 0.2
+
+    # 生産者スコアボーナス
+    if "breeder_score" in df.columns:
+        bs = df["breeder_score"].fillna(50)
+        score += (bs - 50) * 0.15
 
     # 母馬獲得賞金（対数正規化）
     if "dam_prize" in df.columns:
