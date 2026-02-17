@@ -116,6 +116,30 @@ def fetch_horse_list_by_year(birth_year: int, max_pages: int = 20) -> pd.DataFra
             # [8]: 母父
             sire_of_dam = cols[8].text.strip()
 
+            # [6]: 父
+            sire_age_link = cols[6].find("a")
+            sire_age = ""
+            if sire_age_link:
+                tid_match = re.search(r"sire_id=(\d{4})", trainer_link.get("href", ""))
+                if tid_match:
+                    sire_age = birth_year - tid_match.group(1)
+
+            # [7]: 母
+            dam_age_link = cols[7].text.strip()
+            dam_age = ""
+            if dam_age_link:
+                tid_match = re.search(r"mare_id=(\d{4})", trainer_link.get("href", ""))
+                if tid_match:
+                    dam_age = birth_year - tid_match.group(1)
+
+            # [8]: 母父
+            sire_of_dam_age_link = cols[8].text.strip()
+            sire_of_dam_age = ""
+            if sire_of_dam_age_link:
+                tid_match = re.search(r"bms_id=(\d{4})", trainer_link.get("href", ""))
+                if tid_match:
+                    sire_of_dam_age = birth_year - tid_match.group(1)
+
             # [9]: 馬主
             owner = cols[9].text.strip()
 
@@ -134,6 +158,9 @@ def fetch_horse_list_by_year(birth_year: int, max_pages: int = 20) -> pd.DataFra
                 "sire": sire,
                 "dam": dam,
                 "sire_of_dam": sire_of_dam,
+                "sire_age": sire_age,
+                "dam_age": dam_age,
+                "sire_of_dam_age": sire_of_dam_age,
                 "owner": owner,
                 "breeder": breeder,
                 "total_prize": total_prize,
