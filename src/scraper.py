@@ -1,24 +1,28 @@
+# Import required libraries
+import requests
 import pandas as pd
 
-def fetch_horse_data():
-    # Code for fetching horse data
-    pass
+# Constants
+BASE_URL = 'https://example.com/api'
 
-# Other existing functions and code preceded the blood age sections
+# Function to fetch data
 
+def fetch_data():
+    response = requests.get(BASE_URL)
+    if response.status_code == 200:
+        return response.json()
+    return None
 
-def main():
-    horses = []
-    # fetching horse data
-    for horse in all_horses:
-        horses.append({
-            'name': horse.name,
-            'sire': horse.sire,
-            'dam': horse.dam,
-            'other_field': horse.other_field,
-            # Removed sire_age, dam_age, and sire_of_dam_age
-        })
-    # Further processing
+# Function to process data
 
-if __name__ == "__main__":
-    main()
+def process_data(data):
+    df = pd.DataFrame(data)
+    return df.describe()
+
+# Main function
+
+if __name__ == '__main__':
+    data = fetch_data()
+    if data:
+        stats = process_data(data)
+        print(stats)
