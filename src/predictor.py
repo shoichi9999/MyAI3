@@ -15,17 +15,30 @@ import sys
 import pandas as pd
 from tabulate import tabulate
 
-from src.scraper import scrape_all_2yo_data
+from src.scraper import fetch_horse_list_by_year
 from src.features import build_feature_matrix
 from src.model import POGPredictor
 
 
-def collect_data(birth_year: int, max_horses: int = None) -> dict:
+def collect_data(birth_year: int, max_horses: int = None) -> pd.DataFrame:
     """データを収集してCSVに保存する。"""
     print(f"\n{'='*60}")
     print(f"  データ収集: {birth_year}年生まれの2歳馬")
     print(f"{'='*60}")
-    return scrape_all_2yo_data(birth_year, max_horses=max_horses)
+
+    max_pages = None if not max_horses else (max_horses // 100) + 1
+    horse_list = fetch_horse_list_by_year(birth_year, max_pages=max_pages)
+
+    if horse_list.empty:
+        print("[WARN] 馬一覧の取得に失敗しました。")
+        return horse_list
+
+    if max_horses:
+        horse_list = horse_list.head(max_horses)
+
+    print(f"  取得完了: {len(horse_list)}頭")
+    horse_list.to_csv(f"data/horses_{birth_year}.csv", index=False, encoding="utf-8-sig")
+    return horse_list
 
 
 def train_model(training_years: list[int]) -> POGPredictor:
