@@ -150,7 +150,7 @@ def run_gbr_loyo(target_year: int, training_years: list[int],
     if params is None:
         params = {
             "n_estimators": 300, "max_depth": 2, "learning_rate": 0.03,
-            "subsample": 0.8, "min_samples_leaf": 30,
+            "subsample": 0.8, "min_samples_leaf": 30, "max_features": 0.7,
         }
 
     # 学習データ

@@ -23,8 +23,11 @@ from sklearn.model_selection import cross_val_score
 from sklearn.preprocessing import StandardScaler
 
 
-# 予測に使用する特徴量カラム（最適化済み: 14個）
-# Ablation分析で除外: ggp_age_mean(gp_age_meanと相関0.91), breeder_score(owner_scoreと相関0.52)
+# 予測に使用する特徴量カラム（v6: 19個）
+# 除去: gp_age_*, ggp_age_*（デフォルト値によるデータ有無プロキシ）
+# 保持: sire_age, dam_age（親年齢は比較的データが揃っている）
+# 追加: breeder_score, sire_dam_interaction
+# モデル側で max_features を導入し単一特徴量支配を防止
 FEATURE_COLS = [
     "sex",
     "sire_ei",
@@ -33,6 +36,7 @@ FEATURE_COLS = [
     "birth_month",
     "trainer_score",
     "owner_score",
+    "breeder_score",       # 生産牧場スコア
     # 親の産駒時年齢
     "sire_age",
     "dam_age",
@@ -46,13 +50,8 @@ FEATURE_COLS = [
     # 追加特徴量
     "sale_price_log",      # セリ取引価格（対数）
     "foal_number",         # 何番仔か
-    # 祖父母年齢の集約統計量
-    "gp_age_mean",
-    "gp_age_min",
-    "gp_age_std",
-    # 曾祖父母年齢の集約統計量（meanは祖父母と冗長なので除外）
-    "ggp_age_min",
-    "ggp_age_std",
+    # 血統交互作用
+    "sire_dam_interaction", # sire_ei × dam_prize_log
 ]
 
 MODEL_PATH = "models/pog_predictor.pkl"
@@ -69,6 +68,7 @@ class POGPredictor:
             learning_rate=0.03,
             subsample=0.8,
             min_samples_leaf=30,
+            max_features=0.7,      # 各分割で特徴量の70%をサンプル→単一支配防止
             random_state=42,
         )
         self.backup_model = RandomForestRegressor(
@@ -291,24 +291,14 @@ def _heuristic_score(df: pd.DataFrame) -> pd.Series:
         fn = df["foal_number"].fillna(3)
         score += np.where(fn == 1, -3, np.where(fn <= 4, 2, 0))
 
-    # 父年齢ボーナス（若い父ほど有利）
-    if "sire_age" in df.columns:
-        sa = df["sire_age"].fillna(11)
-        score += np.where(sa <= 10, 4, np.where(sa <= 13, 2, np.where(sa <= 16, 0, -3)))
+    # 生産牧場ボーナス
+    if "breeder_score" in df.columns:
+        bs = df["breeder_score"].fillna(50)
+        score += (bs - 50) * 0.3
 
-    # 祖父母年齢ボーナス（集約: 平均年齢が若いほど有利）
-    if "gp_age_mean" in df.columns:
-        gp = df["gp_age_mean"].fillna(21.5)
-        score += np.where(gp <= 20, 3, np.where(gp <= 23, 1.5, np.where(gp <= 27, 0, -2)))
-
-    # 祖父母年齢の散布度ボーナス（均質な世代構成が有利）
-    if "gp_age_std" in df.columns:
-        gp_std = df["gp_age_std"].fillna(3.0)
-        score += np.where(gp_std <= 2, 1, np.where(gp_std <= 4, 0, -1))
-
-    # 曾祖父母年齢ボーナス（最小年齢）
-    if "ggp_age_min" in df.columns:
-        ggp_min = df["ggp_age_min"].fillna(25.0)
-        score += np.where(ggp_min <= 22, 2, np.where(ggp_min <= 28, 1, np.where(ggp_min <= 35, 0, -1)))
+    # 血統データの充実度ボーナス（名門牧場ほどデータが充実）
+    if "pedigree_depth" in df.columns:
+        pd_val = df["pedigree_depth"].fillna(0.0)
+        score += pd_val * 5
 
     return score

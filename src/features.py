@@ -329,17 +329,24 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
         # 母馬賞金の対数変換
         row["dam_prize_log"] = np.log1p(row["dam_prize"])
 
-        # 祖父母年齢の集約（平均・最小・散布度）
+        # 血統交互作用（父の種牡馬力 × 母の実績）
+        row["sire_dam_interaction"] = row["sire_ei"] * row["dam_prize_log"]
+
+        # 祖父母年齢の集約（平均・最小のみ。stdはデフォルト値でデータ有無プロキシになるため除去）
         gp_ages = [row["sire_sire_age"], row["sire_dam_age"],
                    row["dam_sire_age"], row["dam_dam_age"]]
         row["gp_age_mean"] = np.mean(gp_ages)
         row["gp_age_min"] = np.min(gp_ages)
-        row["gp_age_std"] = np.std(gp_ages)
 
-        # 曾祖父母年齢の集約（平均・最小・散布度）
-        row["ggp_age_mean"] = np.mean(ggp_ages)
-        row["ggp_age_min"] = np.min(ggp_ages)
-        row["ggp_age_std"] = np.std(ggp_ages)
+        # 血統データの充実度（デフォルト値ではない祖先の割合）
+        # 祖父母: デフォルト 22.0/21.0、曾祖父母: デフォルト 33.0
+        gp_defaults = {22.0, 21.0}
+        ggp_default = 33.0
+        known_gp = sum(1 for a in gp_ages if a not in gp_defaults)
+        known_ggp = sum(1 for a in ggp_ages if a != ggp_default)
+        # 親2 + 祖父母4 + 曾祖父母8 = 14 ancestors
+        known_parents = (1 if sire_age is not None else 0) + (1 if dam_age is not None else 0)
+        row["pedigree_depth"] = (known_parents + known_gp + known_ggp) / 14.0
 
         feature_rows.append(row)
 
