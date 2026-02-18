@@ -256,3 +256,93 @@ def fetch_pedigree_birth_years(horse_id: str) -> dict:
             result[key] = gen3_fml[i]
 
     return result
+
+
+# ------------------------------------------------------------------
+# セリ価格・母馬ID・産駒番号
+# ------------------------------------------------------------------
+
+def _parse_sale_price(text: str) -> float | None:
+    """セリ価格テキストを万円単位の数値に変換する。"""
+    if not text or text.strip() in ("", "-"):
+        return None
+    text = text.replace(",", "").replace("　", "").replace(" ", "")
+    total = 0.0
+    m_oku = re.search(r"(\d+)億", text)
+    if m_oku:
+        total += int(m_oku.group(1)) * 10000
+    m_man = re.search(r"(\d+)万", text)
+    if m_man:
+        total += int(m_man.group(1))
+    return total if total > 0 else None
+
+
+def fetch_horse_extra(horse_id: str) -> dict:
+    """
+    プロフィールページからセリ取引価格と母馬IDを取得する。
+
+    Returns
+    -------
+    dict
+        {"sale_price": float|None (万円), "dam_id": str|None}
+    """
+    url = f"{BASE_URL}/horse/{horse_id}/"
+    soup = _get_soup(url)
+
+    result = {"sale_price": None, "dam_id": None}
+
+    # セリ取引価格
+    prof_table = soup.find("table", class_="db_prof_table")
+    if prof_table:
+        for row in prof_table.find_all("tr"):
+            th = row.find("th")
+            td = row.find("td")
+            if th and td and "セリ取引価格" in th.text:
+                result["sale_price"] = _parse_sale_price(td.text)
+
+    # 母馬ID（血統テーブルの b_fml rowspan=4 が母）
+    blood_table = soup.find("table", class_="blood_table")
+    if blood_table:
+        for td in blood_table.find_all("td", class_="b_fml"):
+            rs = td.get("rowspan")
+            if rs and int(rs) == 4:
+                a = td.find("a")
+                if a:
+                    href = a.get("href", "")
+                    m = re.search(r"/horse/(\w+)", href)
+                    if m:
+                        result["dam_id"] = m.group(1)
+                break
+
+    return result
+
+
+def fetch_dam_foal_list(dam_id: str) -> list[str]:
+    """
+    母馬のページから産駒のhorse_idリストを生年順で取得する。
+
+    Returns
+    -------
+    list[str]
+        産駒のhorse_idリスト（生年順）
+    """
+    url = f"{BASE_URL}/horse/{dam_id}/"
+    soup = _get_soup(url)
+
+    foal_ids = []
+
+    # 産駒テーブル: "産駒" を含むヘッダーの直後のテーブルを探す
+    for tag in soup.find_all(["h2", "h3", "h4", "div"]):
+        if "産駒" in tag.get_text():
+            table = tag.find_next("table")
+            if table:
+                for row in table.find_all("tr")[1:]:
+                    for a_tag in row.find_all("a"):
+                        href = a_tag.get("href", "")
+                        m = re.search(r"/horse/(\w+)/", href)
+                        if m and m.group(1) != dam_id:
+                            foal_ids.append(m.group(1))
+                            break
+                return foal_ids
+
+    return foal_ids

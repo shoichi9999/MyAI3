@@ -38,6 +38,8 @@ DAM_PRIZES = _load_json("data/dam_prizes.json")
 BIRTH_DATES_CACHE = {}
 # 親年齢キャッシュ（世代別）
 PARENT_AGES_CACHE = {}
+# 追加特徴量キャッシュ（セリ価格・産駒番号、世代別）
+EXTRA_FEATURES_CACHE = {}
 
 
 def _load_birth_dates(birth_year: int) -> dict:
@@ -52,6 +54,13 @@ def _load_parent_ages(birth_year: int) -> dict:
     if birth_year not in PARENT_AGES_CACHE:
         PARENT_AGES_CACHE[birth_year] = _load_json(f"data/parent_ages_{birth_year}.json")
     return PARENT_AGES_CACHE[birth_year]
+
+
+def _load_extra_features(birth_year: int) -> dict:
+    """追加特徴量キャッシュ（セリ価格・産駒番号）を読み込む。"""
+    if birth_year not in EXTRA_FEATURES_CACHE:
+        EXTRA_FEATURES_CACHE[birth_year] = _load_json(f"data/extra_features_{birth_year}.json")
+    return EXTRA_FEATURES_CACHE[birth_year]
 
 
 # 有力調教師スコア（2歳戦〜クラシック実績ベース）
@@ -303,6 +312,15 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
         row["sire_young"] = 1 if row["sire_age"] <= 13 else 0
         row["dam_young"] = 1 if row["dam_age"] <= 13 else 0
         row["both_parents_young"] = 1 if (row["sire_age"] <= 13 and row["dam_age"] <= 13) else 0
+        # 父の初期産駒（初年度〜2世代目：sire_age <= 7）
+        row["sire_first_crop"] = 1 if row["sire_age"] <= 7 else 0
+
+        # --- 追加特徴量（セリ価格・産駒番号） ---
+        extra = _load_extra_features(birth_year).get(str(hid), {})
+        sale_price = extra.get("sale_price")
+        row["sale_price_log"] = np.log1p(sale_price) if sale_price else 0.0
+        foal_number = extra.get("foal_number")
+        row["foal_number"] = foal_number if foal_number else 3.0  # デフォルト: 3番仔
 
         # --- 集約特徴量（世代別の統計量） ---
         # 母馬賞金の対数変換
