@@ -284,26 +284,9 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
         row["sire_age"] = sire_age if sire_age is not None else 11.0  # 平均値で補完
         row["dam_age"] = dam_age if dam_age is not None else 10.5
 
-        # 祖父母年齢（父父・父母・母父・母母の産駒時年齢）
-        sire_sire_age = get_parent_age(hid, birth_year, "sire_sire")
-        sire_dam_age = get_parent_age(hid, birth_year, "sire_dam")
+        # 母父（BMS）の産駒時年齢（dam_bms_gap_small の計算に必要）
         dam_sire_age = get_parent_age(hid, birth_year, "dam_sire")
-        dam_dam_age = get_parent_age(hid, birth_year, "dam_dam")
-        row["sire_sire_age"] = sire_sire_age if sire_sire_age is not None else 22.0
-        row["sire_dam_age"] = sire_dam_age if sire_dam_age is not None else 21.0
         row["dam_sire_age"] = dam_sire_age if dam_sire_age is not None else 22.0
-        row["dam_dam_age"] = dam_dam_age if dam_dam_age is not None else 21.0
-
-        # 曾祖父母年齢（3世代目、8頭分の産駒時年齢）
-        ggp_ages = []
-        for ggp in [
-            "sire_sire_sire", "sire_sire_dam",
-            "sire_dam_sire", "sire_dam_dam",
-            "dam_sire_sire", "dam_sire_dam",
-            "dam_dam_sire", "dam_dam_dam",
-        ]:
-            age = get_parent_age(hid, birth_year, ggp)
-            ggp_ages.append(age if age is not None else 33.0)
 
         # --- ドメイン知識ベースのバイナリ特徴量 ---
         # 1-4月生まれは有利、5月以降は不利
@@ -331,22 +314,6 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
 
         # 血統交互作用（父の種牡馬力 × 母の実績）
         row["sire_dam_interaction"] = row["sire_ei"] * row["dam_prize_log"]
-
-        # 祖父母年齢の集約（平均・最小のみ。stdはデフォルト値でデータ有無プロキシになるため除去）
-        gp_ages = [row["sire_sire_age"], row["sire_dam_age"],
-                   row["dam_sire_age"], row["dam_dam_age"]]
-        row["gp_age_mean"] = np.mean(gp_ages)
-        row["gp_age_min"] = np.min(gp_ages)
-
-        # 血統データの充実度（デフォルト値ではない祖先の割合）
-        # 祖父母: デフォルト 22.0/21.0、曾祖父母: デフォルト 33.0
-        gp_defaults = {22.0, 21.0}
-        ggp_default = 33.0
-        known_gp = sum(1 for a in gp_ages if a not in gp_defaults)
-        known_ggp = sum(1 for a in ggp_ages if a != ggp_default)
-        # 親2 + 祖父母4 + 曾祖父母8 = 14 ancestors
-        known_parents = (1 if sire_age is not None else 0) + (1 if dam_age is not None else 0)
-        row["pedigree_depth"] = (known_parents + known_gp + known_ggp) / 14.0
 
         feature_rows.append(row)
 

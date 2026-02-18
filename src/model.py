@@ -296,9 +296,4 @@ def _heuristic_score(df: pd.DataFrame) -> pd.Series:
         bs = df["breeder_score"].fillna(50)
         score += (bs - 50) * 0.3
 
-    # 血統データの充実度ボーナス（名門牧場ほどデータが充実）
-    if "pedigree_depth" in df.columns:
-        pd_val = df["pedigree_depth"].fillna(0.0)
-        score += pd_val * 5
-
     return score
