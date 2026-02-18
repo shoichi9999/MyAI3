@@ -314,6 +314,9 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
         row["both_parents_young"] = 1 if (row["sire_age"] <= 13 and row["dam_age"] <= 13) else 0
         # 父の初期産駒（初年度〜2世代目：sire_age <= 7）
         row["sire_first_crop"] = 1 if row["sire_age"] <= 7 else 0
+        # 母と母父の年齢差が15以下（母父が若い時に母を産んでいる）
+        dam_bms_gap = row["dam_sire_age"] - row["dam_age"]
+        row["dam_bms_gap_small"] = 1 if dam_bms_gap <= 15 else 0
 
         # --- 追加特徴量（セリ価格・産駒番号） ---
         extra = _load_extra_features(birth_year).get(str(hid), {})

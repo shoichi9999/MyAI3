@@ -42,6 +42,7 @@ FEATURE_COLS = [
     "dam_young",           # 母13歳以下=1
     "both_parents_young",  # 両親とも13歳以下=1
     "sire_first_crop",     # 父の初期産駒（sire_age<=7）=1
+    "dam_bms_gap_small",   # 母と母父の年齢差15以下=1
     # 追加特徴量
     "sale_price_log",      # セリ取引価格（対数）
     "foal_number",         # 何番仔か
@@ -273,6 +274,10 @@ def _heuristic_score(df: pd.DataFrame) -> pd.Series:
         score += df["both_parents_young"].fillna(0) * 5
     elif "sire_young" in df.columns and "dam_young" in df.columns:
         score += (df["sire_young"].fillna(0) + df["dam_young"].fillna(0)) * 2.5
+
+    # 母と母父の年齢差が小さいボーナス
+    if "dam_bms_gap_small" in df.columns:
+        score += df["dam_bms_gap_small"].fillna(0) * 3
 
     # セリ価格ボーナス（高額馬ほど有利）
     if "sale_price_log" in df.columns:
