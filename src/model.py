@@ -36,6 +36,11 @@ FEATURE_COLS = [
     # 親の産駒時年齢
     "sire_age",
     "dam_age",
+    # ドメイン知識ベース（閾値バイナリ）
+    "early_born",          # 1-4月生まれ=1
+    "sire_young",          # 父13歳以下=1
+    "dam_young",           # 母13歳以下=1
+    "both_parents_young",  # 両親とも13歳以下=1
     # 祖父母年齢の集約統計量
     "gp_age_mean",
     "gp_age_min",
@@ -254,6 +259,16 @@ def _heuristic_score(df: pd.DataFrame) -> pd.Series:
         max_dp = dp.max()
         if max_dp > 0:
             score += (dp / max_dp) * 100 * WEIGHT_DAM_PRIZE
+
+    # 早生まれボーナス（1-4月生まれ）
+    if "early_born" in df.columns:
+        score += df["early_born"].fillna(0) * 5
+
+    # 両親若齢ボーナス（13歳以下）
+    if "both_parents_young" in df.columns:
+        score += df["both_parents_young"].fillna(0) * 5
+    elif "sire_young" in df.columns and "dam_young" in df.columns:
+        score += (df["sire_young"].fillna(0) + df["dam_young"].fillna(0)) * 2.5
 
     # 父年齢ボーナス（若い父ほど有利）
     if "sire_age" in df.columns:

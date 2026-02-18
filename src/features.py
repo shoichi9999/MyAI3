@@ -296,6 +296,14 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
             age = get_parent_age(hid, birth_year, ggp)
             ggp_ages.append(age if age is not None else 33.0)
 
+        # --- ドメイン知識ベースのバイナリ特徴量 ---
+        # 1-4月生まれは有利、5月以降は不利
+        row["early_born"] = 1 if row["birth_month"] <= 4 else 0
+        # 両親が13歳以下なら産駒が強い
+        row["sire_young"] = 1 if row["sire_age"] <= 13 else 0
+        row["dam_young"] = 1 if row["dam_age"] <= 13 else 0
+        row["both_parents_young"] = 1 if (row["sire_age"] <= 13 and row["dam_age"] <= 13) else 0
+
         # --- 集約特徴量（世代別の統計量） ---
         # 母馬賞金の対数変換
         row["dam_prize_log"] = np.log1p(row["dam_prize"])
