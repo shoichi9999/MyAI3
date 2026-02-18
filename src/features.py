@@ -278,28 +278,28 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
         # 生まれ月（1-12、小さいほど有利）
         row["birth_month"] = get_birth_month(hid, birth_year)
 
-        # 親年齢（父・母の産駒時年齢）
+        # 親年齢（父・母・母父の産駒時年齢）— 欠損はNaN（デフォルト値補完しない）
         sire_age = get_parent_age(hid, birth_year, "sire")
         dam_age = get_parent_age(hid, birth_year, "dam")
-        row["sire_age"] = sire_age if sire_age is not None else 11.0  # 平均値で補完
-        row["dam_age"] = dam_age if dam_age is not None else 10.5
-
-        # 母父（BMS）の産駒時年齢（dam_bms_gap_small の計算に必要）
         dam_sire_age = get_parent_age(hid, birth_year, "dam_sire")
-        row["dam_sire_age"] = dam_sire_age if dam_sire_age is not None else 22.0
+        row["sire_age"] = sire_age if sire_age is not None else np.nan
+        row["dam_age"] = dam_age if dam_age is not None else np.nan
+        row["dam_sire_age"] = dam_sire_age if dam_sire_age is not None else np.nan
 
         # --- ドメイン知識ベースのバイナリ特徴量 ---
-        # 1-4月生まれは有利、5月以降は不利
+        # 年齢がNaNの場合はバイナリもNaN（デフォルト値で偽装しない）
         row["early_born"] = 1 if row["birth_month"] <= 4 else 0
-        # 両親が13歳以下なら産駒が強い
-        row["sire_young"] = 1 if row["sire_age"] <= 13 else 0
-        row["dam_young"] = 1 if row["dam_age"] <= 13 else 0
-        row["both_parents_young"] = 1 if (row["sire_age"] <= 13 and row["dam_age"] <= 13) else 0
-        # 父の初期産駒（初年度〜2世代目：sire_age <= 7）
-        row["sire_first_crop"] = 1 if row["sire_age"] <= 7 else 0
-        # 母と母父の年齢差が15以下（母父が若い時に母を産んでいる）
-        dam_bms_gap = row["dam_sire_age"] - row["dam_age"]
-        row["dam_bms_gap_small"] = 1 if dam_bms_gap <= 15 else 0
+        row["sire_young"] = (1 if sire_age <= 13 else 0) if sire_age is not None else np.nan
+        row["dam_young"] = (1 if dam_age <= 13 else 0) if dam_age is not None else np.nan
+        row["both_parents_young"] = (
+            (1 if sire_age <= 13 and dam_age <= 13 else 0)
+            if sire_age is not None and dam_age is not None else np.nan
+        )
+        row["sire_first_crop"] = (1 if sire_age <= 7 else 0) if sire_age is not None else np.nan
+        row["dam_bms_gap_small"] = (
+            (1 if (dam_sire_age - dam_age) <= 15 else 0)
+            if dam_sire_age is not None and dam_age is not None else np.nan
+        )
 
         # --- 追加特徴量（セリ価格・産駒番号） ---
         extra = _load_extra_features(birth_year).get(str(hid), {})

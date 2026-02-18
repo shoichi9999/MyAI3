@@ -104,11 +104,15 @@ class POGPredictor:
         """
         df = feature_df.copy()
 
-        # 欠損値処理
+        # 欠損値処理（各カラムの中央値で補完。中央値が無い場合のみ0）
         for col in self.feature_cols:
             if col not in df.columns:
                 df[col] = 0.0
-            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0.0)
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+        for col in self.feature_cols:
+            median = df[col].median()
+            df[col] = df[col].fillna(median if pd.notna(median) else 0.0)
+        self._train_medians = {col: df[col].median() for col in self.feature_cols}
 
         X = df[self.feature_cols].values
         y = df[target_col].values if target_col in df.columns else np.zeros(len(df))
@@ -171,10 +175,14 @@ class POGPredictor:
         """
         df = feature_df.copy()
 
+        # 欠損値処理（学習時の中央値で補完）
+        medians = getattr(self, "_train_medians", {})
         for col in self.feature_cols:
             if col not in df.columns:
                 df[col] = 0.0
-            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0.0)
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+            fill_val = medians.get(col, 0.0)
+            df[col] = df[col].fillna(fill_val if pd.notna(fill_val) else 0.0)
 
         X = df[self.feature_cols].values
 
@@ -205,7 +213,12 @@ class POGPredictor:
         """モデルを保存する。"""
         os.makedirs(os.path.dirname(model_path), exist_ok=True)
         with open(model_path, "wb") as f:
-            pickle.dump({"model": self.model, "backup": self.backup_model, "log_target": self.log_target}, f)
+            pickle.dump({
+                "model": self.model,
+                "backup": self.backup_model,
+                "log_target": self.log_target,
+                "train_medians": getattr(self, "_train_medians", {}),
+            }, f)
         with open(scaler_path, "wb") as f:
             pickle.dump(self.scaler, f)
         print(f"モデルを保存しました: {model_path}")
@@ -217,6 +230,7 @@ class POGPredictor:
             self.model = data["model"]
             self.backup_model = data["backup"]
             self.log_target = data.get("log_target", True)
+            self._train_medians = data.get("train_medians", {})
         with open(scaler_path, "rb") as f:
             self.scaler = pickle.load(f)
         self.is_fitted = True
