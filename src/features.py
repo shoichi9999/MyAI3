@@ -223,13 +223,45 @@ def get_birth_month(horse_id: str, birth_year: int) -> int:
     return 3  # デフォルト: 3月
 
 
+def _birth_year_from_id(horse_id: str) -> int | None:
+    """horse_idの先頭4桁から生年を返す（日本産馬のみ）。"""
+    if horse_id and horse_id[:4].isdigit():
+        return int(horse_id[:4])
+    return None
+
+
+# 親キー名のマッピング: parent引数 → (birth_yearキー, idキー)
+_PARENT_KEY_MAP = {
+    "sire": ("sire_birth_year", "sire_id"),
+    "dam": ("dam_birth_year", "dam_id"),
+    "dam_sire": ("dam_sire_birth_year", "bms_id"),
+}
+
+
 def get_parent_age(horse_id: str, birth_year: int, parent: str = "sire") -> float:
-    """親の産駒時年齢を返す。取得できない場合はNone。"""
+    """親の産駒時年齢を返す。取得できない場合はNone。
+
+    1. キャッシュの {parent}_birth_year を確認
+    2. キャッシュの {parent}_id の先頭4桁からフォールバック計算
+    """
     pa_cache = _load_parent_ages(birth_year)
     data = pa_cache.get(str(horse_id), {})
-    by = data.get(f"{parent}_birth_year")
+
+    by_key, id_key = _PARENT_KEY_MAP.get(parent, (f"{parent}_birth_year", None))
+
+    # 1. birth_year がキャッシュにある場合
+    by = data.get(by_key)
     if by:
         return birth_year - by
+
+    # 2. horse_id の先頭4桁から生年を推定
+    if id_key:
+        parent_id = data.get(id_key)
+        if parent_id:
+            parent_by = _birth_year_from_id(parent_id)
+            if parent_by:
+                return birth_year - parent_by
+
     return None
 
 

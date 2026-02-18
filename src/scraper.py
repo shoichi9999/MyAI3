@@ -4,7 +4,8 @@ netkeiba.comから産駒データをスクレイピングするモジュール�
 対象データ:
 - 馬名、性別、血統情報（父・母・母父）
 - 調教師、馬主、生産者、賞金
-- 3世代分の先祖の生年（父母〜曾祖父母）
+- 親のhorse_id・生年（父・母・母父）
+- プロフィール情報（生年月日、セリ価格、母馬ID）
 """
 
 import time
@@ -313,6 +314,103 @@ def fetch_horse_extra(horse_id: str) -> dict:
                     if m:
                         result["dam_id"] = m.group(1)
                 break
+
+    return result
+
+
+def fetch_horse_profile(horse_id: str) -> dict:
+    """
+    プロフィールページから生年月日・セリ価格・母馬IDを一括取得する。
+
+    1ページアクセスで3つのキャッシュ（birth_dates, extra_features, 母馬ID）を
+    すべて賄える統合関数。
+
+    Returns
+    -------
+    dict
+        {"birth_date": str|None, "sale_price": float|None, "dam_id": str|None}
+    """
+    url = f"{BASE_URL}/horse/{horse_id}/"
+    soup = _get_soup(url)
+
+    result = {"birth_date": None, "sale_price": None, "dam_id": None}
+
+    prof_table = soup.find("table", class_="db_prof_table")
+    if prof_table:
+        for row in prof_table.find_all("tr"):
+            th = row.find("th")
+            td = row.find("td")
+            if not th or not td:
+                continue
+            label = th.text.strip()
+            if "生年月日" in label:
+                result["birth_date"] = td.text.strip()
+            elif "セリ取引価格" in label:
+                result["sale_price"] = _parse_sale_price(td.text)
+
+    # 母馬ID: db_prof_tableの「近親馬」ではなく、血統のAjax取得ができないので
+    # 別途 fetch_parent_ids で取得する設計とする
+
+    return result
+
+
+def fetch_parent_ids(horse_id: str) -> dict:
+    """
+    血統ページから父・母・母父のhorse_idを取得する。
+
+    祖父母以降は不要なので、rowspan=16（父・母）と rowspan=8 の
+    母父のみを取得する軽量版。
+
+    Returns
+    -------
+    dict
+        {"sire_id": str|None, "dam_id": str|None, "bms_id": str|None}
+    """
+    url = f"{BASE_URL}/horse/ped/{horse_id}/"
+    resp = requests.get(url, headers=HEADERS, timeout=30)
+    resp.encoding = "EUC-JP"
+    soup = BeautifulSoup(resp.text, "lxml")
+
+    result = {"sire_id": None, "dam_id": None, "bms_id": None}
+
+    table = soup.find("table", class_="blood_table")
+    if not table:
+        return result
+
+    gen1_ml, gen1_fml = [], []
+    gen2_ml = []
+
+    for td in table.find_all("td"):
+        rs = td.get("rowspan")
+        if not rs:
+            continue
+        rs = int(rs)
+        if rs not in (16, 8):
+            continue
+
+        cls = td.get("class", [])
+        a = td.find("a")
+        if not a:
+            continue
+        href = a.get("href", "")
+        hid_match = re.search(r"/horse/(\w+)", href)
+        if not hid_match:
+            continue
+
+        hid = hid_match.group(1)
+        is_male = "b_ml" in cls
+
+        if rs == 16:
+            (gen1_ml if is_male else gen1_fml).append(hid)
+        elif rs == 8 and is_male:
+            gen2_ml.append(hid)
+
+    if gen1_ml:
+        result["sire_id"] = gen1_ml[0]
+    if gen1_fml:
+        result["dam_id"] = gen1_fml[0]
+    if len(gen2_ml) >= 2:
+        result["bms_id"] = gen2_ml[1]  # 2番目の牡系=母父
 
     return result
 
