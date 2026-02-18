@@ -40,7 +40,7 @@ def _get_soup(url: str) -> BeautifulSoup:
     return BeautifulSoup(resp.text, "lxml")
 
 
-def fetch_horse_list_by_year(birth_year: int, max_pages: int = 20) -> pd.DataFrame:
+def fetch_horse_list_by_year(birth_year: int, max_pages: int = None) -> pd.DataFrame:
     """
     指定した生年の馬一覧を取得する。
     一覧ページから馬名・性別・血統・調教師・賞金を直接取得する。
@@ -49,8 +49,8 @@ def fetch_horse_list_by_year(birth_year: int, max_pages: int = 20) -> pd.DataFra
     ----------
     birth_year : int
         生年（例: 2024）
-    max_pages : int
-        最大取得ページ数
+    max_pages : int, optional
+        最大取得ページ数。Noneの場合はデータがなくなるまで全ページ取得。
 
     Returns
     -------
@@ -58,7 +58,11 @@ def fetch_horse_list_by_year(birth_year: int, max_pages: int = 20) -> pd.DataFra
         馬の基本情報を含むDataFrame
     """
     horses = []
-    for page in range(1, max_pages + 1):
+    page = 0
+    while True:
+        page += 1
+        if max_pages is not None and page > max_pages:
+            break
         url = (
             f"{BASE_URL}/?pid=horse_list"
             f"&birthyear={birth_year}"
@@ -270,7 +274,7 @@ def scrape_all_2yo_data(birth_year: int, max_horses: Optional[int] = None) -> di
     print(f"=== {birth_year}年生まれの馬一覧を取得中 ===")
 
     # 一覧ページから基本情報を一括取得
-    max_pages = 20 if not max_horses else (max_horses // 100) + 1
+    max_pages = None if not max_horses else (max_horses // 100) + 1
     horse_list = fetch_horse_list_by_year(birth_year, max_pages=max_pages)
 
     if horse_list.empty:
