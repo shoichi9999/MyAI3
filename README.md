@@ -134,3 +134,75 @@ python backtest.py 2021 --optimize
 
 > **注**: GBR+RFアンサンブルは現在、学習データ（他年の全件データ）が未取得のため未評価。
 > 2022〜2024年データの全件取得後に再評価予定。
+
+## テスト手順
+
+### 1. 環境確認
+
+```bash
+pip install -r requirements.txt
+python -c "from src.features import build_feature_matrix; print('OK')"
+```
+
+### 2. バックテスト（2021年・ヒューリスティック）
+
+2021年データ（8,167頭）が `data/horses_2021.csv` にあることを確認した上で実行。
+
+```bash
+python backtest.py 2021
+```
+
+期待される結果:
+- Spearman順位相関 ≒ 0.338
+- TOP30一致 ≒ 7/30
+- 賞金倍率 ≒ 10.80x
+- 学習データ無しの場合「ヒューリスティックのみで評価」と表示されること
+
+### 3. データ取得の動作確認（少数テスト）
+
+ネットワークアクセスが必要。少数で動作確認する。
+
+```bash
+# 馬一覧の取得テスト（5ページ=最大500頭）
+python -c "
+from src.scraper import fetch_horse_list_by_year
+df = fetch_horse_list_by_year(2023, max_pages=5)
+print(f'{len(df)}頭取得')
+assert len(df) > 0, 'データ取得失敗'
+print('OK')
+"
+
+# 特徴量取得テスト（3頭だけ）
+python scripts/fetch_all_features.py 2021 --max-horses 3
+```
+
+### 4. 全件データ取得 → GBRバックテスト
+
+各年7,000〜9,000頭を想定。取得にはネットワーク接続と数時間が必要。
+
+```bash
+# Step 1: 馬一覧CSV取得（各年）
+python run.py --mode collect --year 2022
+python run.py --mode collect --year 2023
+python run.py --mode collect --year 2024
+
+# Step 2: 特徴量データ取得（各年、時間がかかる）
+python scripts/fetch_all_features.py 2022
+python scripts/fetch_all_features.py 2023
+python scripts/fetch_all_features.py 2024
+# 2021年も特徴量JSONが不完全（1,450/8,167件）なので再実行
+python scripts/fetch_all_features.py 2021
+
+# Step 3: 母馬賞金の取得（新規の母馬分のみ追加取得）
+python fetch_dam_prizes.py
+
+# Step 4: GBR+RFバックテスト
+python backtest.py 2021
+python backtest.py 2022
+python backtest.py 2023
+```
+
+確認ポイント:
+- 各年のCSVが7,000件以上あること（`wc -l data/horses_*.csv`）
+- GBR+RFアンサンブルのSpearmanがヒューリスティックより高いこと
+- CV R2が正の値であること（負の場合は学習データの分布問題の可能性）
