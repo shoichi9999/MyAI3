@@ -87,15 +87,11 @@ python scripts/fetch_all_features.py 2024
 python fetch_dam_prizes.py              # 全CSVの母馬を対象
 python fetch_dam_prizes.py --year 2024  # 指定年のみ
 
-# バックテスト（通算賞金ベース）
+# バックテスト
 python backtest.py 2021
-
-# バックテスト（ダービーまでの賞金ベース — race_results_{year}.json が必要）
-python backtest.py 2021 --derby
 
 # バックテスト＋ハイパーパラメータ最適化
 python backtest.py 2021 --optimize
-python backtest.py 2021 --optimize --derby
 ```
 
 ## 予測アプローチ
@@ -191,7 +187,6 @@ python run.py --mode collect --year 2023
 python run.py --mode collect --year 2024
 
 # Step 2: 特徴量データ取得（各年、時間がかかる）
-# Phase 1（プロフィール+血統）、Phase 2（産駒番号）、Phase 3（レース戦績）を一括実行
 python scripts/fetch_all_features.py 2022
 python scripts/fetch_all_features.py 2023
 python scripts/fetch_all_features.py 2024
@@ -202,15 +197,12 @@ python scripts/fetch_all_features.py 2021
 python fetch_dam_prizes.py
 
 # Step 4: GBR+RFバックテスト
-python backtest.py 2021          # 通算賞金ベース
-python backtest.py 2021 --derby  # ダービーまでの賞金ベース（POG向き）
+python backtest.py 2021
 python backtest.py 2022
-python backtest.py 2022 --derby
+python backtest.py 2023
 ```
 
 確認ポイント:
 - 各年のCSVが7,000件以上あること（`wc -l data/horses_*.csv`）
-- `race_results_{year}.json` が各年に存在すること
 - GBR+RFアンサンブルのSpearmanがヒューリスティックより高いこと
 - CV R2が正の値であること（負の場合は学習データの分布問題の可能性）
-- `--derby` モードと通常モードでTOP30の顔ぶれが変わることを確認

@@ -415,67 +415,6 @@ def fetch_parent_ids(horse_id: str) -> dict:
     return result
 
 
-# ------------------------------------------------------------------
-# レース戦績（日付・賞金）
-# ------------------------------------------------------------------
-
-def fetch_race_results(horse_id: str) -> list[dict]:
-    """
-    馬の個別ページからレース戦績（日付と賞金）を取得する。
-
-    Returns
-    -------
-    list[dict]
-        [{"date": "2024/01/06", "prize": 700.0}, ...]
-        prize は万円単位。未出走の場合は空リスト。
-    """
-    url = f"{BASE_URL}/horse/{horse_id}/"
-    soup = _get_soup(url)
-
-    results = []
-    table = soup.find("table", class_="db_h_race_results")
-    if not table:
-        return results
-
-    # ヘッダーからカラムインデックスを取得
-    header_row = table.find("tr")
-    if not header_row:
-        return results
-
-    th_cells = header_row.find_all("th")
-    date_col = None
-    prize_col = None
-    for i, th in enumerate(th_cells):
-        text = th.text.strip()
-        if text == "日付":
-            date_col = i
-        elif "賞金" in text:
-            prize_col = i
-
-    if date_col is None or prize_col is None:
-        return results
-
-    for row in table.find_all("tr")[1:]:
-        cols = row.find_all("td")
-        if len(cols) <= max(date_col, prize_col):
-            continue
-
-        date_text = cols[date_col].text.strip()
-        prize_text = cols[prize_col].text.strip()
-
-        prize = 0.0
-        if prize_text:
-            try:
-                prize = float(prize_text.replace(",", ""))
-            except ValueError:
-                pass
-
-        if date_text:
-            results.append({"date": date_text, "prize": prize})
-
-    return results
-
-
 def fetch_dam_foal_list(dam_id: str) -> list[str]:
     """
     母馬のページから産駒のhorse_idリストを生年順で取得する。
