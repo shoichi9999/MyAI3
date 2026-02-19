@@ -370,28 +370,34 @@ def main():
     print_metrics(h_metrics)
     test_df["heuristic_score"] = h_scores
 
-    # 2. GBR+RF アンサンブル評価
-    print(f"\n{'='*60}")
-    print(f"  [2] GBR+RF アンサンブル (デフォルトパラメータ)")
-    print(f"{'='*60}")
+    # 2. GBR+RF アンサンブル評価（学習データがある場合のみ）
+    gbr_metrics = {}
+    opt_metrics = {}
 
-    gbr_metrics, gbr_scores = run_gbr_loyo(target, training_years)
-    if gbr_metrics:
-        print_metrics(gbr_metrics)
-        test_df["ensemble_score"] = gbr_scores
-
-    # 3. ハイパーパラメータ最適化（オプション）
-    if args.optimize:
-        best_params = optimize_hyperparams(target, training_years)
-
+    if training_years:
         print(f"\n{'='*60}")
-        print(f"  [3] 最適パラメータでの再評価")
+        print(f"  [2] GBR+RF アンサンブル (デフォルトパラメータ)")
         print(f"{'='*60}")
 
-        opt_metrics, opt_scores = run_gbr_loyo(target, training_years, params=best_params)
-        if opt_metrics:
-            print_metrics(opt_metrics)
-            test_df["optimized_score"] = opt_scores
+        gbr_metrics, gbr_scores = run_gbr_loyo(target, training_years)
+        if gbr_metrics:
+            print_metrics(gbr_metrics)
+            test_df["ensemble_score"] = gbr_scores
+
+        # 3. ハイパーパラメータ最適化（オプション）
+        if args.optimize:
+            best_params = optimize_hyperparams(target, training_years)
+
+            print(f"\n{'='*60}")
+            print(f"  [3] 最適パラメータでの再評価")
+            print(f"{'='*60}")
+
+            opt_metrics, opt_scores = run_gbr_loyo(target, training_years, params=best_params)
+            if opt_metrics:
+                print_metrics(opt_metrics)
+                test_df["optimized_score"] = opt_scores
+    else:
+        print(f"\n  [INFO] 学習データなし — ヒューリスティックのみで評価")
 
     # 4. 比較サマリー
     print(f"\n{'='*60}")

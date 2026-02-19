@@ -90,9 +90,31 @@ def fetch_horse_prize_by_name(name: str) -> float:
 
 
 def main():
-    horses = pd.read_csv("data/horses_2023.csv")
-    dams = horses["dam"].dropna().unique()
-    dams = [d for d in dams if d.strip()]
+    import argparse
+    import glob
+
+    parser = argparse.ArgumentParser(description="母馬獲得賞金の一括取得")
+    parser.add_argument("--year", type=int, default=None,
+                        help="対象の生年（省略時は全CSVから母馬を収集）")
+    args = parser.parse_args()
+
+    if args.year:
+        csv_files = [f"data/horses_{args.year}.csv"]
+    else:
+        csv_files = sorted(glob.glob("data/horses_*.csv"))
+        csv_files = [f for f in csv_files if "_bak" not in f]
+
+    all_dams = set()
+    for csv_file in csv_files:
+        if not os.path.exists(csv_file):
+            print(f"[WARN] {csv_file} が見つかりません")
+            continue
+        horses = pd.read_csv(csv_file)
+        dams = horses["dam"].dropna().unique()
+        all_dams.update(d for d in dams if d.strip())
+        print(f"  {csv_file}: {len(dams)}頭の母馬")
+
+    dams = sorted(all_dams)
     print(f"ユニーク母馬: {len(dams)}頭")
 
     # キャッシュ読み込み
