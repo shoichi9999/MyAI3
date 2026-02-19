@@ -5,6 +5,7 @@
   - 生年月日 → birth_dates_{year}.json
   - セリ価格・母馬ID・産駒番号 → extra_features_{year}.json
   - 父・母・母父のhorse_id（→生年計算） → parent_ages_{year}.json
+  - レース戦績（日付・賞金） → race_results_{year}.json
 
 旧スクリプト3本(fetch_birth_dates/fetch_progeny_data/fetch_extra_features)の統合版。
 
@@ -28,6 +29,7 @@ from src.scraper import (
     fetch_horse_profile,
     fetch_parent_ids,
     fetch_dam_foal_list,
+    fetch_race_results,
     _extract_birth_year,
     REQUEST_INTERVAL,
 )
@@ -184,17 +186,45 @@ def fetch_all_features(birth_year: int, max_horses: int = None):
     _save_cache(ef_path, ef_cache)
     print(f"  Phase 2完了 (エラー: {errors2})")
 
+    # --- Phase 3: レース戦績（日付・賞金） ---
+    print(f"\n=== Phase 3: レース戦績取得 ===")
+    rr_path = f"data/race_results_{birth_year}.json"
+    rr_cache = _load_cache(rr_path)  # {horse_id: [{"date": "...", "prize": N}, ...]}
+    print(f"  既存キャッシュ: race_results={len(rr_cache)}")
+
+    errors3 = 0
+    for i, (_, row) in enumerate(horses.iterrows()):
+        hid = str(row["horse_id"])
+        if hid in rr_cache:
+            continue
+
+        try:
+            rr_cache[hid] = fetch_race_results(hid)
+        except Exception as e:
+            rr_cache[hid] = []
+            errors3 += 1
+            print(f"  [ERROR] 戦績 {row['horse_name']}: {e}")
+
+        if (i + 1) % 50 == 0:
+            _save_cache(rr_path, rr_cache)
+            print(f"  {i+1}/{total} 処理済み (エラー: {errors3})")
+
+    _save_cache(rr_path, rr_cache)
+    print(f"  Phase 3完了 (エラー: {errors3})")
+
     # --- サマリー ---
     print(f"\n=== 完了 ===")
     bd_ok = sum(1 for v in bd_cache.values() if v)
     pa_ok = sum(1 for v in pa_cache.values() if v.get("sire_birth_year"))
     ef_price = sum(1 for v in ef_cache.values() if v.get("sale_price"))
     ef_foal = sum(1 for v in ef_cache.values() if v.get("foal_number"))
+    rr_ok = sum(1 for v in rr_cache.values() if v)
     print(f"  生年月日:     {bd_ok}/{total}")
     print(f"  親の生年:     {pa_ok}/{total}")
     print(f"  セリ価格:     {ef_price}/{total}")
     print(f"  産駒番号:     {ef_foal}/{total}")
-    print(f"  → {bd_path}, {pa_path}, {ef_path}")
+    print(f"  レース戦績:   {rr_ok}/{total} (出走あり)")
+    print(f"  → {bd_path}, {pa_path}, {ef_path}, {rr_path}")
 
 
 if __name__ == "__main__":

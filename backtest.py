@@ -10,6 +10,7 @@
 """
 
 import argparse
+import json
 import os
 
 import numpy as np
@@ -28,7 +29,27 @@ from src.model import FEATURE_COLS
 # データ準備
 # ------------------------------------------------------------------
 
-def load_backtest_data(year: int) -> pd.DataFrame:
+def _compute_derby_prize(horse_id: str, birth_year: int,
+                         race_results: dict) -> float | None:
+    """
+    レース戦績からダービーまでの賞金合計を算出する。
+
+    カットオフ: 生年+3 年の6月1日（ダービーは5月末開催）。
+    race_results に該当馬のデータがない場合は None を返す。
+    """
+    records = race_results.get(str(horse_id))
+    if records is None:
+        return None
+
+    cutoff = f"{birth_year + 3}/06/01"
+    total = 0.0
+    for r in records:
+        if r["date"] <= cutoff:
+            total += r["prize"]
+    return total
+
+
+def load_backtest_data(year: int, use_derby: bool = False) -> pd.DataFrame:
     """バックテスト用データを読み込み、特徴量を生成する。"""
     csv_path = f"data/horses_{year}.csv"
     if not os.path.exists(csv_path):
@@ -38,6 +59,23 @@ def load_backtest_data(year: int) -> pd.DataFrame:
 
     # 実績賞金（目的変数）
     horses["prize_num"] = horses["total_prize"].apply(_parse_prize)
+
+    # ダービーまでの賞金（--derby モード）
+    if use_derby:
+        rr_path = f"data/race_results_{year}.json"
+        if os.path.exists(rr_path):
+            with open(rr_path, "r", encoding="utf-8") as f:
+                race_results = json.load(f)
+            derby_prizes = horses["horse_id"].apply(
+                lambda hid: _compute_derby_prize(hid, year, race_results)
+            )
+            coverage = derby_prizes.notna().sum()
+            print(f"  ダービー賞金カバー率: {coverage}/{len(horses)} "
+                  f"({coverage/len(horses)*100:.1f}%)")
+            # データがある馬はderby_prize、ない馬はtotal_prizeで代替
+            horses["prize_num"] = derby_prizes.combine_first(horses["prize_num"])
+        else:
+            print(f"  [WARN] {rr_path} なし — total_prizeで代替します")
 
     # 特徴量マトリクス構築
     features = build_feature_matrix(horses, birth_year=year)
@@ -143,7 +181,8 @@ def run_heuristic(df: pd.DataFrame) -> dict:
 # ------------------------------------------------------------------
 
 def run_gbr_loyo(target_year: int, training_years: list[int],
-                 params: dict = None) -> tuple[dict, np.ndarray]:
+                 params: dict = None,
+                 use_derby: bool = False) -> tuple[dict, np.ndarray]:
     """
     Leave-One-Year-Out: training_years で学習、target_year で評価。
     """
@@ -162,6 +201,18 @@ def run_gbr_loyo(target_year: int, training_years: list[int],
             continue
         h = pd.read_csv(path)
         h["prize_num"] = h["total_prize"].apply(_parse_prize)
+
+        # 学習データもダービー賞金に切り替え
+        if use_derby:
+            rr_path = f"data/race_results_{y}.json"
+            if os.path.exists(rr_path):
+                with open(rr_path, "r", encoding="utf-8") as f:
+                    rr = json.load(f)
+                derby = h["horse_id"].apply(
+                    lambda hid, _y=y: _compute_derby_prize(hid, _y, rr)
+                )
+                h["prize_num"] = derby.combine_first(h["prize_num"])
+
         feat = build_feature_matrix(h, birth_year=y)
         feat["prize_num"] = h["prize_num"].values
         train_dfs.append(feat)
@@ -174,7 +225,7 @@ def run_gbr_loyo(target_year: int, training_years: list[int],
     print(f"  学習データ: {len(train_df)}件 (世代: {training_years})")
 
     # テストデータ
-    test_df = load_backtest_data(target_year)
+    test_df = load_backtest_data(target_year, use_derby=use_derby)
     print(f"  テストデータ: {len(test_df)}件 ({target_year}年)")
 
     # 特徴量準備
@@ -230,7 +281,8 @@ def run_gbr_loyo(target_year: int, training_years: list[int],
 # ハイパーパラメータ最適化
 # ------------------------------------------------------------------
 
-def optimize_hyperparams(target_year: int, training_years: list[int]) -> dict:
+def optimize_hyperparams(target_year: int, training_years: list[int],
+                         use_derby: bool = False) -> dict:
     """GBRのハイパーパラメータをグリッドサーチで最適化する。"""
     print(f"\n{'='*60}")
     print(f"  ハイパーパラメータ最適化")
@@ -244,6 +296,17 @@ def optimize_hyperparams(target_year: int, training_years: list[int]) -> dict:
             continue
         h = pd.read_csv(path)
         h["prize_num"] = h["total_prize"].apply(_parse_prize)
+
+        if use_derby:
+            rr_path = f"data/race_results_{y}.json"
+            if os.path.exists(rr_path):
+                with open(rr_path, "r", encoding="utf-8") as f:
+                    rr = json.load(f)
+                derby = h["horse_id"].apply(
+                    lambda hid, _y=y: _compute_derby_prize(hid, _y, rr)
+                )
+                h["prize_num"] = derby.combine_first(h["prize_num"])
+
         feat = build_feature_matrix(h, birth_year=y)
         feat["prize_num"] = h["prize_num"].values
         train_dfs.append(feat)
@@ -251,7 +314,7 @@ def optimize_hyperparams(target_year: int, training_years: list[int]) -> dict:
     train_df = pd.concat(train_dfs, ignore_index=True)
 
     # テストデータ
-    test_df = load_backtest_data(target_year)
+    test_df = load_backtest_data(target_year, use_derby=use_derby)
 
     for col in FEATURE_COLS:
         for d in [train_df, test_df]:
@@ -339,11 +402,14 @@ def main():
     parser = argparse.ArgumentParser(description="バックテスト＆パラメータ最適化")
     parser.add_argument("year", type=int, help="評価対象の生年（例: 2022）")
     parser.add_argument("--optimize", action="store_true", help="ハイパーパラメータ最適化を実行")
+    parser.add_argument("--derby", action="store_true",
+                        help="目的変数をダービーまでの賞金に限定（race_results_{year}.json が必要）")
     parser.add_argument("--training-years", type=int, nargs="+", default=None,
                         help="学習に使う世代（デフォルト: 対象年以外の利用可能な年）")
     args = parser.parse_args()
 
     target = args.year
+    use_derby = args.derby
 
     # 利用可能な学習年を検出
     if args.training_years:
@@ -354,8 +420,10 @@ def main():
             if y != target and os.path.exists(f"data/horses_{y}.csv"):
                 training_years.append(y)
 
+    mode_label = "ダービー賞金" if use_derby else "通算賞金"
     print("=" * 60)
     print(f"  バックテスト: {target}年産駒")
+    print(f"  目的変数:    {mode_label}")
     print(f"  学習世代:    {training_years}")
     print(f"  特徴量:      {len(FEATURE_COLS)}個")
     print("=" * 60)
@@ -365,7 +433,7 @@ def main():
     print(f"  [1] ヒューリスティックスコア")
     print(f"{'='*60}")
 
-    test_df = load_backtest_data(target)
+    test_df = load_backtest_data(target, use_derby=use_derby)
     h_metrics, h_scores = run_heuristic(test_df)
     print_metrics(h_metrics)
     test_df["heuristic_score"] = h_scores
@@ -379,20 +447,23 @@ def main():
         print(f"  [2] GBR+RF アンサンブル (デフォルトパラメータ)")
         print(f"{'='*60}")
 
-        gbr_metrics, gbr_scores = run_gbr_loyo(target, training_years)
+        gbr_metrics, gbr_scores = run_gbr_loyo(
+            target, training_years, use_derby=use_derby)
         if gbr_metrics:
             print_metrics(gbr_metrics)
             test_df["ensemble_score"] = gbr_scores
 
         # 3. ハイパーパラメータ最適化（オプション）
         if args.optimize:
-            best_params = optimize_hyperparams(target, training_years)
+            best_params = optimize_hyperparams(
+                target, training_years, use_derby=use_derby)
 
             print(f"\n{'='*60}")
             print(f"  [3] 最適パラメータでの再評価")
             print(f"{'='*60}")
 
-            opt_metrics, opt_scores = run_gbr_loyo(target, training_years, params=best_params)
+            opt_metrics, opt_scores = run_gbr_loyo(
+                target, training_years, params=best_params, use_derby=use_derby)
             if opt_metrics:
                 print_metrics(opt_metrics)
                 test_df["optimized_score"] = opt_scores
@@ -401,7 +472,7 @@ def main():
 
     # 4. 比較サマリー
     print(f"\n{'='*60}")
-    print(f"  比較サマリー ({target}年産駒)")
+    print(f"  比較サマリー ({target}年産駒 / {mode_label})")
     print(f"{'='*60}")
 
     summary = [h_metrics]
