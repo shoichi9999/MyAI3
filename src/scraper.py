@@ -8,6 +8,8 @@ netkeiba.comから産駒データをスクレイピングするモジュール�
 - 産駒番号（母馬ページから何番仔かを取得）
 """
 
+import json
+import os
 import time
 import re
 
@@ -202,30 +204,62 @@ def fetch_horse_list_by_year(birth_year: int, max_pages: int = None) -> pd.DataF
 # 海外馬の生年解決
 # ------------------------------------------------------------------
 
-_foreign_birth_year_cache: dict[str, int | None] = {}
+_FOREIGN_BY_CACHE_FILE = "data/foreign_birth_years.json"
+
+
+def _load_foreign_by_cache() -> dict[str, int | None]:
+    """ファイルから海外馬生年キャッシュを読み込む。"""
+    if os.path.exists(_FOREIGN_BY_CACHE_FILE):
+        with open(_FOREIGN_BY_CACHE_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}
+
+
+def _save_foreign_by_cache(cache: dict[str, int | None]):
+    """海外馬生年キャッシュをファイルに保存する。"""
+    with open(_FOREIGN_BY_CACHE_FILE, "w", encoding="utf-8") as f:
+        json.dump(cache, f, ensure_ascii=False, indent=2)
 
 
 def _resolve_foreign_birth_years(horse_ids: set[str]) -> dict[str, int]:
     """海外馬のhorse_idセットからプロフィールページ経由で生年を一括解決する。"""
+    cache = _load_foreign_by_cache()
     resolved = {}
+    fetched = 0
+
     for i, hid in enumerate(horse_ids):
-        by = _extract_birth_year(hid)
+        # キャッシュにあればスキップ
+        if hid in cache:
+            if cache[hid] is not None:
+                resolved[hid] = cache[hid]
+            continue
+
+        # 日本産馬はID先頭4桁から
+        if hid[:4].isdigit():
+            resolved[hid] = int(hid[:4])
+            continue
+
+        # プロフィールページから取得
+        by = _fetch_birth_year_from_profile(hid)
+        cache[hid] = by
+        fetched += 1
         if by is not None:
             resolved[hid] = by
-        if (i + 1) % 50 == 0:
-            print(f"    {i+1}/{len(horse_ids)} 処理済み")
-    print(f"    解決: {len(resolved)}/{len(horse_ids)}頭")
+
+        # 50件ごとに保存
+        if fetched % 50 == 0:
+            _save_foreign_by_cache(cache)
+            print(f"    {i+1}/{len(horse_ids)} 処理済み（新規取得: {fetched}）")
+
+    if fetched > 0:
+        _save_foreign_by_cache(cache)
+    skipped = len(horse_ids) - fetched
+    print(f"    解決: {len(resolved)}/{len(horse_ids)}頭（キャッシュ済: {skipped}, 新規取得: {fetched}）")
     return resolved
 
 
-def _extract_birth_year(horse_id: str) -> int | None:
-    """horse_idから生年を抽出する。日本産馬はID先頭4桁、外国産馬はプロフィールページから取得。"""
-    if horse_id[:4].isdigit():
-        return int(horse_id[:4])
-
-    if horse_id in _foreign_birth_year_cache:
-        return _foreign_birth_year_cache[horse_id]
-
+def _fetch_birth_year_from_profile(horse_id: str) -> int | None:
+    """外国産馬のプロフィールページから生年を取得する。"""
     try:
         time.sleep(0.5)
         url = f"{BASE_URL}/horse/{horse_id}/"
@@ -240,13 +274,9 @@ def _extract_birth_year(horse_id: str) -> int | None:
                 if th and td and "生年月日" in th.text:
                     m = re.search(r"(\d{4})年", td.text)
                     if m:
-                        by = int(m.group(1))
-                        _foreign_birth_year_cache[horse_id] = by
-                        return by
+                        return int(m.group(1))
     except Exception:
         pass
-
-    _foreign_birth_year_cache[horse_id] = None
     return None
 
 
