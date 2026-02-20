@@ -26,6 +26,47 @@ def parse_prize_text(text: str) -> float:
     return total
 
 
+def fetch_horse_prize_by_id(horse_id: str) -> float:
+    """horse_idのプロフィールページから獲得賞金(万円)を直接取得する。
+
+    名前検索より高速（検索リダイレクトなし、直接ページアクセス）。
+    """
+    if not horse_id or not str(horse_id).strip():
+        return 0.0
+
+    _rate_limited_sleep()
+    url = f"{BASE_URL}/horse/{horse_id}/"
+
+    try:
+        resp = _session.get(url, timeout=30)
+        resp.encoding = "EUC-JP"
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(resp.text, "lxml")
+    except Exception as e:
+        print(f"  [WARN] {horse_id}: {e}")
+        return 0.0
+
+    prof_table = soup.find("table", class_="db_prof_table")
+    if not prof_table:
+        return 0.0
+
+    # 中央賞金を優先
+    for row in prof_table.find_all("tr"):
+        th = row.find("th")
+        td = row.find("td")
+        if th and td and "賞金" in th.text and "中央" in th.text:
+            return parse_prize_text(td.text)
+
+    # フォールバック: any 賞金
+    for row in prof_table.find_all("tr"):
+        th = row.find("th")
+        td = row.find("td")
+        if th and td and "賞金" in th.text:
+            return parse_prize_text(td.text)
+
+    return 0.0
+
+
 def fetch_horse_prize_by_name(name: str) -> float:
     """netkeiba の名前検索で馬の獲得賞金(万円)を取得する。"""
     if not name or name.strip() == "":
@@ -95,6 +136,7 @@ def main():
         csv_files = [f for f in csv_files if "_bak" not in f]
 
     all_dams = set()
+    dam_id_map = {}  # {dam_name: dam_id}
     for csv_file in csv_files:
         if not os.path.exists(csv_file):
             print(f"[WARN] {csv_file} が見つかりません")
@@ -102,9 +144,17 @@ def main():
         horses = pd.read_csv(csv_file)
         dams = horses["dam"].dropna().unique()
         all_dams.update(d for d in dams if d.strip())
+        # dam_name → dam_id マッピング構築
+        if "dam_id" in horses.columns:
+            for _, row in horses.iterrows():
+                name = row.get("dam")
+                did = row.get("dam_id")
+                if pd.notna(name) and name.strip() and pd.notna(did) and str(did).strip():
+                    dam_id_map[name.strip()] = str(did).strip()
         print(f"  {csv_file}: {len(dams)}頭の母馬")
 
     dams = sorted(all_dams)
+    print(f"  dam_id 判明: {len(dam_id_map)}頭（直接アクセスで高速取得）")
     print(f"ユニーク母馬: {len(dams)}頭")
 
     # キャッシュ読み込み
@@ -119,6 +169,12 @@ def main():
     if to_fetch:
         cache_lock = threading.Lock()
 
+        def _fetch_prize(name):
+            did = dam_id_map.get(name)
+            if did:
+                return fetch_horse_prize_by_id(did)
+            return fetch_horse_prize_by_name(name)
+
         def on_prize_result(name, prize, _idx):
             with cache_lock:
                 cache[name] = prize if prize is not None else 0.0
@@ -130,7 +186,7 @@ def main():
 
         concurrent_fetch(
             items=to_fetch,
-            fetch_fn=fetch_horse_prize_by_name,
+            fetch_fn=_fetch_prize,
             label="母馬賞金",
             on_result=on_prize_result,
             save_interval=100,

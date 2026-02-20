@@ -123,9 +123,16 @@ def _fetch_extra_features(target_year: int, max_horses: int = None, top: int = N
     mod.fetch_all_features(target_year, max_horses=max_horses, top=top)
 
 
-def _fetch_dam_prizes(target_year: int):
-    """母馬賞金データを取得する（未取得分のみ）。"""
+def _fetch_dam_prizes(target_year: int, prescore_top: int = 0):
+    """母馬賞金データを取得する（未取得分のみ）。
+
+    prescore_top > 0 の場合、簡易スコア（父EI+母父EI+調教師等）で
+    上位候補の母馬のみ取得する（全母馬の取得を回避して大幅高速化）。
+    """
     import importlib.util
+    import json
+    import threading
+    from src.scraper import concurrent_fetch
 
     spec = importlib.util.spec_from_file_location(
         "fetch_dam_prizes",
@@ -134,30 +141,66 @@ def _fetch_dam_prizes(target_year: int):
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
 
-    import json
-    import threading
-    from src.scraper import concurrent_fetch
-
     csv_path = f"data/horses_{target_year}.csv"
     if not os.path.exists(csv_path):
         return
 
     horses = pd.read_csv(csv_path)
-    all_dams = set(d for d in horses["dam"].dropna().unique() if d.strip())
+    total_horses = len(horses)
+
+    # --- 簡易スコアで上位候補に絞り込み（dam_prizeなし） ---
+    if prescore_top and prescore_top < total_horses:
+        from src.features import (
+            get_sire_ei, get_bms_ei,
+            calc_trainer_score, calc_owner_score, calc_breeder_score,
+        )
+        lite = pd.Series(0.0, index=horses.index)
+        sei = horses["sire"].apply(lambda x: get_sire_ei(x) if pd.notna(x) else 0.0)
+        mx = sei.max()
+        if mx > 0:
+            lite += (sei / mx) * 100 * 0.40
+        bei = horses["sire_of_dam"].apply(lambda x: get_bms_ei(x) if pd.notna(x) else 0.0)
+        mx2 = bei.max()
+        if mx2 > 0:
+            lite += (bei / mx2) * 100 * 0.20
+        lite += horses["trainer"].apply(lambda x: calc_trainer_score(x) - 50).fillna(0) * 0.2
+        lite += horses["owner"].apply(lambda x: calc_owner_score(x) - 50).fillna(0) * 0.2
+        lite += horses["breeder"].apply(lambda x: calc_breeder_score(x) - 50).fillna(0) * 0.3
+
+        n_candidates = min(prescore_top * 3, total_horses)
+        horses = horses.loc[lite.nlargest(n_candidates).index]
+        print(f"\n  母馬賞金: 簡易スコアで{n_candidates}頭に絞り込み（全{total_horses}頭中）")
+
+    # dam_name → dam_id マッピング構築
+    dam_info = {}  # {name: dam_id or None}
+    for _, row in horses.iterrows():
+        name = row.get("dam")
+        did = row.get("dam_id")
+        if pd.notna(name) and str(name).strip():
+            n = str(name).strip()
+            if n not in dam_info:
+                dam_info[n] = str(did).strip() if pd.notna(did) and str(did).strip() else None
 
     cache = {}
     if os.path.exists(mod.CACHE_FILE):
         with open(mod.CACHE_FILE, "r", encoding="utf-8") as f:
             cache = json.load(f)
 
-    to_fetch = [d for d in sorted(all_dams) if d not in cache]
+    to_fetch = [d for d in sorted(dam_info.keys()) if d not in cache]
     if not to_fetch:
-        print(f"\n--- 母馬賞金: 全{len(all_dams)}頭キャッシュ済み。スキップ ---")
+        print(f"\n--- 母馬賞金: 全{len(dam_info)}頭キャッシュ済み。スキップ ---")
         return
 
+    id_count = sum(1 for d in to_fetch if dam_info.get(d))
     print(f"\n{'='*60}")
-    print(f"  母馬賞金取得: 新規{len(to_fetch)}頭")
+    print(f"  母馬賞金取得: 新規{len(to_fetch)}頭（ID直接: {id_count}, 名前検索: {len(to_fetch) - id_count}）")
     print(f"{'='*60}")
+
+    def fetch_prize(name):
+        did = dam_info.get(name)
+        if did:
+            return mod.fetch_horse_prize_by_id(did)
+        return mod.fetch_horse_prize_by_name(name)
 
     cache_lock = threading.Lock()
 
@@ -172,7 +215,7 @@ def _fetch_dam_prizes(target_year: int):
 
     concurrent_fetch(
         items=to_fetch,
-        fetch_fn=mod.fetch_horse_prize_by_name,
+        fetch_fn=fetch_prize,
         label="母馬賞金",
         on_result=on_result,
         save_interval=100,
@@ -216,7 +259,7 @@ def run_full_pipeline(
         print(f"\n--- {target_year}年世代: 馬一覧データ既存。スキップ ---")
 
     # 2. 母馬賞金（先に取得してDAM_PRIZESを更新→プレスコアで利用）
-    _fetch_dam_prizes(target_year)
+    _fetch_dam_prizes(target_year, prescore_top=prescore_top)
 
     # DAM_PRIZESをリロード（モジュールレベル変数は初回import時の値のまま）
     import src.features as _features_mod
