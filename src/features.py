@@ -143,9 +143,9 @@ ELITE_BREEDERS = {
 }
 
 # ヒューリスティックスコアの重み配分
-WEIGHT_SIRE_EI = 0.50
-WEIGHT_DAM_PRIZE = 0.15
-WEIGHT_BMS_EI = 0.35
+WEIGHT_SIRE_EI = 0.25
+WEIGHT_DAM_PRIZE = 0.075
+WEIGHT_BMS_EI = 0.175
 
 
 def get_sire_ei(sire_name: str) -> float:

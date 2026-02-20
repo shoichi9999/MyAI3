@@ -13,7 +13,7 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
     """
     ヒューリスティックスコアを算出する。
 
-    血統スコア（父EI 50% + 母馬賞金 15% + 母父EI 35%）に
+    血統スコア（父EI 25% + 母馬賞金 7.5% + 母父EI 17.5%）に
     生まれ月・親年齢・市場評価等のボーナスを加算する。
 
     Parameters
@@ -63,13 +63,13 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
 
     # 早生まれボーナス（1-4月生まれ）
     if "early_born" in df.columns:
-        score += df["early_born"].fillna(0) * 5
+        score += df["early_born"].fillna(0) * 8
 
     # 両親若齢ボーナス（13歳以下）
     if "both_parents_young" in df.columns:
-        score += df["both_parents_young"].fillna(0) * 5
+        score += df["both_parents_young"].fillna(0) * 12
     elif "sire_young" in df.columns and "dam_young" in df.columns:
-        score += (df["sire_young"].fillna(0) + df["dam_young"].fillna(0)) * 2.5
+        score += (df["sire_young"].fillna(0) + df["dam_young"].fillna(0)) * 6
 
     # 母と母父の年齢差が小さいボーナス
     if "dam_bms_gap_small" in df.columns:
