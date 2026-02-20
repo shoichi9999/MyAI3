@@ -224,38 +224,49 @@ def get_birth_month(horse_id: str, birth_year: int) -> int:
 
 def _birth_year_from_id(horse_id: str) -> int | None:
     """horse_idの先頭4桁から生年を返す（日本産馬のみ）。"""
-    if horse_id and horse_id[:4].isdigit():
-        return int(horse_id[:4])
+    if horse_id and str(horse_id)[:4].isdigit():
+        return int(str(horse_id)[:4])
     return None
 
 
-# 親キー名のマッピング: parent引数 → (birth_yearキー, idキー)
-_PARENT_KEY_MAP = {
-    "sire": ("sire_birth_year", "sire_id"),
-    "dam": ("dam_birth_year", "dam_id"),
-    "dam_sire": ("dam_sire_birth_year", "bms_id"),
+# 親の (CSVカラム名, JSONキャッシュのbirth_yearキー, JSONキャッシュのidキー)
+_PARENT_MAP = {
+    "sire": ("sire_birth_year", "sire_birth_year", "sire_id"),
+    "dam":  ("dam_birth_year",  "dam_birth_year",  "dam_id"),
+    "bms":  ("bms_birth_year",  "dam_sire_birth_year", "bms_id"),
 }
 
 
-def get_parent_age(horse_id: str, birth_year: int, parent: str = "sire") -> float:
+def get_parent_age(horse_row, birth_year: int, parent: str = "sire") -> float | None:
     """親の産駒時年齢を返す。取得できない場合はNone。
 
-    1. キャッシュの {parent}_birth_year を確認
-    2. キャッシュの {parent}_id の先頭4桁からフォールバック計算
+    優先順:
+      1. CSVカラム (sire_birth_year 等) から直接計算
+      2. JSONキャッシュ (parent_ages_{year}.json) からフォールバック
     """
+    csv_col, cache_by_key, cache_id_key = _PARENT_MAP.get(
+        parent, (f"{parent}_birth_year", f"{parent}_birth_year", None)
+    )
+
+    # 1. CSVカラムから（DataFrameの行に含まれている場合）
+    parent_by = horse_row.get(csv_col)
+    if pd.notna(parent_by) and parent_by:
+        try:
+            return birth_year - int(parent_by)
+        except (ValueError, TypeError):
+            pass
+
+    # 2. JSONキャッシュからフォールバック
+    hid = str(horse_row.get("horse_id", ""))
     pa_cache = _load_parent_ages(birth_year)
-    data = pa_cache.get(str(horse_id), {})
+    data = pa_cache.get(hid, {})
 
-    by_key, id_key = _PARENT_KEY_MAP.get(parent, (f"{parent}_birth_year", None))
-
-    # 1. birth_year がキャッシュにある場合
-    by = data.get(by_key)
+    by = data.get(cache_by_key)
     if by:
         return birth_year - by
 
-    # 2. horse_id の先頭4桁から生年を推定
-    if id_key:
-        parent_id = data.get(id_key)
+    if cache_id_key:
+        parent_id = data.get(cache_id_key)
         if parent_id:
             parent_by = _birth_year_from_id(parent_id)
             if parent_by:
@@ -310,9 +321,9 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
         row["birth_month"] = get_birth_month(hid, birth_year)
 
         # 親年齢（父・母・母父の産駒時年齢）— 欠損はNaN（デフォルト値補完しない）
-        sire_age = get_parent_age(hid, birth_year, "sire")
-        dam_age = get_parent_age(hid, birth_year, "dam")
-        dam_sire_age = get_parent_age(hid, birth_year, "dam_sire")
+        sire_age = get_parent_age(horse, birth_year, "sire")
+        dam_age = get_parent_age(horse, birth_year, "dam")
+        dam_sire_age = get_parent_age(horse, birth_year, "bms")
         row["sire_age"] = sire_age if sire_age is not None else np.nan
         row["dam_age"] = dam_age if dam_age is not None else np.nan
         row["dam_sire_age"] = dam_sire_age if dam_sire_age is not None else np.nan

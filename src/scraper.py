@@ -42,9 +42,29 @@ def _get_soup(url: str) -> BeautifulSoup:
 # 馬一覧取得
 # ------------------------------------------------------------------
 
+def _extract_id_from_param(td_tag, param_name: str) -> str:
+    """tdタグ内のリンクからリクエストパラメータのIDを抽出する。"""
+    for a in td_tag.find_all("a"):
+        href = a.get("href", "")
+        m = re.search(rf"{param_name}=(\w+)", href)
+        if m:
+            return m.group(1)
+    return ""
+
+
+def _birth_year_from_horse_id(horse_id: str) -> int | None:
+    """horse_idの先頭4桁から生年を抽出する（日本産馬のみ）。"""
+    if horse_id and horse_id[:4].isdigit():
+        return int(horse_id[:4])
+    return None
+
+
 def fetch_horse_list_by_year(birth_year: int, max_pages: int = None) -> pd.DataFrame:
     """
     指定した生年の馬一覧を取得する。
+
+    /horse/list.html エンドポイントを使用し、父・母・母父の
+    horse_id も同時に取得する（日本産馬はIDの先頭4桁が生年）。
 
     Parameters
     ----------
@@ -60,9 +80,10 @@ def fetch_horse_list_by_year(birth_year: int, max_pages: int = None) -> pd.DataF
         if max_pages is not None and page > max_pages:
             break
         url = (
-            f"{BASE_URL}/?pid=horse_list"
-            f"&birthyear={birth_year}"
-            f"&sort=prize&list=100&page={page}"
+            f"{BASE_URL}/horse/list.html"
+            f"?year={birth_year}"
+            f"&sort=prize-desc&limit=100&page={page}"
+            f"&range=all&state=all&match=p"
         )
         try:
             soup = _get_soup(url)
@@ -91,17 +112,25 @@ def fetch_horse_list_by_year(birth_year: int, max_pages: int = None) -> pd.DataF
             if not horse_id_match:
                 continue
 
+            # 父・母・母父のhorse_idをリンクパラメータから抽出
+            sire_id = _extract_id_from_param(cols[6], "sire_id")
+            dam_id = _extract_id_from_param(cols[7], "mare_id")
+            bms_id = _extract_id_from_param(cols[8], "bms_id")
+
             horses.append({
                 "horse_id": horse_id_match.group(1),
                 "horse_name": name_tag.text.strip(),
                 "sex": cols[2].text.strip(),
-                "trainer": cols[5].text.strip(),
+                "trainer": _extract_cell_name(cols[5]),
                 "trainer_id": _extract_trainer_id(cols[5]),
-                "sire": cols[6].text.strip(),
-                "dam": cols[7].text.strip(),
-                "sire_of_dam": cols[8].text.strip(),
-                "owner": cols[9].text.strip(),
-                "breeder": cols[10].text.strip(),
+                "sire": _extract_cell_name(cols[6]),
+                "sire_id": sire_id,
+                "dam": _extract_cell_name(cols[7]),
+                "dam_id": dam_id,
+                "sire_of_dam": _extract_cell_name(cols[8]),
+                "bms_id": bms_id,
+                "owner": _extract_cell_name(cols[9]),
+                "breeder": _extract_cell_name(cols[10]),
                 "total_prize": cols[11].text.strip(),
             })
 
@@ -110,7 +139,49 @@ def fetch_horse_list_by_year(birth_year: int, max_pages: int = None) -> pd.DataF
     df = pd.DataFrame(horses)
     if not df.empty:
         df = df.drop_duplicates(subset=["horse_id"])
+
+        # 日本産馬のhorse_idから親の生年を算出
+        for col, id_col in [("sire_birth_year", "sire_id"),
+                            ("dam_birth_year", "dam_id"),
+                            ("bms_birth_year", "bms_id")]:
+            df[col] = df[id_col].apply(_birth_year_from_horse_id)
+
+        # 海外馬（生年不明）のユニークIDを収集してプロフィールから生年取得
+        foreign_ids = set()
+        for id_col in ["sire_id", "dam_id", "bms_id"]:
+            for hid in df.loc[df[id_col].str[:4].apply(
+                    lambda x: not str(x).isdigit() if pd.notna(x) else True), id_col]:
+                if hid:
+                    foreign_ids.add(hid)
+
+        if foreign_ids:
+            print(f"  海外馬の生年を取得中: {len(foreign_ids)}頭...")
+            resolved = _resolve_foreign_birth_years(foreign_ids)
+            # 解決結果を反映
+            for col, id_col in [("sire_birth_year", "sire_id"),
+                                ("dam_birth_year", "dam_id"),
+                                ("bms_birth_year", "bms_id")]:
+                mask = df[col].isna() & df[id_col].isin(resolved.keys())
+                df.loc[mask, col] = df.loc[mask, id_col].map(resolved)
+
+        # 生年不明の件数を表示
+        na_sire = df["sire_birth_year"].isna().sum()
+        na_dam = df["dam_birth_year"].isna().sum()
+        na_bms = df["bms_birth_year"].isna().sum()
+        if na_sire or na_dam or na_bms:
+            print(f"  生年不明（残り）: 父={na_sire}, 母={na_dam}, 母父={na_bms}")
+
     return df
+
+
+def _extract_cell_name(td_tag) -> str:
+    """tdタグから最初のリンクテキスト（名前）を取得する。"""
+    a = td_tag.find("a")
+    if a:
+        text = a.text.strip()
+        if text and not text.startswith("["):
+            return text
+    return td_tag.text.strip()
 
 
 def _extract_trainer_id(td_tag) -> str:
@@ -123,10 +194,23 @@ def _extract_trainer_id(td_tag) -> str:
 
 
 # ------------------------------------------------------------------
-# 血統（3世代分の先祖の生年）
+# 海外馬の生年解決
 # ------------------------------------------------------------------
 
 _foreign_birth_year_cache: dict[str, int | None] = {}
+
+
+def _resolve_foreign_birth_years(horse_ids: set[str]) -> dict[str, int]:
+    """海外馬のhorse_idセットからプロフィールページ経由で生年を一括解決する。"""
+    resolved = {}
+    for i, hid in enumerate(horse_ids):
+        by = _extract_birth_year(hid)
+        if by is not None:
+            resolved[hid] = by
+        if (i + 1) % 50 == 0:
+            print(f"    {i+1}/{len(horse_ids)} 処理済み")
+    print(f"    解決: {len(resolved)}/{len(horse_ids)}頭")
+    return resolved
 
 
 def _extract_birth_year(horse_id: str) -> int | None:
