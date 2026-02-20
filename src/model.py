@@ -1,248 +1,30 @@
 """
-POG賞金予測モデル。
+POGスコアリング — ヒューリスティック方式。
 
-過去の世代データを学習データとして使い、
-当年の2歳馬がダービーまでに獲得する賞金を予測する。
-
-アプローチ:
-1. 過去5世代（2019-2023年生まれ）のデータで学習
-2. GradientBoostingRegressorで賞金を予測
-3. 当年（2024年生まれ）の馬にスコアを付与
-4. デビュー前の馬も血統情報（父EI・母父EI・母馬賞金）＋生まれ月＋親年齢＋世代別年齢統計量から予測可能
-5. 目的変数は対数変換、祖父母/曾祖父母年齢は世代別統計量に集約（最適化済み）
+デビュー前に入手可能な特徴量から、ドメイン知識ベースの
+重み付けスコアを算出して馬をランク付けする。
 """
-
-import os
-import pickle
-from typing import Optional
 
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
-from sklearn.model_selection import cross_val_score
-from sklearn.preprocessing import StandardScaler
 
 
-# 予測に使用する特徴量カラム（v6: 19個）
-# 除去: gp_age_*, ggp_age_*（デフォルト値によるデータ有無プロキシ）
-# 保持: sire_age, dam_age（親年齢は比較的データが揃っている）
-# 追加: breeder_score, sire_dam_interaction
-# モデル側で max_features を導入し単一特徴量支配を防止
-FEATURE_COLS = [
-    "sex",
-    "sire_ei",
-    "bms_ei",
-    "dam_prize_log",
-    "birth_month",
-    "trainer_score",
-    "owner_score",
-    "breeder_score",       # 生産牧場スコア
-    # 親の産駒時年齢
-    "sire_age",
-    "dam_age",
-    # ドメイン知識ベース（閾値バイナリ）
-    "early_born",          # 1-4月生まれ=1
-    "sire_young",          # 父13歳以下=1
-    "dam_young",           # 母13歳以下=1
-    "both_parents_young",  # 両親とも13歳以下=1
-    "sire_first_crop",     # 父の初期産駒（sire_age<=7）=1
-    "dam_bms_gap_small",   # 母と母父の年齢差15以下=1
-    # 追加特徴量
-    "sale_price_log",      # セリ取引価格（対数）
-    "foal_number",         # 何番仔か
-    # 血統交互作用
-    "sire_dam_interaction", # sire_ei × dam_prize_log
-]
-
-MODEL_PATH = "models/pog_predictor.pkl"
-SCALER_PATH = "models/scaler.pkl"
-
-
-class POGPredictor:
-    """POG賞金予測モデル。"""
-
-    def __init__(self):
-        self.model = GradientBoostingRegressor(
-            n_estimators=300,
-            max_depth=2,
-            learning_rate=0.03,
-            subsample=0.8,
-            min_samples_leaf=30,
-            max_features=0.7,      # 各分割で特徴量の70%をサンプル→単一支配防止
-            random_state=42,
-        )
-        self.backup_model = RandomForestRegressor(
-            n_estimators=200,
-            max_depth=4,
-            min_samples_leaf=20,
-            random_state=42,
-        )
-        self.scaler = StandardScaler()
-        self.is_fitted = False
-        self.log_target = True  # 目的変数を対数変換
-        self.feature_cols = FEATURE_COLS
-
-    def train(
-        self,
-        feature_df: pd.DataFrame,
-        target_col: str = "total_earned",
-    ) -> dict:
-        """
-        過去データで予測モデルを学習する。
-
-        Parameters
-        ----------
-        feature_df : pd.DataFrame
-            特徴量マトリクス（total_earnedを含む）
-        target_col : str
-            予測対象のカラム名
-
-        Returns
-        -------
-        dict
-            学習結果の統計情報
-        """
-        df = feature_df.copy()
-
-        # 欠損値処理（各カラムの中央値で補完。中央値が無い場合のみ0）
-        for col in self.feature_cols:
-            if col not in df.columns:
-                df[col] = 0.0
-            df[col] = pd.to_numeric(df[col], errors="coerce")
-        for col in self.feature_cols:
-            median = df[col].median()
-            df[col] = df[col].fillna(median if pd.notna(median) else 0.0)
-        self._train_medians = {col: df[col].median() for col in self.feature_cols}
-
-        X = df[self.feature_cols].values
-        y = df[target_col].values if target_col in df.columns else np.zeros(len(df))
-
-        # 目的変数の対数変換（極端な賞金分布を安定化）
-        if self.log_target:
-            y = np.log1p(y)
-
-        # スケーリング
-        X_scaled = self.scaler.fit_transform(X)
-
-        # 学習
-        self.model.fit(X_scaled, y)
-        self.backup_model.fit(X_scaled, y)
-        self.is_fitted = True
-
-        # クロスバリデーション
-        cv_scores = cross_val_score(
-            self.model, X_scaled, y, cv=min(5, len(df)), scoring="r2"
-        )
-
-        # 特徴量重要度
-        importances = dict(
-            zip(self.feature_cols, self.model.feature_importances_)
-        )
-        importances = dict(
-            sorted(importances.items(), key=lambda x: x[1], reverse=True)
-        )
-
-        stats = {
-            "n_samples": len(df),
-            "cv_r2_mean": cv_scores.mean(),
-            "cv_r2_std": cv_scores.std(),
-            "feature_importances": importances,
-        }
-
-        print(f"学習完了: {stats['n_samples']}件")
-        print(f"CV R2: {stats['cv_r2_mean']:.3f} (+/- {stats['cv_r2_std']:.3f})")
-        print("特徴量重要度 TOP5:")
-        for i, (feat, imp) in enumerate(importances.items()):
-            if i >= 5:
-                break
-            print(f"  {feat}: {imp:.4f}")
-
-        return stats
-
-    def predict(self, feature_df: pd.DataFrame) -> pd.DataFrame:
-        """
-        予測スコアを算出する。
-
-        Parameters
-        ----------
-        feature_df : pd.DataFrame
-            特徴量マトリクス
-
-        Returns
-        -------
-        pd.DataFrame
-            予測スコア付きのDataFrame
-        """
-        df = feature_df.copy()
-
-        # 欠損値処理（学習時の中央値で補完）
-        medians = getattr(self, "_train_medians", {})
-        for col in self.feature_cols:
-            if col not in df.columns:
-                df[col] = 0.0
-            df[col] = pd.to_numeric(df[col], errors="coerce")
-            fill_val = medians.get(col, 0.0)
-            df[col] = df[col].fillna(fill_val if pd.notna(fill_val) else 0.0)
-
-        X = df[self.feature_cols].values
-
-        if self.is_fitted:
-            X_scaled = self.scaler.transform(X)
-            pred_main = self.model.predict(X_scaled)
-            pred_rf = self.backup_model.predict(X_scaled)
-
-            # 対数空間で予測した場合は逆変換
-            if self.log_target:
-                df["predicted_prize"] = np.expm1(pred_main)
-                df["predicted_prize_rf"] = np.expm1(pred_rf)
-            else:
-                df["predicted_prize"] = pred_main
-                df["predicted_prize_rf"] = pred_rf
-
-            # アンサンブル（加重平均）
-            df["ensemble_score"] = (
-                df["predicted_prize"] * 0.6 + df["predicted_prize_rf"] * 0.4
-            )
-        else:
-            # モデル未学習の場合はヒューリスティックスコアを使用
-            df["ensemble_score"] = _heuristic_score(df)
-
-        return df
-
-    def save(self, model_path: str = MODEL_PATH, scaler_path: str = SCALER_PATH):
-        """モデルを保存する。"""
-        os.makedirs(os.path.dirname(model_path), exist_ok=True)
-        with open(model_path, "wb") as f:
-            pickle.dump({
-                "model": self.model,
-                "backup": self.backup_model,
-                "log_target": self.log_target,
-                "train_medians": getattr(self, "_train_medians", {}),
-            }, f)
-        with open(scaler_path, "wb") as f:
-            pickle.dump(self.scaler, f)
-        print(f"モデルを保存しました: {model_path}")
-
-    def load(self, model_path: str = MODEL_PATH, scaler_path: str = SCALER_PATH):
-        """モデルを読み込む。"""
-        with open(model_path, "rb") as f:
-            data = pickle.load(f)
-            self.model = data["model"]
-            self.backup_model = data["backup"]
-            self.log_target = data.get("log_target", True)
-            self._train_medians = data.get("train_medians", {})
-        with open(scaler_path, "rb") as f:
-            self.scaler = pickle.load(f)
-        self.is_fitted = True
-        print(f"モデルを読み込みました: {model_path}")
-
-
-def _heuristic_score(df: pd.DataFrame) -> pd.Series:
+def heuristic_score(df: pd.DataFrame) -> pd.Series:
     """
-    モデル未学習時のヒューリスティックスコア。
+    ヒューリスティックスコアを算出する。
 
     血統スコア（父EI 40% + 母馬賞金 40% + 母父EI 20%）に
-    生まれ月ボーナスと親年齢ボーナスを加算する。
+    生まれ月・親年齢・市場評価等のボーナスを加算する。
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        build_feature_matrix() で生成した特徴量マトリクス
+
+    Returns
+    -------
+    pd.Series
+        各馬のスコア（高いほど有望）
     """
     from src.features import WEIGHT_SIRE_EI, WEIGHT_DAM_PRIZE, WEIGHT_BMS_EI
 

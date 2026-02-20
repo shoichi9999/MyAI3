@@ -5,9 +5,8 @@ POG予測に重要な特徴量を生成する（デビュー前に入手可能�
 - 血統スコア（父馬の産駒EI、母父馬の産駒EI、母馬の獲得賞金）
 - 生まれ月（早生まれほど有利）
 - 親年齢（父・母の産駒時年齢）
-- 調教師スコア（有力調教師の実績ベース）
-- 祖父母年齢の集約統計量（平均・最小・散布度）
-- 曾祖父母年齢の集約統計量（平均・最小・散布度）
+- 調教師・馬主・牧場スコア（実績ベース）
+- セリ価格・産駒番号
 """
 
 import json
@@ -339,13 +338,6 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
         row["sale_price_log"] = np.log1p(sale_price) if sale_price else 0.0
         foal_number = extra.get("foal_number")
         row["foal_number"] = foal_number if foal_number else 3.0  # デフォルト: 3番仔
-
-        # --- 集約特徴量（世代別の統計量） ---
-        # 母馬賞金の対数変換
-        row["dam_prize_log"] = np.log1p(row["dam_prize"])
-
-        # 血統交互作用（父の種牡馬力 × 母の実績）
-        row["sire_dam_interaction"] = row["sire_ei"] * row["dam_prize_log"]
 
         feature_rows.append(row)
 
