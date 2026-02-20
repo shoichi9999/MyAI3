@@ -6,7 +6,7 @@ import threading
 import urllib.parse
 
 import pandas as pd
-from src.scraper import _rate_limited_sleep, BASE_URL, concurrent_fetch
+from src.scraper import _rate_limited_sleep, _session, BASE_URL, concurrent_fetch
 
 CACHE_FILE = "data/dam_prizes.json"
 
@@ -36,15 +36,7 @@ def fetch_horse_prize_by_name(name: str) -> float:
     url = f"{BASE_URL}/?pid=horse_list&word={encoded}&sort=prize&list=100"
 
     try:
-        import requests
-        headers = {
-            "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/120.0.0.0 Safari/537.36"
-            )
-        }
-        resp = requests.get(url, headers=headers, timeout=30)
+        resp = _session.get(url, timeout=30)
         resp.encoding = "EUC-JP"
         from bs4 import BeautifulSoup
         soup = BeautifulSoup(resp.text, "lxml")

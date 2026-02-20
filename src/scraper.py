@@ -35,21 +35,30 @@ REQUEST_INTERVAL = 1.5
 
 # スレッドセーフなグローバルレートリミッター
 _request_lock = threading.Lock()
-_last_request_time = 0.0
+_next_request_time = 0.0
 _MIN_REQUEST_GAP = 0.5  # 全スレッド共通の最小間隔（秒）
 
 DEFAULT_MAX_WORKERS = 3
 
+# コネクションプーリング用セッション
+_session = requests.Session()
+_session.headers.update(HEADERS)
+
 
 def _rate_limited_sleep():
-    """全スレッド共通のリクエスト間隔を強制する（スレッドセーフ）。"""
-    global _last_request_time
+    """全スレッド共通のリクエスト間隔を強制する（スレッドセーフ）。
+
+    ロック内でスケジュール時刻を予約し、ロック外でsleepすることで
+    複数スレッドが並行して待機できる。
+    """
+    global _next_request_time
     with _request_lock:
         now = time.monotonic()
-        wait = _MIN_REQUEST_GAP - (now - _last_request_time)
-        if wait > 0:
-            time.sleep(wait)
-        _last_request_time = time.monotonic()
+        scheduled = max(now, _next_request_time)
+        _next_request_time = scheduled + _MIN_REQUEST_GAP
+    wait = scheduled - time.monotonic()
+    if wait > 0:
+        time.sleep(wait)
 
 
 def concurrent_fetch(
@@ -124,7 +133,7 @@ def concurrent_fetch(
 def _get_soup(url: str) -> BeautifulSoup:
     """URLからBeautifulSoupオブジェクトを取得する。"""
     _rate_limited_sleep()
-    resp = requests.get(url, headers=HEADERS, timeout=30)
+    resp = _session.get(url, timeout=30)
     resp.encoding = "EUC-JP"
     return BeautifulSoup(resp.text, "lxml")
 
@@ -361,7 +370,7 @@ def _fetch_birth_year_from_profile(horse_id: str) -> int | None:
     try:
         _rate_limited_sleep()
         url = f"{BASE_URL}/horse/{horse_id}/"
-        resp = requests.get(url, headers=HEADERS, timeout=30)
+        resp = _session.get(url, timeout=30)
         resp.encoding = "EUC-JP"
         soup = BeautifulSoup(resp.text, "lxml")
         prof_table = soup.find("table", class_="db_prof_table")
