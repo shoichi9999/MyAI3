@@ -159,6 +159,13 @@ def fetch_horse_list_by_year(birth_year: int, max_pages: int = None) -> pd.DataF
     if not df.empty:
         df = df.drop_duplicates(subset=["horse_id"])
 
+        # JRA登録馬のみに絞り込み（horse_idが数字のみ）
+        before = len(df)
+        df = df[df["horse_id"].str.match(r"^\d+$")].reset_index(drop=True)
+        excluded = before - len(df)
+        if excluded:
+            print(f"  JRA登録馬に絞り込み: {before}頭 → {len(df)}頭（{excluded}頭除外）")
+
         # 日本産馬のhorse_idから親の生年を算出
         for col, id_col in [("sire_birth_year", "sire_id"),
                             ("dam_birth_year", "dam_id"),
