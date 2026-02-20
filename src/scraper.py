@@ -36,9 +36,9 @@ REQUEST_INTERVAL = 1.5
 # スレッドセーフなグローバルレートリミッター
 _request_lock = threading.Lock()
 _next_request_time = 0.0
-_MIN_REQUEST_GAP = 0.5  # 全スレッド共通の最小間隔（秒）
+_MIN_REQUEST_GAP = 0.3  # 全スレッド共通の最小間隔（秒）— 約3.3 req/s
 
-DEFAULT_MAX_WORKERS = 3
+DEFAULT_MAX_WORKERS = 5
 
 # コネクションプーリング用セッション
 _session = requests.Session()
@@ -178,6 +178,62 @@ def _extract_trainer_id(td_tag) -> str:
     return ""
 
 
+def _fetch_horse_list_page(birth_year: int, page: int) -> list[dict]:
+    """馬一覧の単一ページを取得してパースする。"""
+    url = (
+        f"{BASE_URL}/horse/list.html"
+        f"?year={birth_year}"
+        f"&sort=prize-desc&limit=100&page={page}"
+        f"&range=all&state=all&match=p"
+    )
+    soup = _get_soup(url)
+
+    table = soup.find("table", class_="nk_tb_common")
+    if not table:
+        return []
+
+    rows = table.find_all("tr")[1:]
+    if not rows:
+        return []
+
+    result = []
+    for row in rows:
+        cols = row.find_all("td")
+        if len(cols) < 12:
+            continue
+
+        name_tag = cols[1].find("a")
+        if not name_tag:
+            continue
+        href = name_tag.get("href", "")
+        horse_id_match = re.search(r"/horse/(\w+)", href)
+        if not horse_id_match:
+            continue
+
+        sire_id = _extract_id_from_param(cols[6], "sire_id")
+        dam_id = _extract_id_from_param(cols[7], "mare_id")
+        bms_id = _extract_id_from_param(cols[8], "bms_id")
+
+        result.append({
+            "horse_id": horse_id_match.group(1),
+            "horse_name": name_tag.text.strip(),
+            "sex": cols[2].text.strip(),
+            "trainer": _extract_cell_name(cols[5]),
+            "trainer_id": _extract_trainer_id(cols[5]),
+            "sire": _extract_cell_name(cols[6]),
+            "sire_id": sire_id,
+            "dam": _extract_cell_name(cols[7]),
+            "dam_id": dam_id,
+            "sire_of_dam": _extract_cell_name(cols[8]),
+            "bms_id": bms_id,
+            "owner": _extract_cell_name(cols[9]),
+            "breeder": _extract_cell_name(cols[10]),
+            "total_prize": cols[11].text.strip(),
+        })
+
+    return result
+
+
 def fetch_horse_list_by_year(birth_year: int, max_pages: int = None) -> pd.DataFrame:
     """
     指定した生年の馬一覧を取得する。
@@ -193,67 +249,33 @@ def fetch_horse_list_by_year(birth_year: int, max_pages: int = None) -> pd.DataF
     max_pages : int, optional
         最大取得ページ数。Noneの場合は全ページ取得。
     """
-    horses = []
-    page = 0
-    while True:
-        page += 1
-        if max_pages is not None and page > max_pages:
-            break
-        url = (
-            f"{BASE_URL}/horse/list.html"
-            f"?year={birth_year}"
-            f"&sort=prize-desc&limit=100&page={page}"
-            f"&range=all&state=all&match=p"
+    # ページ1を取得してデータの存在を確認
+    first_page = _fetch_horse_list_page(birth_year, 1)
+    if not first_page:
+        print("  データが見つかりませんでした")
+        return pd.DataFrame()
+
+    horses = list(first_page)
+    print(f"  ページ 1: {len(first_page)}頭取得")
+
+    # 残りのページを並列取得
+    if len(first_page) >= 100 and (max_pages is None or max_pages > 1):
+        end_page = max_pages if max_pages else 100
+        remaining = list(range(2, end_page + 1))
+
+        results = concurrent_fetch(
+            items=remaining,
+            fetch_fn=lambda p: _fetch_horse_list_page(birth_year, p),
+            label="ページ",
         )
-        try:
-            soup = _get_soup(url)
-        except Exception as e:
-            print(f"[WARN] ページ {page} の取得に失敗: {e}")
-            break
 
-        table = soup.find("table", class_="nk_tb_common")
-        if not table:
-            break
+        for page_num in sorted(results.keys()):
+            page_data = results[page_num]
+            if not page_data:
+                break  # 空ページ到達 = データ終端
+            horses.extend(page_data)
 
-        rows = table.find_all("tr")[1:]
-        if not rows:
-            break
-
-        for row in rows:
-            cols = row.find_all("td")
-            if len(cols) < 12:
-                continue
-
-            name_tag = cols[1].find("a")
-            if not name_tag:
-                continue
-            href = name_tag.get("href", "")
-            horse_id_match = re.search(r"/horse/(\w+)", href)
-            if not horse_id_match:
-                continue
-
-            sire_id = _extract_id_from_param(cols[6], "sire_id")
-            dam_id = _extract_id_from_param(cols[7], "mare_id")
-            bms_id = _extract_id_from_param(cols[8], "bms_id")
-
-            horses.append({
-                "horse_id": horse_id_match.group(1),
-                "horse_name": name_tag.text.strip(),
-                "sex": cols[2].text.strip(),
-                "trainer": _extract_cell_name(cols[5]),
-                "trainer_id": _extract_trainer_id(cols[5]),
-                "sire": _extract_cell_name(cols[6]),
-                "sire_id": sire_id,
-                "dam": _extract_cell_name(cols[7]),
-                "dam_id": dam_id,
-                "sire_of_dam": _extract_cell_name(cols[8]),
-                "bms_id": bms_id,
-                "owner": _extract_cell_name(cols[9]),
-                "breeder": _extract_cell_name(cols[10]),
-                "total_prize": cols[11].text.strip(),
-            })
-
-        print(f"  ページ {page}: {len(rows)}頭取得")
+    print(f"  全{len(horses)}頭取得")
 
     df = pd.DataFrame(horses)
     if not df.empty:
