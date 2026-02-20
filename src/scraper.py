@@ -271,7 +271,9 @@ def fetch_horse_list_by_year(birth_year: int, max_pages: int = None) -> pd.DataF
 
         for page_num in sorted(results.keys()):
             page_data = results[page_num]
-            if not page_data:
+            if page_data is None:
+                continue  # エラーページはスキップ
+            if len(page_data) == 0:
                 break  # 空ページ到達 = データ終端
             horses.extend(page_data)
 
