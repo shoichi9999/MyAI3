@@ -13,7 +13,7 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
     """
     ヒューリスティックスコアを算出する。
 
-    血統スコア（父EI 40% + 母馬賞金 40% + 母父EI 20%）に
+    血統スコア（父EI 50% + 母馬賞金 15% + 母父EI 35%）に
     生まれ月・親年齢・市場評価等のボーナスを加算する。
 
     Parameters
