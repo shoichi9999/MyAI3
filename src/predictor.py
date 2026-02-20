@@ -215,11 +215,15 @@ def run_full_pipeline(
     else:
         print(f"\n--- {target_year}年世代: 馬一覧データ既存。スキップ ---")
 
-    # 2. 追加特徴量（生年月日・セリ価格・産駒番号）
-    _fetch_extra_features(target_year, max_horses=max_horses, top=prescore_top or None)
-
-    # 3. 母馬賞金
+    # 2. 母馬賞金（先に取得してDAM_PRIZESを更新→プレスコアで利用）
     _fetch_dam_prizes(target_year)
+
+    # DAM_PRIZESをリロード（モジュールレベル変数は初回import時の値のまま）
+    import src.features as _features_mod
+    _features_mod.DAM_PRIZES = _features_mod._load_json("data/dam_prizes.json")
+
+    # 3. 追加特徴量（生年月日・セリ価格・産駒番号）
+    _fetch_extra_features(target_year, max_horses=max_horses, top=prescore_top or None)
 
     # 4. 予測
     result = predict_top(target_year, top_n=top_n)
