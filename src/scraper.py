@@ -12,6 +12,8 @@ import json
 import os
 import time
 import re
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import requests
 from bs4 import BeautifulSoup
@@ -31,10 +33,97 @@ HEADERS = {
 # リクエスト間隔（秒）- サーバー負荷軽減のため
 REQUEST_INTERVAL = 1.5
 
+# スレッドセーフなグローバルレートリミッター
+_request_lock = threading.Lock()
+_last_request_time = 0.0
+_MIN_REQUEST_GAP = 0.5  # 全スレッド共通の最小間隔（秒）
+
+DEFAULT_MAX_WORKERS = 3
+
+
+def _rate_limited_sleep():
+    """全スレッド共通のリクエスト間隔を強制する（スレッドセーフ）。"""
+    global _last_request_time
+    with _request_lock:
+        now = time.monotonic()
+        wait = _MIN_REQUEST_GAP - (now - _last_request_time)
+        if wait > 0:
+            time.sleep(wait)
+        _last_request_time = time.monotonic()
+
+
+def concurrent_fetch(
+    items: list,
+    fetch_fn,
+    max_workers: int = DEFAULT_MAX_WORKERS,
+    label: str = "items",
+    on_result=None,
+    save_interval: int = 50,
+    save_fn=None,
+) -> dict:
+    """
+    アイテムを並列取得する汎用ヘルパー。
+
+    Parameters
+    ----------
+    items : list
+        取得対象のキーリスト
+    fetch_fn : callable(item) -> result
+        各アイテムの取得関数（レートリミッター呼び出し含む）
+    max_workers : int
+        並列ワーカー数（デフォルト3）
+    label : str
+        進捗表示用ラベル
+    on_result : callable(item, result, completed_count) -> None
+        結果を受け取るコールバック（Lock外から呼ばれるため、内部でLockを取得すること）
+    save_interval : int
+        何件ごとにsave_fnを呼ぶか
+    save_fn : callable() -> None
+        定期保存用コールバック
+
+    Returns
+    -------
+    dict : {item: result}
+    """
+    results = {}
+    completed = 0
+    errors = 0
+    lock = threading.Lock()
+
+    def _worker(item):
+        return item, fetch_fn(item)
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = {executor.submit(_worker, item): item for item in items}
+
+        for future in as_completed(futures):
+            item = futures[future]
+            try:
+                _, result = future.result()
+                with lock:
+                    results[item] = result
+                    completed += 1
+                    if on_result:
+                        on_result(item, result, completed)
+                    if save_fn and completed % save_interval == 0:
+                        save_fn()
+                        print(f"  {completed}/{len(items)} {label} 処理済み (エラー: {errors})")
+            except Exception as e:
+                with lock:
+                    results[item] = None
+                    completed += 1
+                    errors += 1
+                print(f"  [ERROR] {item}: {e}")
+
+    if save_fn:
+        save_fn()
+    print(f"  完了: {completed}/{len(items)} {label} (エラー: {errors})")
+    return results
+
 
 def _get_soup(url: str) -> BeautifulSoup:
     """URLからBeautifulSoupオブジェクトを取得する。"""
-    time.sleep(REQUEST_INTERVAL)
+    _rate_limited_sleep()
     resp = requests.get(url, headers=HEADERS, timeout=30)
     resp.encoding = "EUC-JP"
     return BeautifulSoup(resp.text, "lxml")
@@ -225,43 +314,52 @@ def _resolve_foreign_birth_years(horse_ids: set[str]) -> dict[str, int]:
     """海外馬のhorse_idセットからプロフィールページ経由で生年を一括解決する。"""
     cache = _load_foreign_by_cache()
     resolved = {}
-    fetched = 0
+    to_fetch = []
 
-    for i, hid in enumerate(horse_ids):
-        # キャッシュにあればスキップ
+    for hid in horse_ids:
         if hid in cache:
             if cache[hid] is not None:
                 resolved[hid] = cache[hid]
             continue
-
-        # 日本産馬はID先頭4桁から
         if hid[:4].isdigit():
             resolved[hid] = int(hid[:4])
             continue
+        to_fetch.append(hid)
 
-        # プロフィールページから取得
-        by = _fetch_birth_year_from_profile(hid)
-        cache[hid] = by
-        fetched += 1
-        if by is not None:
-            resolved[hid] = by
+    if not to_fetch:
+        print(f"    全てキャッシュ済: {len(resolved)}/{len(horse_ids)}頭")
+        return resolved
 
-        # 50件ごとに保存
-        if fetched % 50 == 0:
-            _save_foreign_by_cache(cache)
-            print(f"    {i+1}/{len(horse_ids)} 処理済み（新規取得: {fetched}）")
+    cache_lock = threading.Lock()
 
-    if fetched > 0:
-        _save_foreign_by_cache(cache)
-    skipped = len(horse_ids) - fetched
-    print(f"    解決: {len(resolved)}/{len(horse_ids)}頭（キャッシュ済: {skipped}, 新規取得: {fetched}）")
+    def on_result(hid, by, _idx):
+        with cache_lock:
+            cache[hid] = by
+            if by is not None:
+                resolved[hid] = by
+
+    def save():
+        with cache_lock:
+            _save_foreign_by_cache(dict(cache))
+
+    concurrent_fetch(
+        items=to_fetch,
+        fetch_fn=_fetch_birth_year_from_profile,
+        label="海外馬",
+        on_result=on_result,
+        save_interval=50,
+        save_fn=save,
+    )
+
+    skipped = len(horse_ids) - len(to_fetch)
+    print(f"    解決: {len(resolved)}/{len(horse_ids)}頭（キャッシュ済: {skipped}, 新規取得: {len(to_fetch)}）")
     return resolved
 
 
 def _fetch_birth_year_from_profile(horse_id: str) -> int | None:
     """外国産馬のプロフィールページから生年を取得する。"""
     try:
-        time.sleep(0.5)
+        _rate_limited_sleep()
         url = f"{BASE_URL}/horse/{horse_id}/"
         resp = requests.get(url, headers=HEADERS, timeout=30)
         resp.encoding = "EUC-JP"

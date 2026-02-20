@@ -1,16 +1,14 @@
 """母馬の獲得賞金を一括取得するスクリプト。"""
 import json
 import os
-import time
 import re
+import threading
 import urllib.parse
 
 import pandas as pd
-from src.scraper import _get_soup, BASE_URL
+from src.scraper import _rate_limited_sleep, BASE_URL, concurrent_fetch
 
 CACHE_FILE = "data/dam_prizes.json"
-# 母馬は数が多いのでリクエスト間隔を少し短縮
-REQUEST_INTERVAL = 1.0
 
 
 def parse_prize_text(text: str) -> float:
@@ -33,7 +31,7 @@ def fetch_horse_prize_by_name(name: str) -> float:
     if not name or name.strip() == "":
         return 0.0
 
-    time.sleep(REQUEST_INTERVAL)
+    _rate_limited_sleep()
     encoded = urllib.parse.quote(name.strip())
     url = f"{BASE_URL}/?pid=horse_list&word={encoded}&sort=prize&list=100"
 
@@ -125,22 +123,27 @@ def main():
 
     to_fetch = [d for d in dams if d not in cache]
     print(f"キャッシュ済: {len(dams) - len(to_fetch)}頭, 新規: {len(to_fetch)}頭")
-    print(f"推定所要時間: {len(to_fetch) * REQUEST_INTERVAL / 60:.0f}分")
 
-    for i, name in enumerate(to_fetch):
-        if (i + 1) % 100 == 0 or i == 0:
-            print(f"  [{i+1}/{len(to_fetch)}] {name}")
-        prize = fetch_horse_prize_by_name(name)
-        cache[name] = prize
+    if to_fetch:
+        cache_lock = threading.Lock()
 
-        # 100件ごとにキャッシュ保存
-        if (i + 1) % 100 == 0:
-            with open(CACHE_FILE, "w", encoding="utf-8") as f:
-                json.dump(cache, f, ensure_ascii=False, indent=2)
+        def on_prize_result(name, prize, _idx):
+            with cache_lock:
+                cache[name] = prize if prize is not None else 0.0
 
-    # 最終保存
-    with open(CACHE_FILE, "w", encoding="utf-8") as f:
-        json.dump(cache, f, ensure_ascii=False, indent=2)
+        def save_prizes():
+            with cache_lock:
+                with open(CACHE_FILE, "w", encoding="utf-8") as f:
+                    json.dump(dict(cache), f, ensure_ascii=False, indent=2)
+
+        concurrent_fetch(
+            items=to_fetch,
+            fetch_fn=fetch_horse_prize_by_name,
+            label="母馬賞金",
+            on_result=on_prize_result,
+            save_interval=100,
+            save_fn=save_prizes,
+        )
 
     print(f"\n完了: {len(cache)}頭の母馬賞金を保存")
 

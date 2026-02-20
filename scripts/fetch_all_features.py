@@ -16,7 +16,7 @@ import argparse
 import sys
 import os
 import json
-import time
+import threading
 
 import pandas as pd
 
@@ -25,7 +25,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from src.scraper import (
     fetch_horse_profile,
     fetch_dam_foal_list,
-    REQUEST_INTERVAL,
+    concurrent_fetch,
 )
 
 
@@ -64,38 +64,50 @@ def fetch_all_features(birth_year: int, max_horses: int = None):
 
     # --- Phase 1: プロフィールページ（生年月日 + セリ価格） ---
     print(f"\n=== Phase 1: プロフィールデータ取得 ===")
-    errors = 0
 
-    for i, (_, row) in enumerate(horses.iterrows()):
+    to_fetch_phase1 = []
+    for _, row in horses.iterrows():
         hid = str(row["horse_id"])
-
         has_bd = hid in bd_cache
         has_ef = hid in ef_cache and "sale_price" in ef_cache.get(hid, {})
-        if has_bd and has_ef:
-            continue
+        if not (has_bd and has_ef):
+            to_fetch_phase1.append(hid)
 
-        try:
-            profile = fetch_horse_profile(hid)
-            bd_cache[hid] = profile["birth_date"] or ""
-            if hid not in ef_cache:
-                ef_cache[hid] = {}
-            ef_cache[hid]["sale_price"] = profile["sale_price"]
-        except Exception as e:
-            bd_cache[hid] = ""
-            if hid not in ef_cache:
-                ef_cache[hid] = {}
-            ef_cache[hid].setdefault("sale_price", None)
-            errors += 1
-            print(f"  [ERROR] {row['horse_name']}: {e}")
+    print(f"  未取得: {len(to_fetch_phase1)}頭 (全{total}頭中)")
 
-        if (i + 1) % 50 == 0:
-            _save_cache(bd_path, bd_cache)
-            _save_cache(ef_path, ef_cache)
-            print(f"  {i+1}/{total} 処理済み (エラー: {errors})")
+    if to_fetch_phase1:
+        cache_lock = threading.Lock()
 
-    _save_cache(bd_path, bd_cache)
-    _save_cache(ef_path, ef_cache)
-    print(f"  Phase 1完了 (エラー: {errors})")
+        def on_profile_result(hid, profile, _idx):
+            with cache_lock:
+                if profile is not None:
+                    bd_cache[hid] = profile["birth_date"] or ""
+                    if hid not in ef_cache:
+                        ef_cache[hid] = {}
+                    ef_cache[hid]["sale_price"] = profile["sale_price"]
+                else:
+                    bd_cache[hid] = ""
+                    if hid not in ef_cache:
+                        ef_cache[hid] = {}
+                    ef_cache[hid].setdefault("sale_price", None)
+
+        def save_phase1():
+            with cache_lock:
+                _save_cache(bd_path, dict(bd_cache))
+                _save_cache(ef_path, dict(ef_cache))
+
+        concurrent_fetch(
+            items=to_fetch_phase1,
+            fetch_fn=fetch_horse_profile,
+            label="プロフィール",
+            on_result=on_profile_result,
+            save_interval=50,
+            save_fn=save_phase1,
+        )
+    else:
+        print("  全てキャッシュ済み")
+
+    print(f"  Phase 1完了")
 
     # --- Phase 2: 産駒番号（母馬ページから何番仔かを取得） ---
     print(f"\n=== Phase 2: 産駒番号（何番仔か）取得 ===")
@@ -114,18 +126,21 @@ def fetch_all_features(birth_year: int, max_horses: int = None):
 
     print(f"  未取得の母馬: {len(dams_to_fetch)}頭")
     dam_foals = {}
-    errors2 = 0
 
-    for i, dam_id in enumerate(dams_to_fetch):
-        try:
-            time.sleep(REQUEST_INTERVAL)
-            dam_foals[dam_id] = fetch_dam_foal_list(dam_id)
-        except Exception as e:
-            dam_foals[dam_id] = []
-            errors2 += 1
-            print(f"  [ERROR] dam={dam_id}: {e}")
-        if (i + 1) % 50 == 0:
-            print(f"  {i+1}/{len(dams_to_fetch)} 母馬処理済み")
+    if dams_to_fetch:
+        dam_lock = threading.Lock()
+
+        def on_dam_result(dam_id, foal_list, _idx):
+            with dam_lock:
+                dam_foals[dam_id] = foal_list if foal_list is not None else []
+
+        concurrent_fetch(
+            items=list(dams_to_fetch),
+            fetch_fn=fetch_dam_foal_list,
+            label="母馬",
+            on_result=on_dam_result,
+            save_interval=50,
+        )
 
     for _, row in horses.iterrows():
         hid = str(row["horse_id"])
@@ -137,7 +152,7 @@ def fetch_all_features(birth_year: int, max_horses: int = None):
             ef_cache[hid] = entry
 
     _save_cache(ef_path, ef_cache)
-    print(f"  Phase 2完了 (エラー: {errors2})")
+    print(f"  Phase 2完了")
 
     # --- サマリー ---
     print(f"\n=== 完了 ===")
