@@ -69,12 +69,9 @@ def _prescore(horses: pd.DataFrame) -> pd.Series:
     if max_bms > 0:
         scores += (bms_ei / max_bms) * 100 * WEIGHT_BMS_EI
 
-    # 母馬賞金
-    dam_prizes_list = [v for v in DAM_PRIZES.values() if v > 0]
-    dam_median = np.median(dam_prizes_list) if dam_prizes_list else 0.0
+    # 母馬賞金（不明なら0）
     raw_dp = horses["dam"].apply(lambda x: get_dam_prize(x) if pd.notna(x) else 0.0)
-    dp = raw_dp.where(raw_dp > 0, dam_median)
-    dp_log = np.log1p(dp)
+    dp_log = np.log1p(raw_dp)
     max_dp = dp_log.max()
     if max_dp > 0:
         scores += (dp_log / max_dp) * 100 * WEIGHT_DAM_PRIZE

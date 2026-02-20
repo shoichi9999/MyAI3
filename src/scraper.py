@@ -464,29 +464,25 @@ def fetch_horse_profile(horse_id: str) -> dict:
 
 def fetch_dam_foal_list(dam_id: str) -> list[str]:
     """
-    母馬のページから産駒のhorse_idリストを生年順で取得する。
+    繁殖牝馬ページ (/horse/mare/{id}/) から産駒のhorse_idリストを生年順で取得する。
 
     Returns
     -------
     list[str]
         産駒のhorse_idリスト（生年順）
     """
-    url = f"{BASE_URL}/horse/{dam_id}/"
+    url = f"{BASE_URL}/horse/mare/{dam_id}/"
     soup = _get_soup(url)
 
     foal_ids = []
-
-    for tag in soup.find_all(["h2", "h3", "h4", "div"]):
-        if "産駒" in tag.get_text():
-            table = tag.find_next("table")
-            if table:
-                for row in table.find_all("tr")[1:]:
-                    for a_tag in row.find_all("a"):
-                        href = a_tag.get("href", "")
-                        m = re.search(r"/horse/(\w+)/", href)
-                        if m and m.group(1) != dam_id:
-                            foal_ids.append(m.group(1))
-                            break
-                return foal_ids
+    table = soup.find("table", class_="nk_tb_common")
+    if table:
+        for row in table.find_all("tr")[1:]:
+            for a_tag in row.find_all("a"):
+                href = a_tag.get("href", "")
+                m = re.search(r"/horse/(\w+)/", href)
+                if m and m.group(1) != dam_id:
+                    foal_ids.append(m.group(1))
+                    break
 
     return foal_ids

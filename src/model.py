@@ -30,19 +30,19 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
 
     score = pd.Series(0.0, index=df.index)
 
-    # 父EI（正規化）
+    # 父EI（99パーセンタイル正規化 — 外国種牡馬の外れ値EIで潰されるのを防ぐ）
     if "sire_ei" in df.columns:
         ei = df["sire_ei"].fillna(0)
-        max_ei = ei.max()
-        if max_ei > 0:
-            score += (ei / max_ei) * 100 * WEIGHT_SIRE_EI
+        cap = ei.quantile(0.99)
+        if cap > 0:
+            score += (ei.clip(upper=cap) / cap) * 100 * WEIGHT_SIRE_EI
 
-    # 母父EI（正規化）
+    # 母父EI（99パーセンタイル正規化）
     if "bms_ei" in df.columns:
         ei = df["bms_ei"].fillna(0)
-        max_ei = ei.max()
-        if max_ei > 0:
-            score += (ei / max_ei) * 100 * WEIGHT_BMS_EI
+        cap = ei.quantile(0.99)
+        if cap > 0:
+            score += (ei.clip(upper=cap) / cap) * 100 * WEIGHT_BMS_EI
 
     # 調教師スコアボーナス
     if "trainer_score" in df.columns:
@@ -54,12 +54,12 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
         os_val = df["owner_score"].fillna(50)
         score += (os_val - 50) * 0.2
 
-    # 母馬獲得賞金（対数正規化）
+    # 母馬獲得賞金（対数 + 99パーセンタイル正規化）
     if "dam_prize" in df.columns:
         dp = np.log1p(df["dam_prize"].fillna(0))
-        max_dp = dp.max()
-        if max_dp > 0:
-            score += (dp / max_dp) * 100 * WEIGHT_DAM_PRIZE
+        cap = dp.quantile(0.99)
+        if cap > 0:
+            score += (dp.clip(upper=cap) / cap) * 100 * WEIGHT_DAM_PRIZE
 
     # 早生まれボーナス（1-4月生まれ）
     if "early_born" in df.columns:

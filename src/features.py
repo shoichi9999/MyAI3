@@ -280,10 +280,6 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
     """
     feature_rows = []
 
-    # 母馬賞金の中央値（賞金0の馬への補完用）
-    dam_prizes_list = [v for v in DAM_PRIZES.values() if v > 0]
-    dam_median = np.median(dam_prizes_list) if dam_prizes_list else 0.0
-
     # birth_yearの推定（horse_idの先頭4桁 or DataFrameから）
     if birth_year is None:
         sample_id = str(horses_df.iloc[0].get("horse_id", ""))
@@ -304,9 +300,8 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
         row["sire_ei"] = get_sire_ei(horse.get("sire", ""))
         row["bms_ei"] = get_bms_ei(horse.get("sire_of_dam", ""))
 
-        # 母馬の獲得賞金（0の場合は中央値で補完）
-        raw_dam_prize = get_dam_prize(horse.get("dam", ""))
-        row["dam_prize"] = raw_dam_prize if raw_dam_prize > 0 else dam_median
+        # 母馬の獲得賞金（不明なら0 — 不明は不利な情報として扱う）
+        row["dam_prize"] = get_dam_prize(horse.get("dam", ""))
 
         # 調教師・馬主・生産者スコア
         row["trainer_score"] = calc_trainer_score(horse.get("trainer", ""))

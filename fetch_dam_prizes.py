@@ -46,48 +46,57 @@ def _parse_prize_from_soup(soup) -> float:
     return 0.0
 
 
-def _parse_foals_from_soup(soup, dam_id: str) -> list[str]:
-    """BeautifulSoupオブジェクトから産駒horse_idリストを抽出する。"""
-    for tag in soup.find_all(["h2", "h3", "h4", "div"]):
-        if "産駒" in tag.get_text():
-            table = tag.find_next("table")
-            if table:
-                foal_ids = []
-                for row in table.find_all("tr")[1:]:
-                    for a_tag in row.find_all("a"):
-                        href = a_tag.get("href", "")
-                        m = re.search(r"/horse/(\w+)/", href)
-                        if m and m.group(1) != dam_id:
-                            foal_ids.append(m.group(1))
-                            break
-                return foal_ids
-    return []
+def _parse_foals_from_mare_soup(soup, dam_id: str) -> list[str]:
+    """繁殖牝馬ページ (/horse/mare/{id}/) のsoupから産駒horse_idリストを抽出する。"""
+    table = soup.find("table", class_="nk_tb_common")
+    if not table:
+        return []
+    foal_ids = []
+    for row in table.find_all("tr")[1:]:
+        for a_tag in row.find_all("a"):
+            href = a_tag.get("href", "")
+            m = re.search(r"/horse/(\w+)/", href)
+            if m and m.group(1) != dam_id:
+                foal_ids.append(m.group(1))
+                break
+    return foal_ids
 
 
 def fetch_dam_prize_and_foals(dam_id: str) -> dict:
-    """母馬のページから賞金と産駒リストを1リクエストで同時取得する。
+    """母馬の賞金（プロフィールページ）と産駒リスト（繁殖牝馬ページ）を取得する。
+
+    2リクエスト必要（プロフィールと繁殖牝馬ページはURLが異なる）。
 
     Returns {"prize": float, "foals": list[str]}
     """
     if not dam_id or not str(dam_id).strip():
         return {"prize": 0.0, "foals": []}
 
+    from bs4 import BeautifulSoup
+
+    # 1. プロフィールページから賞金を取得
     _rate_limited_sleep()
-    url = f"{BASE_URL}/horse/{dam_id}/"
-
+    prize = 0.0
     try:
-        resp = _session.get(url, timeout=30)
+        resp = _session.get(f"{BASE_URL}/horse/{dam_id}/", timeout=30)
         resp.encoding = "EUC-JP"
-        from bs4 import BeautifulSoup
         soup = BeautifulSoup(resp.text, "lxml")
+        prize = _parse_prize_from_soup(soup)
     except Exception as e:
-        print(f"  [WARN] {dam_id}: {e}")
-        return {"prize": 0.0, "foals": []}
+        print(f"  [WARN] {dam_id} prize: {e}")
 
-    return {
-        "prize": _parse_prize_from_soup(soup),
-        "foals": _parse_foals_from_soup(soup, dam_id),
-    }
+    # 2. 繁殖牝馬ページから産駒リストを取得
+    _rate_limited_sleep()
+    foals = []
+    try:
+        resp2 = _session.get(f"{BASE_URL}/horse/mare/{dam_id}/", timeout=30)
+        resp2.encoding = "EUC-JP"
+        soup2 = BeautifulSoup(resp2.text, "lxml")
+        foals = _parse_foals_from_mare_soup(soup2, dam_id)
+    except Exception as e:
+        print(f"  [WARN] {dam_id} foals: {e}")
+
+    return {"prize": prize, "foals": foals}
 
 
 def fetch_horse_prize_by_id(horse_id: str) -> float:
