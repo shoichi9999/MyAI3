@@ -77,9 +77,9 @@ def _prescore(horses: pd.DataFrame) -> pd.Series:
         scores += (dp_log / max_dp) * 100 * WEIGHT_DAM_PRIZE
 
     # 調教師・馬主・牧場
-    scores += horses["trainer"].apply(lambda x: calc_trainer_score(x) - 50).fillna(0) * 0.2
-    scores += horses["owner"].apply(lambda x: calc_owner_score(x) - 50).fillna(0) * 0.2
-    scores += horses["breeder"].apply(lambda x: calc_breeder_score(x) - 50).fillna(0) * 0.3
+    scores += horses["trainer"].apply(lambda x: calc_trainer_score(x) - 50).fillna(0) * 0.05
+    scores += horses["owner"].apply(lambda x: calc_owner_score(x) - 50).fillna(0) * 0.05
+    scores += horses["breeder"].apply(lambda x: calc_breeder_score(x) - 50).fillna(0) * 0.08
 
     # 親年齢ボーナス（CSVに含まれている場合）
     for by_col in ["sire_birth_year", "dam_birth_year"]:

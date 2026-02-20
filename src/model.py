@@ -44,15 +44,15 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
         if cap > 0:
             score += (ei.clip(upper=cap) / cap) * 100 * WEIGHT_BMS_EI
 
-    # 調教師スコアボーナス
+    # 調教師スコアボーナス（50基準で加減算、限定的な寄与に抑える）
     if "trainer_score" in df.columns:
         ts = df["trainer_score"].fillna(50)
-        score += (ts - 50) * 0.2  # 50基準で加減算
+        score += (ts - 50) * 0.05
 
     # 馬主スコアボーナス
     if "owner_score" in df.columns:
         os_val = df["owner_score"].fillna(50)
-        score += (os_val - 50) * 0.2
+        score += (os_val - 50) * 0.05
 
     # 母馬獲得賞金（対数 + 99パーセンタイル正規化）
     if "dam_prize" in df.columns:
@@ -90,6 +90,6 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
     # 生産牧場ボーナス
     if "breeder_score" in df.columns:
         bs = df["breeder_score"].fillna(50)
-        score += (bs - 50) * 0.3
+        score += (bs - 50) * 0.08
 
     return score
