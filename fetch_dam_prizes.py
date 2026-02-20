@@ -26,11 +26,72 @@ def parse_prize_text(text: str) -> float:
     return total
 
 
-def fetch_horse_prize_by_id(horse_id: str) -> float:
-    """horse_idのプロフィールページから獲得賞金(万円)を直接取得する。
+def _parse_prize_from_soup(soup) -> float:
+    """BeautifulSoupオブジェクトから獲得賞金(万円)を抽出する。"""
+    prof_table = soup.find("table", class_="db_prof_table")
+    if not prof_table:
+        return 0.0
+    # 中央賞金を優先
+    for row in prof_table.find_all("tr"):
+        th = row.find("th")
+        td = row.find("td")
+        if th and td and "賞金" in th.text and "中央" in th.text:
+            return parse_prize_text(td.text)
+    # フォールバック: any 賞金
+    for row in prof_table.find_all("tr"):
+        th = row.find("th")
+        td = row.find("td")
+        if th and td and "賞金" in th.text:
+            return parse_prize_text(td.text)
+    return 0.0
 
-    名前検索より高速（検索リダイレクトなし、直接ページアクセス）。
+
+def _parse_foals_from_soup(soup, dam_id: str) -> list[str]:
+    """BeautifulSoupオブジェクトから産駒horse_idリストを抽出する。"""
+    for tag in soup.find_all(["h2", "h3", "h4", "div"]):
+        if "産駒" in tag.get_text():
+            table = tag.find_next("table")
+            if table:
+                foal_ids = []
+                for row in table.find_all("tr")[1:]:
+                    for a_tag in row.find_all("a"):
+                        href = a_tag.get("href", "")
+                        m = re.search(r"/horse/(\w+)/", href)
+                        if m and m.group(1) != dam_id:
+                            foal_ids.append(m.group(1))
+                            break
+                return foal_ids
+    return []
+
+
+def fetch_dam_prize_and_foals(dam_id: str) -> dict:
+    """母馬のページから賞金と産駒リストを1リクエストで同時取得する。
+
+    Returns {"prize": float, "foals": list[str]}
     """
+    if not dam_id or not str(dam_id).strip():
+        return {"prize": 0.0, "foals": []}
+
+    _rate_limited_sleep()
+    url = f"{BASE_URL}/horse/{dam_id}/"
+
+    try:
+        resp = _session.get(url, timeout=30)
+        resp.encoding = "EUC-JP"
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(resp.text, "lxml")
+    except Exception as e:
+        print(f"  [WARN] {dam_id}: {e}")
+        return {"prize": 0.0, "foals": []}
+
+    return {
+        "prize": _parse_prize_from_soup(soup),
+        "foals": _parse_foals_from_soup(soup, dam_id),
+    }
+
+
+def fetch_horse_prize_by_id(horse_id: str) -> float:
+    """horse_idのプロフィールページから獲得賞金(万円)を直接取得する。"""
     if not horse_id or not str(horse_id).strip():
         return 0.0
 
@@ -46,25 +107,7 @@ def fetch_horse_prize_by_id(horse_id: str) -> float:
         print(f"  [WARN] {horse_id}: {e}")
         return 0.0
 
-    prof_table = soup.find("table", class_="db_prof_table")
-    if not prof_table:
-        return 0.0
-
-    # 中央賞金を優先
-    for row in prof_table.find_all("tr"):
-        th = row.find("th")
-        td = row.find("td")
-        if th and td and "賞金" in th.text and "中央" in th.text:
-            return parse_prize_text(td.text)
-
-    # フォールバック: any 賞金
-    for row in prof_table.find_all("tr"):
-        th = row.find("th")
-        td = row.find("td")
-        if th and td and "賞金" in th.text:
-            return parse_prize_text(td.text)
-
-    return 0.0
+    return _parse_prize_from_soup(soup)
 
 
 def fetch_horse_prize_by_name(name: str) -> float:

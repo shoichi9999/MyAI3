@@ -186,6 +186,13 @@ def _fetch_dam_prizes(target_year: int, prescore_top: int = 0):
         with open(mod.CACHE_FILE, "r", encoding="utf-8") as f:
             cache = json.load(f)
 
+    # 産駒リストキャッシュも同時に更新（Phase 2の重複リクエストを排除）
+    dam_foals_path = "data/dam_foals.json"
+    dam_foals_cache = {}
+    if os.path.exists(dam_foals_path):
+        with open(dam_foals_path, "r", encoding="utf-8") as f:
+            dam_foals_cache = json.load(f)
+
     to_fetch = [d for d in sorted(dam_info.keys()) if d not in cache]
     if not to_fetch:
         print(f"\n--- 母馬賞金: 全{len(dam_info)}頭キャッシュ済み。スキップ ---")
@@ -193,35 +200,47 @@ def _fetch_dam_prizes(target_year: int, prescore_top: int = 0):
 
     id_count = sum(1 for d in to_fetch if dam_info.get(d))
     print(f"\n{'='*60}")
-    print(f"  母馬賞金取得: 新規{len(to_fetch)}頭（ID直接: {id_count}, 名前検索: {len(to_fetch) - id_count}）")
+    print(f"  母馬賞金+産駒リスト取得: 新規{len(to_fetch)}頭（ID直接: {id_count}, 名前検索: {len(to_fetch) - id_count}）")
     print(f"{'='*60}")
 
-    def fetch_prize(name):
+    def fetch_combined(name):
+        """dam_idがあれば1リクエストで賞金+産駒リストを同時取得。"""
         did = dam_info.get(name)
         if did:
-            return mod.fetch_horse_prize_by_id(did)
-        return mod.fetch_horse_prize_by_name(name)
+            return mod.fetch_dam_prize_and_foals(did)
+        # IDなし: 名前検索（産駒リストは取れない）
+        prize = mod.fetch_horse_prize_by_name(name)
+        return {"prize": prize, "foals": None}
 
     cache_lock = threading.Lock()
 
-    def on_result(name, prize, _idx):
+    def on_result(name, result, _idx):
         with cache_lock:
-            cache[name] = prize if prize is not None else 0.0
+            if result is None:
+                cache[name] = 0.0
+                return
+            cache[name] = result["prize"] if result["prize"] is not None else 0.0
+            # 産駒リストもキャッシュに保存
+            did = dam_info.get(name)
+            if did and result.get("foals") is not None:
+                dam_foals_cache[did] = result["foals"]
 
     def save_fn():
         with cache_lock:
             with open(mod.CACHE_FILE, "w", encoding="utf-8") as f:
                 json.dump(dict(cache), f, ensure_ascii=False, indent=2)
+            with open(dam_foals_path, "w", encoding="utf-8") as f:
+                json.dump(dict(dam_foals_cache), f, ensure_ascii=False, indent=2)
 
     concurrent_fetch(
         items=to_fetch,
-        fetch_fn=fetch_prize,
-        label="母馬賞金",
+        fetch_fn=fetch_combined,
+        label="母馬賞金+産駒",
         on_result=on_result,
         save_interval=100,
         save_fn=save_fn,
     )
-    print(f"  完了: {len(cache)}頭の母馬賞金を保存")
+    print(f"  完了: 賞金{len(cache)}頭, 産駒リスト{len(dam_foals_cache)}頭")
 
 
 def run_full_pipeline(
