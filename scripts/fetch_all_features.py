@@ -112,6 +112,10 @@ def fetch_all_features(birth_year: int, max_horses: int = None):
     # --- Phase 2: 産駒番号（母馬ページから何番仔かを取得） ---
     print(f"\n=== Phase 2: 産駒番号（何番仔か）取得 ===")
 
+    # 母馬産駒リストのファイルキャッシュ（年度横断で再利用可能）
+    dam_foals_path = "data/dam_foals.json"
+    dam_foals_cache = _load_cache(dam_foals_path)  # {dam_id: [horse_id, ...]}
+
     # CSVのdam_idカラムを使用（馬一覧取得時に保存済み）
     dams_to_fetch = set()
     for _, row in horses.iterrows():
@@ -119,20 +123,24 @@ def fetch_all_features(birth_year: int, max_horses: int = None):
         entry = ef_cache.get(hid, {})
         dam_id = str(row.get("dam_id", "")) if pd.notna(row.get("dam_id")) else ""
         if dam_id and "foal_number" not in entry:
-            dams_to_fetch.add(dam_id)
+            if dam_id not in dam_foals_cache:
+                dams_to_fetch.add(dam_id)
             if hid not in ef_cache:
                 ef_cache[hid] = {}
             ef_cache[hid]["dam_id"] = dam_id
 
-    print(f"  未取得の母馬: {len(dams_to_fetch)}頭")
-    dam_foals = {}
+    print(f"  未取得の母馬: {len(dams_to_fetch)}頭 (キャッシュ済: {len(dam_foals_cache)})")
 
     if dams_to_fetch:
         dam_lock = threading.Lock()
 
         def on_dam_result(dam_id, foal_list, _idx):
             with dam_lock:
-                dam_foals[dam_id] = foal_list if foal_list is not None else []
+                dam_foals_cache[dam_id] = foal_list if foal_list is not None else []
+
+        def save_dam_foals():
+            with dam_lock:
+                _save_cache(dam_foals_path, dict(dam_foals_cache))
 
         concurrent_fetch(
             items=list(dams_to_fetch),
@@ -140,6 +148,7 @@ def fetch_all_features(birth_year: int, max_horses: int = None):
             label="母馬",
             on_result=on_dam_result,
             save_interval=50,
+            save_fn=save_dam_foals,
         )
 
     for _, row in horses.iterrows():
@@ -147,7 +156,7 @@ def fetch_all_features(birth_year: int, max_horses: int = None):
         entry = ef_cache.get(hid, {})
         dam_id = entry.get("dam_id") or (str(row.get("dam_id", "")) if pd.notna(row.get("dam_id")) else "")
         if dam_id and "foal_number" not in entry:
-            foal_list = dam_foals.get(dam_id, [])
+            foal_list = dam_foals_cache.get(dam_id, [])
             entry["foal_number"] = (foal_list.index(hid) + 1) if hid in foal_list else None
             ef_cache[hid] = entry
 

@@ -2,13 +2,14 @@
 POG TOP10予測 - メイン実行モジュール。
 
 使い方:
-  1. データ収集モード: 対象年のデータをスクレイピング
-  2. 予測モード: ヒューリスティックスコアでTOP10を予測
-  3. 全自動モード: 上記すべてを一括実行
+  python run.py --year 2024            # 全自動（収集→特徴量→予測）
+  python run.py --mode collect --year 2024
+  python run.py --mode predict --year 2024
 """
 
 import argparse
 import os
+import sys
 
 import pandas as pd
 from tabulate import tabulate
@@ -109,13 +110,84 @@ def predict_top(
     return top
 
 
+def _fetch_extra_features(target_year: int, max_horses: int = None):
+    """追加特徴量（生年月日・セリ価格・産駒番号）を一括取得する。"""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "fetch_all_features",
+        os.path.join(os.path.dirname(__file__), "..", "scripts", "fetch_all_features.py"),
+    )
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    mod.fetch_all_features(target_year, max_horses=max_horses)
+
+
+def _fetch_dam_prizes(target_year: int):
+    """母馬賞金データを取得する（未取得分のみ）。"""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "fetch_dam_prizes",
+        os.path.join(os.path.dirname(__file__), "..", "fetch_dam_prizes.py"),
+    )
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+
+    import json
+    import threading
+    from src.scraper import concurrent_fetch
+
+    csv_path = f"data/horses_{target_year}.csv"
+    if not os.path.exists(csv_path):
+        return
+
+    horses = pd.read_csv(csv_path)
+    all_dams = set(d for d in horses["dam"].dropna().unique() if d.strip())
+
+    cache = {}
+    if os.path.exists(mod.CACHE_FILE):
+        with open(mod.CACHE_FILE, "r", encoding="utf-8") as f:
+            cache = json.load(f)
+
+    to_fetch = [d for d in sorted(all_dams) if d not in cache]
+    if not to_fetch:
+        print(f"\n--- 母馬賞金: 全{len(all_dams)}頭キャッシュ済み。スキップ ---")
+        return
+
+    print(f"\n{'='*60}")
+    print(f"  母馬賞金取得: 新規{len(to_fetch)}頭")
+    print(f"{'='*60}")
+
+    cache_lock = threading.Lock()
+
+    def on_result(name, prize, _idx):
+        with cache_lock:
+            cache[name] = prize if prize is not None else 0.0
+
+    def save_fn():
+        with cache_lock:
+            with open(mod.CACHE_FILE, "w", encoding="utf-8") as f:
+                json.dump(dict(cache), f, ensure_ascii=False, indent=2)
+
+    concurrent_fetch(
+        items=to_fetch,
+        fetch_fn=mod.fetch_horse_prize_by_name,
+        label="母馬賞金",
+        on_result=on_result,
+        save_interval=100,
+        save_fn=save_fn,
+    )
+    print(f"  完了: {len(cache)}頭の母馬賞金を保存")
+
+
 def run_full_pipeline(
     target_year: int = 2024,
     max_horses: int = None,
     top_n: int = 10,
 ):
     """
-    全自動パイプライン（データ収集 → 予測）。
+    全自動パイプライン（データ収集 → 特徴量取得 → 予測）。
 
     Parameters
     ----------
@@ -132,13 +204,19 @@ def run_full_pipeline(
     print(f"  予測馬数: TOP{top_n}")
     print("=" * 60)
 
-    # 1. データ収集
+    # 1. 馬一覧データ収集
     if not os.path.exists(f"data/horses_{target_year}.csv"):
         collect_data(target_year, max_horses=max_horses)
     else:
-        print(f"\n--- {target_year}年世代: データ既存。スキップ ---")
+        print(f"\n--- {target_year}年世代: 馬一覧データ既存。スキップ ---")
 
-    # 2. 予測
+    # 2. 追加特徴量（生年月日・セリ価格・産駒番号）
+    _fetch_extra_features(target_year, max_horses=max_horses)
+
+    # 3. 母馬賞金
+    _fetch_dam_prizes(target_year)
+
+    # 4. 予測
     result = predict_top(target_year, top_n=top_n)
 
     return result
