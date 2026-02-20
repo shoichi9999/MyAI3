@@ -10,6 +10,7 @@
 使い方:
   python scripts/fetch_all_features.py 2024
   python scripts/fetch_all_features.py 2024 --max-horses 100
+  python scripts/fetch_all_features.py 2024 --top 500   # 上位500頭のみ
 """
 
 import argparse
@@ -18,6 +19,7 @@ import os
 import json
 import threading
 
+import numpy as np
 import pandas as pd
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -41,7 +43,60 @@ def _save_cache(path: str, data: dict):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
-def fetch_all_features(birth_year: int, max_horses: int = None):
+def _prescore(horses: pd.DataFrame) -> pd.Series:
+    """CSVデータだけで計算できる暫定スコアを算出する。
+
+    プロフィール取得前に上位候補を絞り込むために使用。
+    父EI + 母馬賞金 + 母父EI + 調教師/馬主/牧場スコア + 親年齢ボーナス。
+    """
+    from src.features import (
+        get_sire_ei, get_bms_ei, get_dam_prize,
+        calc_trainer_score, calc_owner_score, calc_breeder_score,
+        WEIGHT_SIRE_EI, WEIGHT_DAM_PRIZE, WEIGHT_BMS_EI, DAM_PRIZES,
+    )
+
+    scores = pd.Series(0.0, index=horses.index)
+
+    # 父EI
+    sire_ei = horses["sire"].apply(lambda x: get_sire_ei(x) if pd.notna(x) else 0.0)
+    max_ei = sire_ei.max()
+    if max_ei > 0:
+        scores += (sire_ei / max_ei) * 100 * WEIGHT_SIRE_EI
+
+    # 母父EI
+    bms_ei = horses["sire_of_dam"].apply(lambda x: get_bms_ei(x) if pd.notna(x) else 0.0)
+    max_bms = bms_ei.max()
+    if max_bms > 0:
+        scores += (bms_ei / max_bms) * 100 * WEIGHT_BMS_EI
+
+    # 母馬賞金
+    dam_prizes_list = [v for v in DAM_PRIZES.values() if v > 0]
+    dam_median = np.median(dam_prizes_list) if dam_prizes_list else 0.0
+    raw_dp = horses["dam"].apply(lambda x: get_dam_prize(x) if pd.notna(x) else 0.0)
+    dp = raw_dp.where(raw_dp > 0, dam_median)
+    dp_log = np.log1p(dp)
+    max_dp = dp_log.max()
+    if max_dp > 0:
+        scores += (dp_log / max_dp) * 100 * WEIGHT_DAM_PRIZE
+
+    # 調教師・馬主・牧場
+    scores += horses["trainer"].apply(lambda x: calc_trainer_score(x) - 50).fillna(0) * 0.2
+    scores += horses["owner"].apply(lambda x: calc_owner_score(x) - 50).fillna(0) * 0.2
+    scores += horses["breeder"].apply(lambda x: calc_breeder_score(x) - 50).fillna(0) * 0.3
+
+    # 親年齢ボーナス（CSVに含まれている場合）
+    for by_col in ["sire_birth_year", "dam_birth_year"]:
+        if by_col in horses.columns:
+            ages = horses.get("horse_id").apply(
+                lambda x: int(str(x)[:4]) if str(x)[:4].isdigit() else None
+            ) - pd.to_numeric(horses[by_col], errors="coerce")
+            young = (ages <= 13) & ages.notna()
+            scores += young.astype(float) * 2.5
+
+    return scores
+
+
+def fetch_all_features(birth_year: int, max_horses: int = None, top: int = None):
     csv_path = f"data/horses_{birth_year}.csv"
     if not os.path.exists(csv_path):
         print(f"[ERROR] {csv_path} が見つかりません。先にデータを収集してください。")
@@ -51,7 +106,16 @@ def fetch_all_features(birth_year: int, max_horses: int = None):
     if max_horses:
         horses = horses.head(max_horses)
     total = len(horses)
-    print(f"=== {birth_year}年世代: {total}頭 ===\n")
+
+    # --- プレスコアで上位候補に絞り込み ---
+    if top and top < total:
+        print(f"=== プレスコア: {total}頭 → 上位{top}頭に絞り込み ===")
+        horses["_prescore"] = _prescore(horses)
+        horses = horses.nlargest(top, "_prescore").drop(columns=["_prescore"])
+        print(f"  絞り込み完了: {len(horses)}頭")
+
+    total = len(horses)
+    print(f"\n=== {birth_year}年世代: {total}頭 ===\n")
 
     # キャッシュファイル
     bd_path = f"data/birth_dates_{birth_year}.json"
@@ -178,5 +242,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="追加特徴量データを一括取得")
     parser.add_argument("year", type=int, help="対象の生年（例: 2024）")
     parser.add_argument("--max-horses", type=int, default=None, help="最大取得頭数")
+    parser.add_argument("--top", type=int, default=None,
+                        help="プレスコア上位N頭のみプロフィール取得（例: 500）")
     args = parser.parse_args()
-    fetch_all_features(args.year, max_horses=args.max_horses)
+    fetch_all_features(args.year, max_horses=args.max_horses, top=args.top)

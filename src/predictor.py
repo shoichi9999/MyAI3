@@ -110,7 +110,7 @@ def predict_top(
     return top
 
 
-def _fetch_extra_features(target_year: int, max_horses: int = None):
+def _fetch_extra_features(target_year: int, max_horses: int = None, top: int = None):
     """追加特徴量（生年月日・セリ価格・産駒番号）を一括取得する。"""
     import importlib.util
 
@@ -120,7 +120,7 @@ def _fetch_extra_features(target_year: int, max_horses: int = None):
     )
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
-    mod.fetch_all_features(target_year, max_horses=max_horses)
+    mod.fetch_all_features(target_year, max_horses=max_horses, top=top)
 
 
 def _fetch_dam_prizes(target_year: int):
@@ -185,6 +185,7 @@ def run_full_pipeline(
     target_year: int = 2024,
     max_horses: int = None,
     top_n: int = 10,
+    prescore_top: int = 500,
 ):
     """
     全自動パイプライン（データ収集 → 特徴量取得 → 予測）。
@@ -197,11 +198,15 @@ def run_full_pipeline(
         取得する最大馬数（テスト用）
     top_n : int
         上位何頭を出力するか
+    prescore_top : int
+        プレスコア上位N頭のみプロフィール取得（0で全頭取得）
     """
     print("=" * 60)
     print("  POG予測システム - 全自動パイプライン")
     print(f"  対象世代: {target_year}年生まれ")
     print(f"  予測馬数: TOP{top_n}")
+    if prescore_top:
+        print(f"  プレスコア絞り込み: 上位{prescore_top}頭")
     print("=" * 60)
 
     # 1. 馬一覧データ収集
@@ -211,7 +216,7 @@ def run_full_pipeline(
         print(f"\n--- {target_year}年世代: 馬一覧データ既存。スキップ ---")
 
     # 2. 追加特徴量（生年月日・セリ価格・産駒番号）
-    _fetch_extra_features(target_year, max_horses=max_horses)
+    _fetch_extra_features(target_year, max_horses=max_horses, top=prescore_top or None)
 
     # 3. 母馬賞金
     _fetch_dam_prizes(target_year)
@@ -248,6 +253,12 @@ def main():
         default=10,
         help="上位何頭を出力するか (default: 10)",
     )
+    parser.add_argument(
+        "--prescore-top",
+        type=int,
+        default=500,
+        help="プレスコア上位N頭のみプロフィール取得 (default: 500, 0=全頭)",
+    )
 
     args = parser.parse_args()
 
@@ -260,6 +271,7 @@ def main():
             target_year=args.year,
             max_horses=args.max_horses,
             top_n=args.top_n,
+            prescore_top=args.prescore_top,
         )
 
 
