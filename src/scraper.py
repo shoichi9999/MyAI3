@@ -2,10 +2,10 @@
 netkeiba.comから産駒データをスクレイピングするモジュール。
 
 対象データ:
-- 馬名、性別、血統情報（父・母・母父）
+- 馬名、性別、血統情報（父・母・母父）+ 各horse_id・生年
 - 調教師、馬主、生産者、賞金
-- 親のhorse_id・生年（父・母・母父）
-- プロフィール情報（生年月日、セリ価格、母馬ID）
+- プロフィール情報（生年月日、セリ価格）
+- 産駒番号（母馬ページから何番仔かを取得）
 """
 
 import time
@@ -59,19 +59,39 @@ def _birth_year_from_horse_id(horse_id: str) -> int | None:
     return None
 
 
+def _extract_cell_name(td_tag) -> str:
+    """tdタグから最初のリンクテキスト（名前）を取得する。"""
+    a = td_tag.find("a")
+    if a:
+        text = a.text.strip()
+        if text and not text.startswith("["):
+            return text
+    return td_tag.text.strip()
+
+
+def _extract_trainer_id(td_tag) -> str:
+    link = td_tag.find("a")
+    if link:
+        m = re.search(r"/trainer/\w+/(\w+)", link.get("href", ""))
+        if m:
+            return m.group(1)
+    return ""
+
+
 def fetch_horse_list_by_year(birth_year: int, max_pages: int = None) -> pd.DataFrame:
     """
     指定した生年の馬一覧を取得する。
 
     /horse/list.html エンドポイントを使用し、父・母・母父の
     horse_id も同時に取得する（日本産馬はIDの先頭4桁が生年）。
+    海外馬はプロフィールページから生年を取得する。
 
     Parameters
     ----------
     birth_year : int
         生年（例: 2024）
     max_pages : int, optional
-        最大取得ページ数。Noneの場合はデータがなくなるまで全ページ取得。
+        最大取得ページ数。Noneの場合は全ページ取得。
     """
     horses = []
     page = 0
@@ -112,7 +132,6 @@ def fetch_horse_list_by_year(birth_year: int, max_pages: int = None) -> pd.DataF
             if not horse_id_match:
                 continue
 
-            # 父・母・母父のhorse_idをリンクパラメータから抽出
             sire_id = _extract_id_from_param(cols[6], "sire_id")
             dam_id = _extract_id_from_param(cols[7], "mare_id")
             bms_id = _extract_id_from_param(cols[8], "bms_id")
@@ -157,14 +176,12 @@ def fetch_horse_list_by_year(birth_year: int, max_pages: int = None) -> pd.DataF
         if foreign_ids:
             print(f"  海外馬の生年を取得中: {len(foreign_ids)}頭...")
             resolved = _resolve_foreign_birth_years(foreign_ids)
-            # 解決結果を反映
             for col, id_col in [("sire_birth_year", "sire_id"),
                                 ("dam_birth_year", "dam_id"),
                                 ("bms_birth_year", "bms_id")]:
                 mask = df[col].isna() & df[id_col].isin(resolved.keys())
                 df.loc[mask, col] = df.loc[mask, id_col].map(resolved)
 
-        # 生年不明の件数を表示
         na_sire = df["sire_birth_year"].isna().sum()
         na_dam = df["dam_birth_year"].isna().sum()
         na_bms = df["bms_birth_year"].isna().sum()
@@ -172,25 +189,6 @@ def fetch_horse_list_by_year(birth_year: int, max_pages: int = None) -> pd.DataF
             print(f"  生年不明（残り）: 父={na_sire}, 母={na_dam}, 母父={na_bms}")
 
     return df
-
-
-def _extract_cell_name(td_tag) -> str:
-    """tdタグから最初のリンクテキスト（名前）を取得する。"""
-    a = td_tag.find("a")
-    if a:
-        text = a.text.strip()
-        if text and not text.startswith("["):
-            return text
-    return td_tag.text.strip()
-
-
-def _extract_trainer_id(td_tag) -> str:
-    link = td_tag.find("a")
-    if link:
-        m = re.search(r"/trainer/\w+/(\w+)", link.get("href", ""))
-        if m:
-            return m.group(1)
-    return ""
 
 
 # ------------------------------------------------------------------
@@ -245,106 +243,8 @@ def _extract_birth_year(horse_id: str) -> int | None:
     return None
 
 
-def fetch_pedigree_birth_years(horse_id: str) -> dict:
-    """
-    血統ページから3世代分の先祖の生年を取得する。
-
-    血統テーブル構造:
-      rowspan=16: 父(b_ml), 母(b_fml)
-      rowspan=8:  父父, 母父(b_ml), 父母, 母母(b_fml)
-      rowspan=4:  曾祖父母(b_ml x4, b_fml x4)
-    """
-    url = f"{BASE_URL}/horse/ped/{horse_id}/"
-    resp = requests.get(url, headers=HEADERS, timeout=30)
-    resp.encoding = "EUC-JP"
-    soup = BeautifulSoup(resp.text, "lxml")
-
-    result = {
-        "sire_birth_year": None,
-        "dam_birth_year": None,
-        "sire_sire_birth_year": None,
-        "sire_dam_birth_year": None,
-        "dam_sire_birth_year": None,
-        "dam_dam_birth_year": None,
-        "sire_sire_sire_birth_year": None,
-        "sire_sire_dam_birth_year": None,
-        "sire_dam_sire_birth_year": None,
-        "sire_dam_dam_birth_year": None,
-        "dam_sire_sire_birth_year": None,
-        "dam_sire_dam_birth_year": None,
-        "dam_dam_sire_birth_year": None,
-        "dam_dam_dam_birth_year": None,
-    }
-
-    table = soup.find("table", class_="blood_table")
-    if not table:
-        return result
-
-    gen1_ml, gen1_fml = [], []
-    gen2_ml, gen2_fml = [], []
-    gen3_ml, gen3_fml = [], []
-
-    for td in table.find_all("td"):
-        rs = td.get("rowspan")
-        if not rs:
-            continue
-        rs = int(rs)
-        if rs not in (16, 8, 4):
-            continue
-
-        cls = td.get("class", [])
-        a = td.find("a")
-        if not a:
-            continue
-        href = a.get("href", "")
-        hid_match = re.search(r"/horse/(\w+)", href)
-        if not hid_match:
-            continue
-
-        by = _extract_birth_year(hid_match.group(1))
-        is_male = "b_ml" in cls
-
-        if rs == 16:
-            (gen1_ml if is_male else gen1_fml).append(by)
-        elif rs == 8:
-            (gen2_ml if is_male else gen2_fml).append(by)
-        elif rs == 4:
-            (gen3_ml if is_male else gen3_fml).append(by)
-
-    if gen1_ml:
-        result["sire_birth_year"] = gen1_ml[0]
-    if gen1_fml:
-        result["dam_birth_year"] = gen1_fml[0]
-
-    if len(gen2_ml) >= 1:
-        result["sire_sire_birth_year"] = gen2_ml[0]
-    if len(gen2_ml) >= 2:
-        result["dam_sire_birth_year"] = gen2_ml[1]
-    if len(gen2_fml) >= 1:
-        result["sire_dam_birth_year"] = gen2_fml[0]
-    if len(gen2_fml) >= 2:
-        result["dam_dam_birth_year"] = gen2_fml[1]
-
-    ggp_ml_keys = [
-        "sire_sire_sire_birth_year", "sire_dam_sire_birth_year",
-        "dam_sire_sire_birth_year", "dam_dam_sire_birth_year",
-    ]
-    ggp_fml_keys = [
-        "sire_sire_dam_birth_year", "sire_dam_dam_birth_year",
-        "dam_sire_dam_birth_year", "dam_dam_dam_birth_year",
-    ]
-    for i, key in enumerate(ggp_ml_keys):
-        if i < len(gen3_ml):
-            result[key] = gen3_ml[i]
-    for i, key in enumerate(ggp_fml_keys):
-        if i < len(gen3_fml):
-            result[key] = gen3_fml[i]
-
-    return result
-
-
 # ------------------------------------------------------------------
-# セリ価格・母馬ID・産駒番号
+# プロフィール（生年月日・セリ価格）
 # ------------------------------------------------------------------
 
 def _parse_sale_price(text: str) -> float | None:
@@ -362,62 +262,19 @@ def _parse_sale_price(text: str) -> float | None:
     return total if total > 0 else None
 
 
-def fetch_horse_extra(horse_id: str) -> dict:
-    """
-    プロフィールページからセリ取引価格と母馬IDを取得する。
-
-    Returns
-    -------
-    dict
-        {"sale_price": float|None (万円), "dam_id": str|None}
-    """
-    url = f"{BASE_URL}/horse/{horse_id}/"
-    soup = _get_soup(url)
-
-    result = {"sale_price": None, "dam_id": None}
-
-    # セリ取引価格
-    prof_table = soup.find("table", class_="db_prof_table")
-    if prof_table:
-        for row in prof_table.find_all("tr"):
-            th = row.find("th")
-            td = row.find("td")
-            if th and td and "セリ取引価格" in th.text:
-                result["sale_price"] = _parse_sale_price(td.text)
-
-    # 母馬ID（血統テーブルの b_fml rowspan=4 が母）
-    blood_table = soup.find("table", class_="blood_table")
-    if blood_table:
-        for td in blood_table.find_all("td", class_="b_fml"):
-            rs = td.get("rowspan")
-            if rs and int(rs) == 4:
-                a = td.find("a")
-                if a:
-                    href = a.get("href", "")
-                    m = re.search(r"/horse/(\w+)", href)
-                    if m:
-                        result["dam_id"] = m.group(1)
-                break
-
-    return result
-
-
 def fetch_horse_profile(horse_id: str) -> dict:
     """
-    プロフィールページから生年月日・セリ価格・母馬IDを一括取得する。
-
-    1ページアクセスで3つのキャッシュ（birth_dates, extra_features, 母馬ID）を
-    すべて賄える統合関数。
+    プロフィールページから生年月日・セリ価格を取得する。
 
     Returns
     -------
     dict
-        {"birth_date": str|None, "sale_price": float|None, "dam_id": str|None}
+        {"birth_date": str|None, "sale_price": float|None}
     """
     url = f"{BASE_URL}/horse/{horse_id}/"
     soup = _get_soup(url)
 
-    result = {"birth_date": None, "sale_price": None, "dam_id": None}
+    result = {"birth_date": None, "sale_price": None}
 
     prof_table = soup.find("table", class_="db_prof_table")
     if prof_table:
@@ -432,72 +289,12 @@ def fetch_horse_profile(horse_id: str) -> dict:
             elif "セリ取引価格" in label:
                 result["sale_price"] = _parse_sale_price(td.text)
 
-    # 母馬ID: db_prof_tableの「近親馬」ではなく、血統のAjax取得ができないので
-    # 別途 fetch_parent_ids で取得する設計とする
-
     return result
 
 
-def fetch_parent_ids(horse_id: str) -> dict:
-    """
-    血統ページから父・母・母父のhorse_idを取得する。
-
-    祖父母以降は不要なので、rowspan=16（父・母）と rowspan=8 の
-    母父のみを取得する軽量版。
-
-    Returns
-    -------
-    dict
-        {"sire_id": str|None, "dam_id": str|None, "bms_id": str|None}
-    """
-    url = f"{BASE_URL}/horse/ped/{horse_id}/"
-    resp = requests.get(url, headers=HEADERS, timeout=30)
-    resp.encoding = "EUC-JP"
-    soup = BeautifulSoup(resp.text, "lxml")
-
-    result = {"sire_id": None, "dam_id": None, "bms_id": None}
-
-    table = soup.find("table", class_="blood_table")
-    if not table:
-        return result
-
-    gen1_ml, gen1_fml = [], []
-    gen2_ml = []
-
-    for td in table.find_all("td"):
-        rs = td.get("rowspan")
-        if not rs:
-            continue
-        rs = int(rs)
-        if rs not in (16, 8):
-            continue
-
-        cls = td.get("class", [])
-        a = td.find("a")
-        if not a:
-            continue
-        href = a.get("href", "")
-        hid_match = re.search(r"/horse/(\w+)", href)
-        if not hid_match:
-            continue
-
-        hid = hid_match.group(1)
-        is_male = "b_ml" in cls
-
-        if rs == 16:
-            (gen1_ml if is_male else gen1_fml).append(hid)
-        elif rs == 8 and is_male:
-            gen2_ml.append(hid)
-
-    if gen1_ml:
-        result["sire_id"] = gen1_ml[0]
-    if gen1_fml:
-        result["dam_id"] = gen1_fml[0]
-    if len(gen2_ml) >= 2:
-        result["bms_id"] = gen2_ml[1]  # 2番目の牡系=母父
-
-    return result
-
+# ------------------------------------------------------------------
+# 産駒番号（母馬ページから何番仔かを取得）
+# ------------------------------------------------------------------
 
 def fetch_dam_foal_list(dam_id: str) -> list[str]:
     """
@@ -513,7 +310,6 @@ def fetch_dam_foal_list(dam_id: str) -> list[str]:
 
     foal_ids = []
 
-    # 産駒テーブル: "産駒" を含むヘッダーの直後のテーブルを探す
     for tag in soup.find_all(["h2", "h3", "h4", "div"]):
         if "産駒" in tag.get_text():
             table = tag.find_next("table")

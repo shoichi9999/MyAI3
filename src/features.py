@@ -142,12 +142,10 @@ ELITE_BREEDERS = {
     "コスモヴューファーム": 72,
 }
 
-# ヒューリスティックスコアの重み配分（血統特化）
+# ヒューリスティックスコアの重み配分
 WEIGHT_SIRE_EI = 0.40
 WEIGHT_DAM_PRIZE = 0.40
 WEIGHT_BMS_EI = 0.20
-WEIGHT_TRAINER = 0.00
-WEIGHT_BREEDER = 0.00
 
 
 def get_sire_ei(sire_name: str) -> float:
@@ -207,8 +205,6 @@ def calc_breeder_score(breeder_name: str) -> float:
         if key in str(breeder_name):
             return score
     return 50.0
-
-
 
 
 def get_birth_month(horse_id: str, birth_year: int) -> int:
