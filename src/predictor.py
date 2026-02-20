@@ -163,9 +163,9 @@ def _fetch_dam_prizes(target_year: int, prescore_top: int = 0):
         mx2 = bei.max()
         if mx2 > 0:
             lite += (bei / mx2) * 100 * 0.20
-        lite += horses["trainer"].apply(lambda x: calc_trainer_score(x) - 50).fillna(0) * 0.2
-        lite += horses["owner"].apply(lambda x: calc_owner_score(x) - 50).fillna(0) * 0.2
-        lite += horses["breeder"].apply(lambda x: calc_breeder_score(x) - 50).fillna(0) * 0.3
+        lite += horses["trainer"].apply(lambda x: calc_trainer_score(x) - 50).fillna(0) * 0.05
+        lite += horses["owner"].apply(lambda x: calc_owner_score(x) - 50).fillna(0) * 0.05
+        lite += horses["breeder"].apply(lambda x: calc_breeder_score(x) - 50).fillna(0) * 0.08
 
         n_candidates = min(prescore_top * 3, total_horses)
         horses = horses.loc[lite.nlargest(n_candidates).index]
