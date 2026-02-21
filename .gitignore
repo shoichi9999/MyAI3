@@ -10,3 +10,4 @@ models/*.pkl
 .DS_Store
 data/*.csv
 data/*.json
+*.log
