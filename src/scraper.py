@@ -30,15 +30,12 @@ HEADERS = {
     )
 }
 
-# リクエスト間隔（秒）- サーバー負荷軽減のため
-REQUEST_INTERVAL = 1.5
-
 # スレッドセーフなグローバルレートリミッター
 _request_lock = threading.Lock()
 _next_request_time = 0.0
-_MIN_REQUEST_GAP = 0.3  # 全スレッド共通の最小間隔（秒）— 約3.3 req/s
+_MIN_REQUEST_GAP = 1.0  # 全スレッド共通の最小間隔（秒）— 約1 req/s
 
-DEFAULT_MAX_WORKERS = 5
+DEFAULT_MAX_WORKERS = 3
 
 # コネクションプーリング用セッション
 _session = requests.Session()
@@ -130,30 +127,36 @@ def concurrent_fetch(
     return results
 
 
-def _get_soup(url: str, max_retries: int = 3) -> BeautifulSoup:
+def _get_soup(url: str, max_retries: int = 4) -> BeautifulSoup:
     """URLからBeautifulSoupオブジェクトを取得する。
 
-    サーバーが断続的にHTTP 400を返すことがあるため、リトライを行う。
+    サーバーが断続的にHTTP 400/403を返すことがあるため、
+    指数バックオフでリトライを行う。
     """
     global _session
     for attempt in range(max_retries):
         _rate_limited_sleep()
         try:
             resp = _session.get(url, timeout=30)
-        except requests.RequestException:
+        except requests.RequestException as e:
             if attempt < max_retries - 1:
-                time.sleep(2)
+                wait = 2 ** (attempt + 1)  # 2, 4, 8秒
+                print(f"  [WARN] 接続エラー (attempt {attempt+1}/{max_retries}): {e} — {wait}秒待機")
+                time.sleep(wait)
                 continue
             raise
         if resp.status_code == 200:
             resp.encoding = "EUC-JP"
             return BeautifulSoup(resp.text, "lxml")
-        # HTTP 400等 — セッションを再生成してリトライ
+        # HTTP 400/403等 — セッションを再生成して指数バックオフリトライ
+        wait = 2 ** (attempt + 1)
+        print(f"  [WARN] HTTP {resp.status_code} (attempt {attempt+1}/{max_retries}): {url[:80]}... — {wait}秒待機")
         if attempt < max_retries - 1:
-            time.sleep(2)
+            time.sleep(wait)
             _session = requests.Session()
             _session.headers.update(HEADERS)
     # 最終試行の結果を返す（パースエラーになるが呼び出し元で空テーブル扱い）
+    print(f"  [ERROR] {max_retries}回リトライ後も失敗: HTTP {resp.status_code} — {url[:80]}")
     resp.encoding = "EUC-JP"
     return BeautifulSoup(resp.text, "lxml")
 
