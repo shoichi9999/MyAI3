@@ -52,7 +52,7 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
     # 馬主スコアボーナス
     if "owner_score" in df.columns:
         os_val = df["owner_score"].fillna(50)
-        score += (os_val - 50) * 0.05
+        score += (os_val - 50) * 0.08
 
     # 母馬獲得賞金（対数 + 99パーセンタイル正規化）
     if "dam_prize" in df.columns:
@@ -67,29 +67,29 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
 
     # 両親若齢ボーナス（13歳以下）
     if "both_parents_young" in df.columns:
-        score += df["both_parents_young"].fillna(0) * 12
+        score += df["both_parents_young"].fillna(0) * 8
     elif "sire_young" in df.columns and "dam_young" in df.columns:
         score += (df["sire_young"].fillna(0) + df["dam_young"].fillna(0)) * 6
 
     # 母と母父の年齢差が小さいボーナス
     if "dam_bms_gap_small" in df.columns:
-        score += df["dam_bms_gap_small"].fillna(0) * 3
+        score += df["dam_bms_gap_small"].fillna(0) * 5
 
     # セリ価格ボーナス（高額馬ほど有利）
     if "sale_price_log" in df.columns:
         sp = df["sale_price_log"].fillna(0)
         max_sp = sp.max()
         if max_sp > 0:
-            score += (sp / max_sp) * 8
+            score += (sp / max_sp) * 5
 
     # 産駒番号（初仔は不利、2-4番仔がスイートスポット）
     if "foal_number" in df.columns:
         fn = df["foal_number"].fillna(3)
-        score += np.where(fn == 1, -3, np.where(fn <= 4, 2, 0))
+        score += np.where(fn == 1, -5, np.where(fn <= 4, 3, 0))
 
     # 生産牧場ボーナス
     if "breeder_score" in df.columns:
         bs = df["breeder_score"].fillna(50)
-        score += (bs - 50) * 0.08
+        score += (bs - 50) * 0.15
 
     return score
