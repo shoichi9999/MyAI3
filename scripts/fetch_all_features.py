@@ -43,7 +43,7 @@ def _save_cache(path: str, data: dict):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
-def _prescore(horses: pd.DataFrame) -> pd.Series:
+def _prescore(horses: pd.DataFrame, birth_year: int = None) -> pd.Series:
     """CSVデータだけで計算できる暫定スコアを算出する。
 
     プロフィール取得前に上位候補を絞り込むために使用。
@@ -53,18 +53,22 @@ def _prescore(horses: pd.DataFrame) -> pd.Series:
         get_sire_ei, get_bms_ei, get_dam_prize,
         calc_trainer_score, calc_owner_score, calc_breeder_score,
         WEIGHT_SIRE_EI, WEIGHT_DAM_PRIZE, WEIGHT_BMS_EI, DAM_PRIZES,
+        get_leading_year,
     )
+
+    # 年度別リーディングを使用（データリーク防止）
+    ly = get_leading_year(birth_year) if birth_year else None
 
     scores = pd.Series(0.0, index=horses.index)
 
     # 父EI
-    sire_ei = horses["sire"].apply(lambda x: get_sire_ei(x) if pd.notna(x) else 0.0)
+    sire_ei = horses["sire"].apply(lambda x: get_sire_ei(x, ly) if pd.notna(x) else 0.0)
     max_ei = sire_ei.max()
     if max_ei > 0:
         scores += (sire_ei / max_ei) * 100 * WEIGHT_SIRE_EI
 
     # 母父EI
-    bms_ei = horses["sire_of_dam"].apply(lambda x: get_bms_ei(x) if pd.notna(x) else 0.0)
+    bms_ei = horses["sire_of_dam"].apply(lambda x: get_bms_ei(x, ly) if pd.notna(x) else 0.0)
     max_bms = bms_ei.max()
     if max_bms > 0:
         scores += (bms_ei / max_bms) * 100 * WEIGHT_BMS_EI
@@ -107,7 +111,7 @@ def fetch_all_features(birth_year: int, max_horses: int = None, top: int = None)
     # --- プレスコアで上位候補に絞り込み ---
     if top and top < total:
         print(f"=== プレスコア: {total}頭 → 上位{top}頭に絞り込み ===")
-        horses["_prescore"] = _prescore(horses)
+        horses["_prescore"] = _prescore(horses, birth_year)
         horses = horses.nlargest(top, "_prescore").drop(columns=["_prescore"])
         print(f"  絞り込み完了: {len(horses)}頭")
 

@@ -27,10 +27,49 @@ def _load_json(path: str) -> dict:
     return {}
 
 
-# 種牡馬リーディング（産駒賞金・EI）
+# 年度別リーディングキャッシュ
+_LEADING_CACHE: dict[tuple[str, int], dict] = {}
+
+# デフォルト（最新）のリーディングデータ — 予測時に使用
+_DEFAULT_LEADING_YEAR = 2024
 SIRE_LEADING = _load_json("data/sire_leading_2024.json")
-# 母父馬リーディング（産駒賞金・EI）
 BMS_LEADING = _load_json("data/bms_leading_2024.json")
+
+
+def _load_leading(kind: str, year: int) -> dict:
+    """年度別リーディングデータを読み込む（キャッシュ付き）。
+
+    Parameters
+    ----------
+    kind : str
+        "sire_leading" or "bms_leading"
+    year : int
+        リーディングの年度
+
+    Returns
+    -------
+    dict
+        {馬名: {rank, progeny_prize, ei, ...}}
+    """
+    key = (kind, year)
+    if key not in _LEADING_CACHE:
+        _LEADING_CACHE[key] = _load_json(f"data/{kind}_{year}.json")
+    return _LEADING_CACHE[key]
+
+
+def get_leading_year(birth_year: int) -> int:
+    """POGドラフト時点で利用可能なリーディング年度を返す。
+
+    生年Yの馬 → デビューはY+2年 → POGドラフトはY+2年春
+    → 最新の通年データは Y+1 年。
+    ただし該当ファイルがなければ最も近い年に降格。
+    """
+    target = birth_year + 1
+    # 対象年のファイルが存在するかチェック
+    for y in [target, target - 1, target + 1, _DEFAULT_LEADING_YEAR]:
+        if os.path.exists(f"data/sire_leading_{y}.json"):
+            return y
+    return _DEFAULT_LEADING_YEAR
 # 母馬の獲得賞金
 DAM_PRIZES = _load_json("data/dam_prizes.json")
 # 生年月日キャッシュ（世代別）
@@ -148,22 +187,44 @@ WEIGHT_DAM_PRIZE = 0.075
 WEIGHT_BMS_EI = 0.25
 
 
-def get_sire_ei(sire_name: str) -> float:
-    """種牡馬のEI（アーニングインデックス）を返す。"""
+def get_sire_ei(sire_name: str, leading_year: int = None) -> float:
+    """種牡馬のEI（アーニングインデックス）を返す。
+
+    Parameters
+    ----------
+    sire_name : str
+        種牡馬名
+    leading_year : int, optional
+        参照するリーディング年度。Noneならデフォルト（最新）を使用。
+    """
     if not sire_name:
         return 0.0
-    data = SIRE_LEADING.get(sire_name, {})
+    if leading_year is not None:
+        data = _load_leading("sire_leading", leading_year).get(sire_name, {})
+    else:
+        data = SIRE_LEADING.get(sire_name, {})
     try:
         return float(data.get("ei", 0) or 0)
     except (ValueError, TypeError):
         return 0.0
 
 
-def get_bms_ei(bms_name: str) -> float:
-    """母父馬のEI（アーニングインデックス）を返す。"""
+def get_bms_ei(bms_name: str, leading_year: int = None) -> float:
+    """母父馬のEI（アーニングインデックス）を返す。
+
+    Parameters
+    ----------
+    bms_name : str
+        母父馬名
+    leading_year : int, optional
+        参照するリーディング年度。Noneならデフォルト（最新）を使用。
+    """
     if not bms_name:
         return 0.0
-    data = BMS_LEADING.get(bms_name, {})
+    if leading_year is not None:
+        data = _load_leading("bms_leading", leading_year).get(bms_name, {})
+    else:
+        data = BMS_LEADING.get(bms_name, {})
     try:
         return float(data.get("ei", 0) or 0)
     except (ValueError, TypeError):
@@ -277,6 +338,9 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
 
     血統スコア（父EI、母父EI、母馬獲得賞金）、生まれ月、親年齢を
     使って予測に使える特徴量を生成する。
+
+    EIデータは birth_year に対応するリーディング年度
+    （= birth_year + 1、POGドラフト時点で利用可能な最新データ）を参照する。
     """
     feature_rows = []
 
@@ -288,6 +352,9 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
         else:
             birth_year = 2024
 
+    # リーディング年度の決定（データリーク防止）
+    leading_year = get_leading_year(birth_year)
+
     for _, horse in horses_df.iterrows():
         hid = horse.get("horse_id", "")
         row = {"horse_id": hid}
@@ -296,9 +363,9 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
         row["horse_name"] = horse.get("horse_name", "")
         row["sex"] = 1 if horse.get("sex") == "牡" else (0 if horse.get("sex") == "牝" else 0.5)
 
-        # 産駒成績ベースの血統スコア
-        row["sire_ei"] = get_sire_ei(horse.get("sire", ""))
-        row["bms_ei"] = get_bms_ei(horse.get("sire_of_dam", ""))
+        # 産駒成績ベースの血統スコア（年度別リーディングを参照）
+        row["sire_ei"] = get_sire_ei(horse.get("sire", ""), leading_year)
+        row["bms_ei"] = get_bms_ei(horse.get("sire_of_dam", ""), leading_year)
 
         # 母馬の獲得賞金（不明なら0 — 不明は不利な情報として扱う）
         row["dam_prize"] = get_dam_prize(horse.get("dam", ""))
