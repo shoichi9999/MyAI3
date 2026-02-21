@@ -142,7 +142,7 @@ ELITE_BREEDERS = {
     "コスモヴューファーム": 72,
 }
 
-# ヒューリスティックスコアの重み配分
+# ヒューリスティックスコアの重み配分（グリッドサーチ最適化済み）
 WEIGHT_SIRE_EI = 0.225
 WEIGHT_DAM_PRIZE = 0.075
 WEIGHT_BMS_EI = 0.25

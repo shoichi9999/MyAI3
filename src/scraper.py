@@ -130,10 +130,30 @@ def concurrent_fetch(
     return results
 
 
-def _get_soup(url: str) -> BeautifulSoup:
-    """URLからBeautifulSoupオブジェクトを取得する。"""
-    _rate_limited_sleep()
-    resp = _session.get(url, timeout=30)
+def _get_soup(url: str, max_retries: int = 3) -> BeautifulSoup:
+    """URLからBeautifulSoupオブジェクトを取得する。
+
+    サーバーが断続的にHTTP 400を返すことがあるため、リトライを行う。
+    """
+    global _session
+    for attempt in range(max_retries):
+        _rate_limited_sleep()
+        try:
+            resp = _session.get(url, timeout=30)
+        except requests.RequestException:
+            if attempt < max_retries - 1:
+                time.sleep(2)
+                continue
+            raise
+        if resp.status_code == 200:
+            resp.encoding = "EUC-JP"
+            return BeautifulSoup(resp.text, "lxml")
+        # HTTP 400等 — セッションを再生成してリトライ
+        if attempt < max_retries - 1:
+            time.sleep(2)
+            _session = requests.Session()
+            _session.headers.update(HEADERS)
+    # 最終試行の結果を返す（パースエラーになるが呼び出し元で空テーブル扱い）
     resp.encoding = "EUC-JP"
     return BeautifulSoup(resp.text, "lxml")
 
