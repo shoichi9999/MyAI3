@@ -33,9 +33,9 @@ HEADERS = {
 # スレッドセーフなグローバルレートリミッター
 _request_lock = threading.Lock()
 _next_request_time = 0.0
-_MIN_REQUEST_GAP = 1.0  # 全スレッド共通の最小間隔（秒）— 約1 req/s
+_MIN_REQUEST_GAP = 0.5  # 全スレッド共通の最小間隔（秒）— 約2 req/s
 
-DEFAULT_MAX_WORKERS = 3
+DEFAULT_MAX_WORKERS = 5
 
 # コネクションプーリング用セッション
 _session = requests.Session()

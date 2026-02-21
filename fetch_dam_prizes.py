@@ -4,6 +4,7 @@ import os
 import re
 import threading
 import urllib.parse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import pandas as pd
 from src.scraper import _rate_limited_sleep, _session, BASE_URL, concurrent_fetch
@@ -65,7 +66,7 @@ def _parse_foals_from_mare_soup(soup, dam_id: str) -> list[str]:
 def fetch_dam_prize_and_foals(dam_id: str) -> dict:
     """母馬の賞金（プロフィールページ）と産駒リスト（繁殖牝馬ページ）を取得する。
 
-    2リクエスト必要（プロフィールと繁殖牝馬ページはURLが異なる）。
+    2リクエストを並列発行して高速化。
 
     Returns {"prize": float, "foals": list[str]}
     """
@@ -74,27 +75,33 @@ def fetch_dam_prize_and_foals(dam_id: str) -> dict:
 
     from bs4 import BeautifulSoup
 
-    # 1. プロフィールページから賞金を取得
-    _rate_limited_sleep()
-    prize = 0.0
-    try:
-        resp = _session.get(f"{BASE_URL}/horse/{dam_id}/", timeout=30)
-        resp.encoding = "EUC-JP"
-        soup = BeautifulSoup(resp.text, "lxml")
-        prize = _parse_prize_from_soup(soup)
-    except Exception as e:
-        print(f"  [WARN] {dam_id} prize: {e}")
+    def _fetch_prize():
+        _rate_limited_sleep()
+        try:
+            resp = _session.get(f"{BASE_URL}/horse/{dam_id}/", timeout=30)
+            resp.encoding = "EUC-JP"
+            soup = BeautifulSoup(resp.text, "lxml")
+            return _parse_prize_from_soup(soup)
+        except Exception as e:
+            print(f"  [WARN] {dam_id} prize: {e}")
+            return 0.0
 
-    # 2. 繁殖牝馬ページから産駒リストを取得
-    _rate_limited_sleep()
-    foals = []
-    try:
-        resp2 = _session.get(f"{BASE_URL}/horse/mare/{dam_id}/", timeout=30)
-        resp2.encoding = "EUC-JP"
-        soup2 = BeautifulSoup(resp2.text, "lxml")
-        foals = _parse_foals_from_mare_soup(soup2, dam_id)
-    except Exception as e:
-        print(f"  [WARN] {dam_id} foals: {e}")
+    def _fetch_foals():
+        _rate_limited_sleep()
+        try:
+            resp = _session.get(f"{BASE_URL}/horse/mare/{dam_id}/", timeout=30)
+            resp.encoding = "EUC-JP"
+            soup = BeautifulSoup(resp.text, "lxml")
+            return _parse_foals_from_mare_soup(soup, dam_id)
+        except Exception as e:
+            print(f"  [WARN] {dam_id} foals: {e}")
+            return []
+
+    with ThreadPoolExecutor(max_workers=2) as ex:
+        f_prize = ex.submit(_fetch_prize)
+        f_foals = ex.submit(_fetch_foals)
+        prize = f_prize.result()
+        foals = f_foals.result()
 
     return {"prize": prize, "foals": foals}
 
