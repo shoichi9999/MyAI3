@@ -72,6 +72,8 @@ def get_leading_year(birth_year: int) -> int:
     return _DEFAULT_LEADING_YEAR
 # 母馬の獲得賞金
 DAM_PRIZES = _load_json("data/dam_prizes.json")
+# 母馬産駒リスト（dam_id → [horse_id, ...]、生年順）
+DAM_FOALS = _load_json("data/dam_foals.json")
 # 生年月日キャッシュ（世代別）
 BIRTH_DATES_CACHE = {}
 # 親年齢キャッシュ（世代別）
@@ -407,6 +409,19 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
         row["sale_price_log"] = np.log1p(sale_price) if sale_price else 0.0
         foal_number = extra.get("foal_number")
         row["foal_number"] = foal_number if foal_number else 3.0  # デフォルト: 3番仔
+
+        # --- 母馬の繁殖入り年齢（初仔生年 - 母馬生年 = 引退時期の近似） ---
+        dam_breeding_age = np.nan
+        dam_by = horse.get("dam_birth_year")
+        dam_id = str(horse.get("dam_id", "")) if pd.notna(horse.get("dam_id")) else ""
+        if dam_id and pd.notna(dam_by):
+            foal_list = DAM_FOALS.get(dam_id, [])
+            if foal_list:
+                # 産駒リストは降順（新しい順）→ 末尾が初仔
+                first_foal_by = _birth_year_from_id(foal_list[-1])
+                if first_foal_by is not None:
+                    dam_breeding_age = first_foal_by - int(dam_by)
+        row["dam_breeding_age"] = dam_breeding_age
 
         feature_rows.append(row)
 

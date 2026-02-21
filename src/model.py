@@ -92,4 +92,14 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
         bs = df["breeder_score"].fillna(50)
         score += (bs - 50) * 0.15
 
+    # 母馬の繁殖入り年齢（5-8歳 = しっかり走ってから繁殖入り → 好走遺伝＋丈夫さ）
+    if "dam_breeding_age" in df.columns:
+        dba = df["dam_breeding_age"]
+        score += np.where(
+            dba.isna(), 0,
+            np.where((dba >= 5) & (dba <= 8), 3,   # スイートスポット
+            np.where(dba <= 3, -3,                    # 未出走/極端な早期引退
+            0))
+        )
+
     return score
