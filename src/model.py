@@ -45,7 +45,7 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
     if "sire_prize" in df.columns and "sire_ei" in df.columns:
         is_first_crop = df["sire_ei"].fillna(0) == 0
         sire_prize_log = np.log1p(df["sire_prize"].fillna(0))
-        score += is_first_crop * sire_prize_log * 0.5
+        score += is_first_crop * sire_prize_log * 0.7
 
     # 母馬獲得賞金（対数 + 99パーセンタイル正規化）
     if "dam_prize" in df.columns:
@@ -62,28 +62,21 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
     # 馬主スコアボーナス
     if "owner_score" in df.columns:
         os_val = df["owner_score"].fillna(50)
-        score += (os_val - 50) * 0.05
+        score += (os_val - 50) * 0.12
 
     # 早生まれボーナス（1-4月生まれ）
     if "early_born" in df.columns:
-        score += df["early_born"].fillna(0) * 8
+        score += df["early_born"].fillna(0) * 5
 
     # 両親若齢ボーナス（13歳以下）
     if "both_parents_young" in df.columns:
-        score += df["both_parents_young"].fillna(0) * 10
+        score += df["both_parents_young"].fillna(0) * 8
     elif "sire_young" in df.columns and "dam_young" in df.columns:
-        score += (df["sire_young"].fillna(0) + df["dam_young"].fillna(0)) * 5
+        score += (df["sire_young"].fillna(0) + df["dam_young"].fillna(0)) * 4
 
     # 母と母父の年齢差が小さいボーナス
     if "dam_bms_gap_small" in df.columns:
-        score += df["dam_bms_gap_small"].fillna(0) * 8
-
-    # セリ価格ボーナス（高額馬ほど有利）
-    if "sale_price_log" in df.columns:
-        sp = df["sale_price_log"].fillna(0)
-        max_sp = sp.max()
-        if max_sp > 0:
-            score += (sp / max_sp) * 0
+        score += df["dam_bms_gap_small"].fillna(0) * 5
 
     # 産駒番号（2-4番仔がスイートスポット）
     if "foal_number" in df.columns:
@@ -93,11 +86,11 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
     # 生産牧場ボーナス
     if "breeder_score" in df.columns:
         bs = df["breeder_score"].fillna(50)
-        score += (bs - 50) * 0.05
+        score += (bs - 50) * 0.20
 
     # 母馬の繁殖入り年齢（若いほど良い = 良血馬ほど早く繁殖入り）
     if "dam_breeding_age" in df.columns:
         dba = df["dam_breeding_age"]
-        score += np.where(dba.isna(), 0, (8 - dba).clip(-1, 5))
+        score += np.where(dba.isna(), 0, (6 - dba).clip(-2, 2))
 
     return score
