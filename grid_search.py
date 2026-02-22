@@ -148,13 +148,11 @@ def evaluate_single(df: pd.DataFrame, params: dict) -> dict:
 def composite_score(metrics: dict, objective: str = "balanced") -> float:
     """複合スコア。objectiveで重み付けを切り替える。"""
     if objective == "top10":
-        # TOP10一致数を最大化（1マッチ=+10点で他を圧倒）
+        # TOP10を絶対的に優先。TOP30は同スコア時のタイブレーカーのみ
         return (
-            metrics["top10"] * 10.0
-            + metrics["top30"] * 0.5
-            + metrics["top100"] * 0.1
-            + metrics["prize_ratio"] * 0.1
-            + metrics["spearman"] * 2
+            metrics["top10"] * 100.0
+            + metrics["top30"] * 1.0
+            + metrics["spearman"] * 0.1
         )
     # balanced（従来）
     return (
@@ -223,15 +221,15 @@ def grid_search(years, objective="balanced"):
 
     print(f"\n  利用年度: {sorted(all_data.keys())} ({len(all_data)}年分)")
 
-    # 現行パラメータ（model.py の値に合わせる — TOP10最適化済み + 性別ボーナス）
+    # 現行パラメータ（model.py の値に合わせる — TOP10最適化v2）
     current_params = {
-        "b_sex": 7,
-        "w_sire_ei": 0.121, "w_dam_prize": 0.019, "w_bms_ei": 0.0,
-        "w_first_crop": 0.74,
-        "b_early": 1.27, "b_parents_young": 2.32, "b_dam_bms_gap": 5.40,
-        "b_sale_price": 6.29, "b_foal_penalty": 5.87, "b_foal_bonus": 1.99,
-        "w_trainer": 0.246, "w_owner": 0.188, "w_breeder": 0.118,
-        "dam_breed_base": 3.0, "dam_breed_cap": 1.39, "dam_breed_penalty": 0.57,
+        "b_sex": 16.47,
+        "w_sire_ei": 0.065, "w_dam_prize": 0.036, "w_bms_ei": 0.036,
+        "w_first_crop": 0.355,
+        "b_early": 6.10, "b_parents_young": 1.71, "b_dam_bms_gap": 0.0,
+        "b_sale_price": 1.94, "b_foal_penalty": 14.97, "b_foal_bonus": 6.24,
+        "w_trainer": 0.270, "w_owner": 0.143, "w_breeder": 0.0,
+        "dam_breed_base": 1.84, "dam_breed_cap": 6.76, "dam_breed_penalty": 7.25,
     }
 
     current_cv = cv_score(all_data, current_params)
@@ -287,107 +285,329 @@ def grid_search(years, objective="balanced"):
     return best_params
 
 
-def _random_search_top10(all_data, current_params, best_score, n_iter=50000):
-    """全パラメータ同時ランダム探索（TOP10最大化専用）。"""
-    rng = np.random.default_rng(42)
-    best_params = dict(current_params)
+def _precompute_arrays(all_data):
+    """DataFrameから高速評価用のnumpy配列を事前計算する。"""
+    precomputed = {}
+    for year, df in all_data.items():
+        n = len(df)
+        d = {}
+        # 性別
+        d["sex_centered"] = (df["sex"].fillna(0.5) - 0.5).values if "sex" in df.columns else np.zeros(n)
+        # 父EI（正規化済み）
+        if "sire_ei" in df.columns:
+            ei = df["sire_ei"].fillna(0).values
+            cap = np.percentile(ei, 99)
+            d["sire_ei_norm"] = (np.clip(ei, 0, cap) / cap * 100) if cap > 0 else np.zeros(n)
+        else:
+            d["sire_ei_norm"] = np.zeros(n)
+        # 母父EI（正規化済み）
+        if "bms_ei" in df.columns:
+            ei = df["bms_ei"].fillna(0).values
+            cap = np.percentile(ei, 99)
+            d["bms_ei_norm"] = (np.clip(ei, 0, cap) / cap * 100) if cap > 0 else np.zeros(n)
+        else:
+            d["bms_ei_norm"] = np.zeros(n)
+        # 初年度種牡馬ボーナス
+        if "sire_prize" in df.columns and "sire_ei" in df.columns:
+            is_first = (df["sire_ei"].fillna(0) == 0).values.astype(float)
+            sp_log = np.log1p(df["sire_prize"].fillna(0).values)
+            d["first_crop_val"] = is_first * sp_log
+        else:
+            d["first_crop_val"] = np.zeros(n)
+        # 母馬賞金（対数正規化）
+        if "dam_prize" in df.columns:
+            dp = np.log1p(df["dam_prize"].fillna(0).values)
+            cap = np.percentile(dp, 99)
+            d["dam_prize_norm"] = (np.clip(dp, 0, cap) / cap * 100) if cap > 0 else np.zeros(n)
+        else:
+            d["dam_prize_norm"] = np.zeros(n)
+        # 調教師・馬主・牧場（中心化済み）
+        d["trainer_centered"] = (df["trainer_score"].fillna(50) - 50).values if "trainer_score" in df.columns else np.zeros(n)
+        d["owner_centered"] = (df["owner_score"].fillna(50) - 50).values if "owner_score" in df.columns else np.zeros(n)
+        d["breeder_centered"] = (df["breeder_score"].fillna(50) - 50).values if "breeder_score" in df.columns else np.zeros(n)
+        # 早生まれ
+        d["early_born"] = df["early_born"].fillna(0).values if "early_born" in df.columns else np.zeros(n)
+        # 両親若齢
+        if "both_parents_young" in df.columns:
+            d["parents_young"] = df["both_parents_young"].fillna(0).values
+        elif "sire_young" in df.columns and "dam_young" in df.columns:
+            d["parents_young_half"] = (df["sire_young"].fillna(0) + df["dam_young"].fillna(0)).values
+        else:
+            d["parents_young"] = np.zeros(n)
+        # 母-母父年齢差
+        d["dam_bms_gap"] = df["dam_bms_gap_small"].fillna(0).values if "dam_bms_gap_small" in df.columns else np.zeros(n)
+        # セリ価格（正規化）
+        if "sale_price_log" in df.columns:
+            sp = df["sale_price_log"].fillna(0).values
+            max_sp = sp.max()
+            d["sale_price_norm"] = (sp / max_sp) if max_sp > 0 else np.zeros(n)
+        else:
+            d["sale_price_norm"] = np.zeros(n)
+        # 産駒番号（事前マスク）
+        if "foal_number" in df.columns:
+            fn = df["foal_number"].fillna(3).values
+            d["is_first_foal"] = (fn == 1).astype(float)
+            d["is_good_foal"] = ((fn >= 2) & (fn <= 4)).astype(float)
+        else:
+            d["is_first_foal"] = np.zeros(n)
+            d["is_good_foal"] = np.zeros(n)
+        # 繁殖入り年齢
+        if "dam_breeding_age" in df.columns:
+            dba = df["dam_breeding_age"].values
+            d["dam_breed_notna"] = (~np.isnan(dba)).astype(float)
+            d["dam_breed_age"] = np.nan_to_num(dba, nan=0.0)
+        else:
+            d["dam_breed_notna"] = np.zeros(n)
+            d["dam_breed_age"] = np.zeros(n)
+        # 正解データ
+        d["prize"] = df["prize_num"].values
+        d["actual_top10"] = set(np.argsort(-d["prize"])[:10])
+        d["actual_top30"] = set(np.argsort(-d["prize"])[:30])
 
-    # パラメータの探索範囲（広め）
-    param_ranges = {
-        "b_sex":           (0, 20),
-        "w_sire_ei":       (0.05, 0.50),
-        "w_dam_prize":     (0.0, 0.30),
-        "w_bms_ei":        (0.0, 0.35),
-        "w_first_crop":    (0.0, 3.0),
-        "b_early":         (0, 15),
-        "b_parents_young": (0, 15),
-        "b_dam_bms_gap":   (0, 10),
-        "b_sale_price":    (0, 15),
-        "b_foal_penalty":  (0, 10),
-        "b_foal_bonus":    (0, 5),
-        "w_trainer":       (0.0, 0.25),
-        "w_owner":         (0.0, 0.25),
-        "w_breeder":       (0.0, 0.40),
-        "dam_breed_base":  (3, 10),
-        "dam_breed_cap":   (1, 6),
-        "dam_breed_penalty": (0, 5),
-    }
+        precomputed[year] = d
+    return precomputed
 
+
+def _fast_cv_score(precomputed, params):
+    """事前計算配列を使った高速CVスコア。"""
+    total_score = 0.0
+    n_years = len(precomputed)
+
+    for d in precomputed.values():
+        # ベクトル化されたスコア計算
+        score = (
+            d["sex_centered"] * params[0]          # b_sex
+            + d["sire_ei_norm"] * params[1]         # w_sire_ei
+            + d["dam_prize_norm"] * params[2]       # w_dam_prize
+            + d["bms_ei_norm"] * params[3]          # w_bms_ei
+            + d["first_crop_val"] * params[4]       # w_first_crop
+            + d["trainer_centered"] * params[5]     # w_trainer
+            + d["owner_centered"] * params[6]       # w_owner
+            + d["breeder_centered"] * params[7]     # w_breeder
+            + d["early_born"] * params[8]           # b_early
+            + d["dam_bms_gap"] * params[10]         # b_dam_bms_gap
+            + d["sale_price_norm"] * params[11]     # b_sale_price
+            + d["is_first_foal"] * (-params[12])    # b_foal_penalty
+            + d["is_good_foal"] * params[13]        # b_foal_bonus
+        )
+        # 両親若齢（2パターン）
+        if "parents_young" in d:
+            score += d["parents_young"] * params[9]
+        else:
+            score += d["parents_young_half"] * (params[9] / 2)
+
+        # 繁殖入り年齢（clip付き）
+        breed_val = np.clip(params[14] - d["dam_breed_age"], -params[16], params[15])
+        score += d["dam_breed_notna"] * breed_val
+
+        # TOP10/TOP30 計算
+        pred_top10 = set(np.argpartition(-score, 10)[:10])
+        pred_top30 = set(np.argpartition(-score, 30)[:30])
+
+        top10_match = len(pred_top10 & d["actual_top10"])
+        top30_match = len(pred_top30 & d["actual_top30"])
+
+        # Spearmanは高コストなので簡易版: TOP10支配なので省略可能
+        # composite: top10 * 100 + top30 * 1 + spearman * 0.1
+        total_score += top10_match * 100.0 + top30_match * 1.0
+
+    return total_score / n_years
+
+
+# パラメータ名 → 配列インデックスの対応
+_PARAM_KEYS = [
+    "b_sex", "w_sire_ei", "w_dam_prize", "w_bms_ei", "w_first_crop",
+    "w_trainer", "w_owner", "w_breeder", "b_early", "b_parents_young",
+    "b_dam_bms_gap", "b_sale_price", "b_foal_penalty", "b_foal_bonus",
+    "dam_breed_base", "dam_breed_cap", "dam_breed_penalty",
+]
+
+def _dict_to_arr(params):
+    return np.array([params[k] for k in _PARAM_KEYS])
+
+def _arr_to_dict(arr):
+    return {k: float(v) for k, v in zip(_PARAM_KEYS, arr)}
+
+
+def _random_search_top10(all_data, current_params, best_score):
+    """マルチリスタート+ポピュレーションベース探索（TOP10最大化専用、高速版）。"""
+    import time
+
+    # 事前計算（1回だけ）
+    print("\n  特徴量を事前計算中...")
+    precomputed = _precompute_arrays(all_data)
+    print("  完了")
+
+    # パラメータの探索範囲
+    param_ranges = np.array([
+        (0, 20),       # b_sex
+        (0.0, 0.50),   # w_sire_ei
+        (0.0, 0.30),   # w_dam_prize
+        (0.0, 0.35),   # w_bms_ei
+        (0.0, 3.0),    # w_first_crop
+        (0.0, 0.50),   # w_trainer
+        (0.0, 0.50),   # w_owner
+        (0.0, 0.50),   # w_breeder
+        (0, 15),       # b_early
+        (0, 15),       # b_parents_young
+        (0, 15),       # b_dam_bms_gap
+        (0, 15),       # b_sale_price
+        (0, 15),       # b_foal_penalty
+        (0, 10),       # b_foal_bonus
+        (1, 12),       # dam_breed_base
+        (0, 8),        # dam_breed_cap
+        (0, 8),        # dam_breed_penalty
+    ])
+    lo = param_ranges[:, 0]
+    hi = param_ranges[:, 1]
+    span = hi - lo
+    n_params = len(lo)
+
+    current_arr = _dict_to_arr(current_params)
+    best_arr = current_arr.copy()
+    # 事前計算版の現行スコア
+    best_score_fast = _fast_cv_score(precomputed, current_arr)
+    print(f"  現行スコア(高速版): {best_score_fast:.2f}")
+
+    def _show_top10(arr, label=""):
+        params = _arr_to_dict(arr)
+        top10s = []
+        total = 0
+        for y in sorted(all_data.keys()):
+            m = evaluate_single(all_data[y], params)
+            top10s.append(f"{y}:{m['top10']}")
+            total += m['top10']
+        print(f"  {label} TOP10合計={total} [{', '.join(top10s)}]")
+
+    t_start = time.time()
+
+    # ================================================================
+    # Phase 1: マルチシード広域探索 (5シード × 100k = 500k)
+    # ================================================================
+    n_seeds = 5
+    n_phase1 = 100000
     print(f"\n{'='*60}")
-    print(f"  Phase 1: ランダム探索 ({n_iter:,}回)")
+    print(f"  Phase 1: マルチシード広域探索 ({n_seeds}シード × {n_phase1:,} = {n_seeds*n_phase1:,}回)")
     print(f"{'='*60}")
 
-    improved_count = 0
-    for i in range(n_iter):
-        p = {}
-        for k, (lo, hi) in param_ranges.items():
-            p[k] = rng.uniform(lo, hi)
+    pool_size = 50
+    pool = [(best_score_fast, best_arr.copy())]
 
-        s = cv_score(all_data, p)
-        if s > best_score:
-            best_score = s
-            best_params = dict(p)
-            improved_count += 1
+    for seed in range(n_seeds):
+        rng = np.random.default_rng(seed * 1000 + 42)
+        local_best = best_score_fast
+        local_arr = best_arr.copy()
 
-        if (i + 1) % 10000 == 0:
-            # 年度別TOP10を表示
-            top10s = []
-            for y in sorted(all_data.keys()):
-                m = evaluate_single(all_data[y], best_params)
-                top10s.append(f"{y}:{m['top10']}")
-            print(f"  {i+1:>6,}回完了 | best={best_score:.2f} | TOP10=[{', '.join(top10s)}] | 改善{improved_count}回")
+        for i in range(n_phase1):
+            p = rng.uniform(lo, hi)
+            s = _fast_cv_score(precomputed, p)
+            if s > local_best:
+                local_best = s
+                local_arr = p.copy()
+            if s > pool[-1][0] if len(pool) >= pool_size else True:
+                pool.append((s, p.copy()))
 
-    # Phase 2: best周辺の局所探索
+        pool.sort(key=lambda x: -x[0])
+        pool = pool[:pool_size]
+
+        elapsed = time.time() - t_start
+        _show_top10(local_arr, f"Seed {seed} ({elapsed:.0f}s): score={local_best:.2f}")
+
+    best_score_fast, best_arr = pool[0]
+    print(f"\n  Phase 1 完了: best={best_score_fast:.2f} ({time.time()-t_start:.0f}s)")
+    _show_top10(best_arr, "Best")
+
+    # ================================================================
+    # Phase 2: トップ候補の局所探索 (上位30個 × 20k = 600k)
+    # ================================================================
+    n_top = 30
+    n_phase2 = 20000
     print(f"\n{'='*60}")
-    print(f"  Phase 2: 局所探索（best周辺±20%）")
+    print(f"  Phase 2: トップ{n_top}局所探索 ({n_top} × {n_phase2:,} = {n_top*n_phase2:,}回)")
     print(f"{'='*60}")
 
-    n_local = 30000
-    for i in range(n_local):
-        p = {}
-        for k, v in best_params.items():
-            lo, hi = param_ranges[k]
-            # ±20%のperturbation（範囲内にclip）
-            delta = (hi - lo) * 0.2
-            p[k] = np.clip(rng.uniform(v - delta, v + delta), lo, hi)
+    rng = np.random.default_rng(9999)
+    new_pool = list(pool[:pool_size])
 
-        s = cv_score(all_data, p)
-        if s > best_score:
-            best_score = s
-            best_params = dict(p)
-            improved_count += 1
+    for ci in range(min(n_top, len(pool))):
+        cand_score, cand_arr = pool[ci]
+        local_best = cand_score
+        local_arr = cand_arr.copy()
 
-        if (i + 1) % 10000 == 0:
-            top10s = []
-            for y in sorted(all_data.keys()):
-                m = evaluate_single(all_data[y], best_params)
-                top10s.append(f"{y}:{m['top10']}")
-            print(f"  {i+1:>6,}回完了 | best={best_score:.2f} | TOP10=[{', '.join(top10s)}] | 改善{improved_count}回")
+        for i in range(n_phase2):
+            delta = rng.uniform(-0.15, 0.15, n_params) * span
+            p = np.clip(local_arr + delta, lo, hi)
+            s = _fast_cv_score(precomputed, p)
+            if s > local_best:
+                local_best = s
+                local_arr = p.copy()
 
-    # Phase 3: さらに狭い局所探索（±5%）
+        new_pool.append((local_best, local_arr.copy()))
+        if ci < 5:
+            _show_top10(local_arr, f"Cand {ci}: score={local_best:.2f}")
+
+    new_pool.sort(key=lambda x: -x[0])
+    new_pool = new_pool[:pool_size]
+    best_score_fast, best_arr = new_pool[0]
+    print(f"\n  Phase 2 完了: best={best_score_fast:.2f} ({time.time()-t_start:.0f}s)")
+    _show_top10(best_arr, "Best")
+
+    # ================================================================
+    # Phase 3: トップ10の微調整 (10 × 30k = 300k)
+    # ================================================================
+    n_fine = 10
+    n_phase3 = 30000
     print(f"\n{'='*60}")
-    print(f"  Phase 3: 微調整（best周辺±5%）")
+    print(f"  Phase 3: トップ{n_fine}微調整 ({n_fine} × {n_phase3:,} = {n_fine*n_phase3:,}回)")
     print(f"{'='*60}")
 
-    n_fine = 20000
-    for i in range(n_fine):
-        p = {}
-        for k, v in best_params.items():
-            lo, hi = param_ranges[k]
-            delta = (hi - lo) * 0.05
-            p[k] = np.clip(rng.uniform(v - delta, v + delta), lo, hi)
+    for ci in range(min(n_fine, len(new_pool))):
+        cand_score, cand_arr = new_pool[ci]
+        local_best = cand_score
+        local_arr = cand_arr.copy()
 
-        s = cv_score(all_data, p)
-        if s > best_score:
-            best_score = s
-            best_params = dict(p)
-            improved_count += 1
+        for i in range(n_phase3):
+            delta = rng.uniform(-0.05, 0.05, n_params) * span
+            p = np.clip(local_arr + delta, lo, hi)
+            s = _fast_cv_score(precomputed, p)
+            if s > local_best:
+                local_best = s
+                local_arr = p.copy()
 
-    top10s = []
-    for y in sorted(all_data.keys()):
-        m = evaluate_single(all_data[y], best_params)
-        top10s.append(f"{y}:{m['top10']}")
-    print(f"  完了 | best={best_score:.2f} | TOP10=[{', '.join(top10s)}] | 総改善{improved_count}回")
+        if ci < 5:
+            _show_top10(local_arr, f"Fine {ci}: score={local_best:.2f}")
+        if local_best > best_score_fast:
+            best_score_fast = local_best
+            best_arr = local_arr.copy()
+
+    print(f"\n  Phase 3 完了: best={best_score_fast:.2f} ({time.time()-t_start:.0f}s)")
+    _show_top10(best_arr, "Best")
+
+    # ================================================================
+    # Phase 4: 最終超微調整 (100k at ±2%)
+    # ================================================================
+    n_phase4 = 100000
+    print(f"\n{'='*60}")
+    print(f"  Phase 4: 最終超微調整 ({n_phase4:,}回 at ±2%)")
+    print(f"{'='*60}")
+
+    for i in range(n_phase4):
+        delta = rng.uniform(-0.02, 0.02, n_params) * span
+        p = np.clip(best_arr + delta, lo, hi)
+        s = _fast_cv_score(precomputed, p)
+        if s > best_score_fast:
+            best_score_fast = s
+            best_arr = p.copy()
+
+    elapsed = time.time() - t_start
+    print(f"  Phase 4 完了: best={best_score_fast:.2f} ({elapsed:.0f}s)")
+    _show_top10(best_arr, "Final")
+
+    # dict形式で返す（元のcv_scoreで検算）
+    best_params = _arr_to_dict(best_arr)
+    best_score = cv_score(all_data, best_params)
+    print(f"\n  検算(元スコア関数): {best_score:.2f}")
+    print(f"  総所要時間: {elapsed:.0f}秒")
 
     return best_params, best_score
 
