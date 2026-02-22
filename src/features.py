@@ -72,6 +72,8 @@ def get_leading_year(birth_year: int) -> int:
     return _DEFAULT_LEADING_YEAR
 # 母馬の獲得賞金
 DAM_PRIZES = _load_json("data/dam_prizes.json")
+# 種牡馬自身の現役獲得賞金（初年度種牡馬ボーナス用）
+SIRE_PRIZES = _load_json("data/sire_prizes.json")
 # 母馬産駒リスト（dam_id → [horse_id, ...]、生年順）
 DAM_FOALS = _load_json("data/dam_foals.json")
 # 生年月日キャッシュ（世代別）
@@ -240,6 +242,13 @@ def get_dam_prize(dam_name: str) -> float:
     return DAM_PRIZES.get(dam_name, 0.0)
 
 
+def get_sire_prize(sire_name: str) -> float:
+    """種牡馬自身の現役獲得賞金（万円）を返す。"""
+    if not sire_name:
+        return 0.0
+    return SIRE_PRIZES.get(sire_name, 0.0)
+
+
 def calc_trainer_score(trainer_name: str) -> float:
     """調教師スコアを返す。"""
     if not trainer_name:
@@ -371,6 +380,9 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
 
         # 母馬の獲得賞金（不明なら0 — 不明は不利な情報として扱う）
         row["dam_prize"] = get_dam_prize(horse.get("dam", ""))
+
+        # 種牡馬自身の現役獲得賞金（初年度種牡馬ボーナス用）
+        row["sire_prize"] = get_sire_prize(horse.get("sire", ""))
 
         # 調教師・馬主・生産者スコア
         row["trainer_score"] = calc_trainer_score(horse.get("trainer", ""))
