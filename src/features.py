@@ -185,10 +185,10 @@ ELITE_BREEDERS = {
     "コスモヴューファーム": 72,
 }
 
-# ヒューリスティックスコアの重み配分（グリッドサーチ最適化済み — 2015-2022 8年分CV）
-WEIGHT_SIRE_EI = 0.225
-WEIGHT_DAM_PRIZE = 0.025
-WEIGHT_BMS_EI = 0.0875
+# ヒューリスティックスコアの重み配分（TOP10最適化 — 2015-2022 8年分ランダム探索）
+WEIGHT_SIRE_EI = 0.121
+WEIGHT_DAM_PRIZE = 0.019
+WEIGHT_BMS_EI = 0.0
 
 
 def get_sire_ei(sire_name: str, leading_year: int = None) -> float:

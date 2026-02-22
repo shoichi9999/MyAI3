@@ -45,7 +45,7 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
     if "sire_prize" in df.columns and "sire_ei" in df.columns:
         is_first_crop = df["sire_ei"].fillna(0) == 0
         sire_prize_log = np.log1p(df["sire_prize"].fillna(0))
-        score += is_first_crop * sire_prize_log * 1.6
+        score += is_first_crop * sire_prize_log * 0.74
 
     # 母馬獲得賞金（対数 + 99パーセンタイル正規化）
     if "dam_prize" in df.columns:
@@ -57,36 +57,48 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
     # 調教師スコアボーナス
     if "trainer_score" in df.columns:
         ts = df["trainer_score"].fillna(50)
-        score += (ts - 50) * 0.12
+        score += (ts - 50) * 0.246
 
     # 馬主スコアボーナス
     if "owner_score" in df.columns:
         os_val = df["owner_score"].fillna(50)
-        score += (os_val - 50) * 0.12
+        score += (os_val - 50) * 0.188
 
     # 早生まれボーナス（1-4月生まれ）
     if "early_born" in df.columns:
-        score += df["early_born"].fillna(0) * 10
+        score += df["early_born"].fillna(0) * 1.27
 
     # 両親若齢ボーナス（13歳以下）
     if "both_parents_young" in df.columns:
-        score += df["both_parents_young"].fillna(0) * 5
+        score += df["both_parents_young"].fillna(0) * 2.32
     elif "sire_young" in df.columns and "dam_young" in df.columns:
-        score += (df["sire_young"].fillna(0) + df["dam_young"].fillna(0)) * 2.5
+        score += (df["sire_young"].fillna(0) + df["dam_young"].fillna(0)) * 1.16
 
-    # 産駒番号（2-4番仔ボーナス）
+    # 産駒番号（2-4番仔ボーナス、初仔ペナルティ）
     if "foal_number" in df.columns:
         fn = df["foal_number"].fillna(3)
-        score += np.where(fn <= 4, 1, 0)
+        score += np.where(fn == 1, -5.87,
+                          np.where(fn <= 4, 1.99, 0))
 
     # 生産牧場ボーナス
     if "breeder_score" in df.columns:
         bs = df["breeder_score"].fillna(50)
-        score += (bs - 50) * 0.20
+        score += (bs - 50) * 0.118
+
+    # 母-母父年齢差ボーナス
+    if "dam_bms_gap_small" in df.columns:
+        score += df["dam_bms_gap_small"].fillna(0) * 5.40
+
+    # セリ価格ボーナス
+    if "sale_price_log" in df.columns:
+        sp = df["sale_price_log"].fillna(0)
+        max_sp = sp.max()
+        if max_sp > 0:
+            score += (sp / max_sp) * 6.29
 
     # 母馬の繁殖入り年齢（若いほど良い = 良血馬ほど早く繁殖入り）
     if "dam_breeding_age" in df.columns:
         dba = df["dam_breeding_age"]
-        score += np.where(dba.isna(), 0, (5 - dba).clip(-2, 2))
+        score += np.where(dba.isna(), 0, (3.0 - dba).clip(-0.57, 1.39))
 
     return score

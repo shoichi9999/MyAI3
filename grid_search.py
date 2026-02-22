@@ -140,8 +140,18 @@ def evaluate_single(df: pd.DataFrame, params: dict) -> dict:
     }
 
 
-def composite_score(metrics: dict) -> float:
-    """POG実用性重視の複合スコア。"""
+def composite_score(metrics: dict, objective: str = "balanced") -> float:
+    """複合スコア。objectiveで重み付けを切り替える。"""
+    if objective == "top10":
+        # TOP10一致数を最大化（1マッチ=+10点で他を圧倒）
+        return (
+            metrics["top10"] * 10.0
+            + metrics["top30"] * 0.5
+            + metrics["top100"] * 0.1
+            + metrics["prize_ratio"] * 0.1
+            + metrics["spearman"] * 2
+        )
+    # balanced（従来）
     return (
         metrics["top30"] * 2.0
         + metrics["top10"] * 3.0
@@ -151,12 +161,16 @@ def composite_score(metrics: dict) -> float:
     )
 
 
+# グローバル設定（grid_search関数内で設定）
+_OBJECTIVE = "balanced"
+
+
 def cv_score(all_data: dict, params: dict) -> float:
     """全年度の composite_score 平均を返す。"""
     scores = []
     for df in all_data.values():
         m = evaluate_single(df, params)
-        scores.append(composite_score(m))
+        scores.append(composite_score(m, _OBJECTIVE))
     return np.mean(scores)
 
 
@@ -185,8 +199,10 @@ def load_year(year: int) -> pd.DataFrame | None:
 # グリッドサーチ
 # ------------------------------------------------------------------
 
-def grid_search(years):
-    print("=== データ読み込み ===")
+def grid_search(years, objective="balanced"):
+    global _OBJECTIVE
+    _OBJECTIVE = objective
+    print(f"=== データ読み込み === (目的関数: {objective})")
     all_data = {}
     for y in years:
         df = load_year(y)
@@ -202,14 +218,14 @@ def grid_search(years):
 
     print(f"\n  利用年度: {sorted(all_data.keys())} ({len(all_data)}年分)")
 
-    # 現行パラメータ（model.py の値に合わせる — 2015-2022 8年分CV最適化済み）
+    # 現行パラメータ（model.py の値に合わせる — TOP10最適化済み）
     current_params = {
-        "w_sire_ei": 0.225, "w_dam_prize": 0.025, "w_bms_ei": 0.0875,
-        "w_first_crop": 1.6,
-        "b_early": 10, "b_parents_young": 5, "b_dam_bms_gap": 0,
-        "b_sale_price": 0, "b_foal_penalty": 0, "b_foal_bonus": 1,
-        "w_trainer": 0.12, "w_owner": 0.12, "w_breeder": 0.2,
-        "dam_breed_base": 5, "dam_breed_cap": 2, "dam_breed_penalty": 2,
+        "w_sire_ei": 0.121, "w_dam_prize": 0.019, "w_bms_ei": 0.0,
+        "w_first_crop": 0.74,
+        "b_early": 1.27, "b_parents_young": 2.32, "b_dam_bms_gap": 5.40,
+        "b_sale_price": 6.29, "b_foal_penalty": 5.87, "b_foal_bonus": 1.99,
+        "w_trainer": 0.246, "w_owner": 0.188, "w_breeder": 0.118,
+        "dam_breed_base": 3.0, "dam_breed_cap": 1.39, "dam_breed_penalty": 0.57,
     }
 
     current_cv = cv_score(all_data, current_params)
@@ -221,6 +237,156 @@ def grid_search(years):
     best_score = current_cv
     best_params = dict(current_params)
 
+    if objective == "top10":
+        # TOP10最適化: 全パラメータ同時ランダム探索（局所最適回避）
+        best_params, best_score = _random_search_top10(all_data, current_params, best_score)
+    else:
+        # balanced: 従来の段階的グリッドサーチ
+        best_params, best_score = _staged_grid_search(all_data, dict(current_params), best_score)
+
+    # ------------------------------------------------------------------
+    # 最終結果
+    # ------------------------------------------------------------------
+    print("\n" + "=" * 70)
+    print("  最適パラメータ")
+    print("=" * 70)
+    for k, v in sorted(best_params.items()):
+        print(f"    {k}: {v}")
+    print(f"\n  CVスコア: {best_score:.2f} (現行: {current_cv:.2f}, 差: {best_score - current_cv:+.2f})")
+
+    # 変更点
+    print(f"\n--- 変更点 ---")
+    changed = False
+    for k in sorted(current_params):
+        if current_params[k] != best_params[k]:
+            print(f"  {k}: {current_params[k]} → {best_params[k]}")
+            changed = True
+    if not changed:
+        print("  （変更なし — 現行パラメータが最適）")
+
+    # 年度別詳細
+    print(f"\n--- 年度別パフォーマンス比較 ---")
+    print(f"{'年':>6} | {'指標':>10} | {'現行':>8} | {'最適化':>8} | {'差':>8}")
+    print("-" * 60)
+    for y in sorted(all_data.keys()):
+        m_old = evaluate_single(all_data[y], current_params)
+        m_new = evaluate_single(all_data[y], best_params)
+        print(f"  {y} | {'Spearman':>10} | {m_old['spearman']:8.4f} | {m_new['spearman']:8.4f} | {m_new['spearman']-m_old['spearman']:+8.4f}")
+        print(f"       | {'TOP10':>10} | {m_old['top10']:8d} | {m_new['top10']:8d} | {m_new['top10']-m_old['top10']:+8d}")
+        print(f"       | {'TOP30':>10} | {m_old['top30']:8d} | {m_new['top30']:8d} | {m_new['top30']-m_old['top30']:+8d}")
+        print(f"       | {'TOP100':>10} | {m_old['top100']:8d} | {m_new['top100']:8d} | {m_new['top100']-m_old['top100']:+8d}")
+        print(f"       | {'賞金倍率':>10} | {m_old['prize_ratio']:8.2f}x | {m_new['prize_ratio']:8.2f}x | {m_new['prize_ratio']-m_old['prize_ratio']:+8.2f}")
+        print("-" * 60)
+
+    return best_params
+
+
+def _random_search_top10(all_data, current_params, best_score, n_iter=50000):
+    """全パラメータ同時ランダム探索（TOP10最大化専用）。"""
+    rng = np.random.default_rng(42)
+    best_params = dict(current_params)
+
+    # パラメータの探索範囲（広め）
+    param_ranges = {
+        "w_sire_ei":       (0.05, 0.50),
+        "w_dam_prize":     (0.0, 0.30),
+        "w_bms_ei":        (0.0, 0.35),
+        "w_first_crop":    (0.0, 3.0),
+        "b_early":         (0, 15),
+        "b_parents_young": (0, 15),
+        "b_dam_bms_gap":   (0, 10),
+        "b_sale_price":    (0, 15),
+        "b_foal_penalty":  (0, 10),
+        "b_foal_bonus":    (0, 5),
+        "w_trainer":       (0.0, 0.25),
+        "w_owner":         (0.0, 0.25),
+        "w_breeder":       (0.0, 0.40),
+        "dam_breed_base":  (3, 10),
+        "dam_breed_cap":   (1, 6),
+        "dam_breed_penalty": (0, 5),
+    }
+
+    print(f"\n{'='*60}")
+    print(f"  Phase 1: ランダム探索 ({n_iter:,}回)")
+    print(f"{'='*60}")
+
+    improved_count = 0
+    for i in range(n_iter):
+        p = {}
+        for k, (lo, hi) in param_ranges.items():
+            p[k] = rng.uniform(lo, hi)
+
+        s = cv_score(all_data, p)
+        if s > best_score:
+            best_score = s
+            best_params = dict(p)
+            improved_count += 1
+
+        if (i + 1) % 10000 == 0:
+            # 年度別TOP10を表示
+            top10s = []
+            for y in sorted(all_data.keys()):
+                m = evaluate_single(all_data[y], best_params)
+                top10s.append(f"{y}:{m['top10']}")
+            print(f"  {i+1:>6,}回完了 | best={best_score:.2f} | TOP10=[{', '.join(top10s)}] | 改善{improved_count}回")
+
+    # Phase 2: best周辺の局所探索
+    print(f"\n{'='*60}")
+    print(f"  Phase 2: 局所探索（best周辺±20%）")
+    print(f"{'='*60}")
+
+    n_local = 30000
+    for i in range(n_local):
+        p = {}
+        for k, v in best_params.items():
+            lo, hi = param_ranges[k]
+            # ±20%のperturbation（範囲内にclip）
+            delta = (hi - lo) * 0.2
+            p[k] = np.clip(rng.uniform(v - delta, v + delta), lo, hi)
+
+        s = cv_score(all_data, p)
+        if s > best_score:
+            best_score = s
+            best_params = dict(p)
+            improved_count += 1
+
+        if (i + 1) % 10000 == 0:
+            top10s = []
+            for y in sorted(all_data.keys()):
+                m = evaluate_single(all_data[y], best_params)
+                top10s.append(f"{y}:{m['top10']}")
+            print(f"  {i+1:>6,}回完了 | best={best_score:.2f} | TOP10=[{', '.join(top10s)}] | 改善{improved_count}回")
+
+    # Phase 3: さらに狭い局所探索（±5%）
+    print(f"\n{'='*60}")
+    print(f"  Phase 3: 微調整（best周辺±5%）")
+    print(f"{'='*60}")
+
+    n_fine = 20000
+    for i in range(n_fine):
+        p = {}
+        for k, v in best_params.items():
+            lo, hi = param_ranges[k]
+            delta = (hi - lo) * 0.05
+            p[k] = np.clip(rng.uniform(v - delta, v + delta), lo, hi)
+
+        s = cv_score(all_data, p)
+        if s > best_score:
+            best_score = s
+            best_params = dict(p)
+            improved_count += 1
+
+    top10s = []
+    for y in sorted(all_data.keys()):
+        m = evaluate_single(all_data[y], best_params)
+        top10s.append(f"{y}:{m['top10']}")
+    print(f"  完了 | best={best_score:.2f} | TOP10=[{', '.join(top10s)}] | 総改善{improved_count}回")
+
+    return best_params, best_score
+
+
+def _staged_grid_search(all_data, best_params, best_score):
+    """従来の段階的グリッドサーチ（balanced用）。"""
     # ===============================================================
     # Stage 1: 血統重み（父EI + 母父EI + 母馬賞金 + 初年度ボーナス）
     # ===============================================================
@@ -372,41 +538,7 @@ def grid_search(years):
             best_params.update({"w_sire_ei": ws, "w_dam_prize": wd,
                                 "w_bms_ei": wb, "w_first_crop": wf})
 
-    # ------------------------------------------------------------------
-    # 最終結果
-    # ------------------------------------------------------------------
-    print("\n" + "=" * 70)
-    print("  最適パラメータ")
-    print("=" * 70)
-    for k, v in sorted(best_params.items()):
-        print(f"    {k}: {v}")
-    print(f"\n  CVスコア: {best_score:.2f} (現行: {current_cv:.2f}, 差: {best_score - current_cv:+.2f})")
-
-    # 変更点
-    print(f"\n--- 変更点 ---")
-    changed = False
-    for k in sorted(current_params):
-        if current_params[k] != best_params[k]:
-            print(f"  {k}: {current_params[k]} → {best_params[k]}")
-            changed = True
-    if not changed:
-        print("  （変更なし — 現行パラメータが最適）")
-
-    # 年度別詳細
-    print(f"\n--- 年度別パフォーマンス比較 ---")
-    print(f"{'年':>6} | {'指標':>10} | {'現行':>8} | {'最適化':>8} | {'差':>8}")
-    print("-" * 60)
-    for y in sorted(all_data.keys()):
-        m_old = evaluate_single(all_data[y], current_params)
-        m_new = evaluate_single(all_data[y], best_params)
-        print(f"  {y} | {'Spearman':>10} | {m_old['spearman']:8.4f} | {m_new['spearman']:8.4f} | {m_new['spearman']-m_old['spearman']:+8.4f}")
-        print(f"       | {'TOP10':>10} | {m_old['top10']:8d} | {m_new['top10']:8d} | {m_new['top10']-m_old['top10']:+8d}")
-        print(f"       | {'TOP30':>10} | {m_old['top30']:8d} | {m_new['top30']:8d} | {m_new['top30']-m_old['top30']:+8d}")
-        print(f"       | {'TOP100':>10} | {m_old['top100']:8d} | {m_new['top100']:8d} | {m_new['top100']-m_old['top100']:+8d}")
-        print(f"       | {'賞金倍率':>10} | {m_old['prize_ratio']:8.2f}x | {m_new['prize_ratio']:8.2f}x | {m_new['prize_ratio']-m_old['prize_ratio']:+8.2f}")
-        print("-" * 60)
-
-    return best_params
+    return best_params, best_score
 
 
 if __name__ == "__main__":
@@ -414,6 +546,9 @@ if __name__ == "__main__":
     parser.add_argument("--years", nargs="+", type=int,
                         default=[2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022],
                         help="使用する年度リスト")
+    parser.add_argument("--objective", choices=["balanced", "top10"],
+                        default="balanced",
+                        help="最適化目的: balanced(従来) / top10(TOP10最大化)")
     args = parser.parse_args()
 
-    best = grid_search(args.years)
+    best = grid_search(args.years, objective=args.objective)
