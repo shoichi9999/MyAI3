@@ -202,14 +202,14 @@ def grid_search(years):
 
     print(f"\n  利用年度: {sorted(all_data.keys())} ({len(all_data)}年分)")
 
-    # 現行パラメータ（model.py の値に合わせる）
+    # 現行パラメータ（model.py の値に合わせる — 2015-2022 8年分CV最適化済み）
     current_params = {
-        "w_sire_ei": 0.225, "w_dam_prize": 0.075, "w_bms_ei": 0.25,
-        "w_first_crop": 0.8,
-        "b_early": 8, "b_parents_young": 8, "b_dam_bms_gap": 5,
-        "b_sale_price": 5, "b_foal_penalty": 5, "b_foal_bonus": 3,
-        "w_trainer": 0.05, "w_owner": 0.08, "w_breeder": 0.15,
-        "dam_breed_base": 7, "dam_breed_cap": 4, "dam_breed_penalty": 2,
+        "w_sire_ei": 0.225, "w_dam_prize": 0.025, "w_bms_ei": 0.0875,
+        "w_first_crop": 1.6,
+        "b_early": 10, "b_parents_young": 5, "b_dam_bms_gap": 0,
+        "b_sale_price": 0, "b_foal_penalty": 0, "b_foal_bonus": 1,
+        "w_trainer": 0.12, "w_owner": 0.12, "w_breeder": 0.2,
+        "dam_breed_base": 5, "dam_breed_cap": 2, "dam_breed_penalty": 2,
     }
 
     current_cv = cv_score(all_data, current_params)
@@ -412,7 +412,7 @@ def grid_search(years):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="グリッドサーチ（重み最適化）")
     parser.add_argument("--years", nargs="+", type=int,
-                        default=[2019],
+                        default=[2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022],
                         help="使用する年度リスト")
     args = parser.parse_args()
 

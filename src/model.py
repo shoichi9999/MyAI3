@@ -45,7 +45,7 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
     if "sire_prize" in df.columns and "sire_ei" in df.columns:
         is_first_crop = df["sire_ei"].fillna(0) == 0
         sire_prize_log = np.log1p(df["sire_prize"].fillna(0))
-        score += is_first_crop * sire_prize_log * 0.7
+        score += is_first_crop * sire_prize_log * 1.6
 
     # 母馬獲得賞金（対数 + 99パーセンタイル正規化）
     if "dam_prize" in df.columns:
@@ -66,22 +66,18 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
 
     # 早生まれボーナス（1-4月生まれ）
     if "early_born" in df.columns:
-        score += df["early_born"].fillna(0) * 5
+        score += df["early_born"].fillna(0) * 10
 
     # 両親若齢ボーナス（13歳以下）
     if "both_parents_young" in df.columns:
-        score += df["both_parents_young"].fillna(0) * 8
+        score += df["both_parents_young"].fillna(0) * 5
     elif "sire_young" in df.columns and "dam_young" in df.columns:
-        score += (df["sire_young"].fillna(0) + df["dam_young"].fillna(0)) * 4
+        score += (df["sire_young"].fillna(0) + df["dam_young"].fillna(0)) * 2.5
 
-    # 母と母父の年齢差が小さいボーナス
-    if "dam_bms_gap_small" in df.columns:
-        score += df["dam_bms_gap_small"].fillna(0) * 5
-
-    # 産駒番号（2-4番仔がスイートスポット）
+    # 産駒番号（2-4番仔ボーナス）
     if "foal_number" in df.columns:
         fn = df["foal_number"].fillna(3)
-        score += np.where(fn <= 4, 2, 0)
+        score += np.where(fn <= 4, 1, 0)
 
     # 生産牧場ボーナス
     if "breeder_score" in df.columns:
@@ -91,6 +87,6 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
     # 母馬の繁殖入り年齢（若いほど良い = 良血馬ほど早く繁殖入り）
     if "dam_breeding_age" in df.columns:
         dba = df["dam_breeding_age"]
-        score += np.where(dba.isna(), 0, (6 - dba).clip(-2, 2))
+        score += np.where(dba.isna(), 0, (5 - dba).clip(-2, 2))
 
     return score

@@ -20,10 +20,10 @@ HEADERS = {
         "Chrome/120.0.0.0 Safari/537.36"
     )
 }
-DELAY = 1.0  # リクエスト間隔（秒）
+DELAY = 1.5  # リクエスト間隔（秒）
 
 
-def fetch_leading_page(kind: str, year: int, page: int) -> list[dict]:
+def fetch_leading_page(kind: str, year: int, page: int, max_retries: int = 4) -> list[dict]:
     """1ページ分のリーディングデータを取得する。
 
     Parameters
@@ -32,6 +32,8 @@ def fetch_leading_page(kind: str, year: int, page: int) -> list[dict]:
         "sire_leading" or "bms_leading"
     year : int
     page : int
+    max_retries : int
+        リトライ回数（指数バックオフ）
 
     Returns
     -------
@@ -42,9 +44,36 @@ def fetch_leading_page(kind: str, year: int, page: int) -> list[dict]:
     pid = kind  # sire_leading / bms_leading
     url = f"https://db.netkeiba.com/?pid={pid}&year={year}&page={page}"
 
-    resp = requests.get(url, headers=HEADERS, timeout=15)
-    resp.encoding = "euc-jp"
-    soup = BeautifulSoup(resp.text, "html.parser")
+    session = requests.Session()
+    session.headers.update(HEADERS)
+
+    for attempt in range(max_retries):
+        try:
+            resp = session.get(url, timeout=15)
+        except requests.RequestException as e:
+            if attempt < max_retries - 1:
+                wait = 2 ** (attempt + 1)
+                print(f"    [WARN] 接続エラー (attempt {attempt+1}/{max_retries}): {e} — {wait}秒待機")
+                time.sleep(wait)
+                continue
+            print(f"    [ERROR] 接続エラー (最終): {e}")
+            return []
+
+        if resp.status_code == 200:
+            resp.encoding = "euc-jp"
+            soup = BeautifulSoup(resp.text, "html.parser")
+            break
+        else:
+            wait = 2 ** (attempt + 1)
+            print(f"    [WARN] HTTP {resp.status_code} (attempt {attempt+1}/{max_retries}): {url[:80]}... — {wait}秒待機")
+            if attempt < max_retries - 1:
+                time.sleep(wait)
+                session = requests.Session()
+                session.headers.update(HEADERS)
+            else:
+                print(f"    [ERROR] {max_retries}回リトライ後も失敗: HTTP {resp.status_code}")
+                resp.encoding = "euc-jp"
+                soup = BeautifulSoup(resp.text, "html.parser")
 
     table = soup.find("table", class_="nk_tb_common")
     if not table:
