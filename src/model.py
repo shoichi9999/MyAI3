@@ -27,6 +27,12 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
 
     score = pd.Series(0.0, index=df.index)
 
+    # 性別ボーナス（牡馬はTOP50入り率1.52倍 — Feature Importance分析より）
+    if "sex" in df.columns:
+        sex = df["sex"].fillna(0.5)
+        # 牡馬(1.0)=+3.5, セン(0.5)=0, 牝馬(0.0)=-3.5
+        score += (sex - 0.5) * 7
+
     # 父EI（99パーセンタイル正規化 — 外国種牡馬の外れ値EIで潰されるのを防ぐ）
     if "sire_ei" in df.columns:
         ei = df["sire_ei"].fillna(0)

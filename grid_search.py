@@ -24,6 +24,11 @@ def parameterized_score(df: pd.DataFrame, params: dict) -> pd.Series:
     """パラメータ辞書でスコアを計算する。"""
     score = pd.Series(0.0, index=df.index)
 
+    # 性別ボーナス
+    if "sex" in df.columns:
+        sex = df["sex"].fillna(0.5)
+        score += (sex - 0.5) * params.get("b_sex", 10)
+
     w_sire = params["w_sire_ei"]
     w_dam = params["w_dam_prize"]
     w_bms = params["w_bms_ei"]
@@ -218,8 +223,9 @@ def grid_search(years, objective="balanced"):
 
     print(f"\n  利用年度: {sorted(all_data.keys())} ({len(all_data)}年分)")
 
-    # 現行パラメータ（model.py の値に合わせる — TOP10最適化済み）
+    # 現行パラメータ（model.py の値に合わせる — TOP10最適化済み + 性別ボーナス）
     current_params = {
+        "b_sex": 7,
         "w_sire_ei": 0.121, "w_dam_prize": 0.019, "w_bms_ei": 0.0,
         "w_first_crop": 0.74,
         "b_early": 1.27, "b_parents_young": 2.32, "b_dam_bms_gap": 5.40,
@@ -288,6 +294,7 @@ def _random_search_top10(all_data, current_params, best_score, n_iter=50000):
 
     # パラメータの探索範囲（広め）
     param_ranges = {
+        "b_sex":           (0, 20),
         "w_sire_ei":       (0.05, 0.50),
         "w_dam_prize":     (0.0, 0.30),
         "w_bms_ei":        (0.0, 0.35),
