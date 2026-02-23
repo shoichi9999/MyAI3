@@ -51,7 +51,7 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
     if "sire_prize" in df.columns and "sire_ei" in df.columns:
         is_first_crop = df["sire_ei"].fillna(0) == 0
         sire_prize_log = np.log1p(df["sire_prize"].fillna(0))
-        score += is_first_crop * sire_prize_log * 0.355
+        score += is_first_crop * sire_prize_log * 0.455
 
     # 母馬獲得賞金（対数 + 99パーセンタイル正規化）
     if "dam_prize" in df.columns:
@@ -70,41 +70,41 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
         os_val = df["owner_score"].fillna(50)
         score += (os_val - 50) * 0.143
 
-    # 早生まれボーナス（1-4月生まれ — TOP10では非常に重要）
+    # 早生まれボーナス（グリッドサーチv3: 重み0、データ完全化後に再評価）
     if "early_born" in df.columns:
-        score += df["early_born"].fillna(0) * 6.10
+        score += df["early_born"].fillna(0) * 0.0
 
-    # 両親若齢ボーナス（13歳以下）
+    # 両親若齢ボーナス（グリッドサーチv3: 重み0）
     if "both_parents_young" in df.columns:
-        score += df["both_parents_young"].fillna(0) * 1.71
+        score += df["both_parents_young"].fillna(0) * 0.0
     elif "sire_young" in df.columns and "dam_young" in df.columns:
-        score += (df["sire_young"].fillna(0) + df["dam_young"].fillna(0)) * 0.86
+        score += (df["sire_young"].fillna(0) + df["dam_young"].fillna(0)) * 0.0
 
-    # 産駒番号（2-4番仔ボーナス、初仔ペナルティ — TOP10では初仔不利が顕著）
+    # 産駒番号（2-4番仔ボーナス、初仔ペナルティ）
     if "foal_number" in df.columns:
         fn = df["foal_number"].fillna(3)
         score += np.where(fn == 1, -14.97,
                           np.where(fn <= 4, 6.24, 0))
 
-    # セリ価格ボーナス
+    # セリ価格ボーナス（グリッドサーチv3: 重み0）
     if "sale_price_log" in df.columns:
         sp = df["sale_price_log"].fillna(0)
         max_sp = sp.max()
         if max_sp > 0:
-            score += (sp / max_sp) * 1.94
+            score += (sp / max_sp) * 0.0
 
     # 母馬の繁殖入り年齢（若いほど良い = 良血馬ほど早く繁殖入り）
     if "dam_breeding_age" in df.columns:
         dba = df["dam_breeding_age"]
-        score += np.where(dba.isna(), 0, (1.84 - dba).clip(-7.25, 6.76))
+        score += np.where(dba.isna(), 0, (5.0 - dba).clip(-3.0, 2.0))
 
-    # 生産牧場スコアボーナス（仮重み — グリッドサーチ再実行で要最適化）
+    # 生産牧場スコア（グリッドサーチv3: 重み0）
     if "breeder_score" in df.columns:
         bs = df["breeder_score"].fillna(50)
-        score += (bs - 50) * 0.150
+        score += (bs - 50) * 0.0
 
-    # 母-母父年齢差ボーナス（15歳以下 — 仮重み）
+    # 母-母父年齢差（グリッドサーチv3: 重み0）
     if "dam_bms_gap_small" in df.columns:
-        score += df["dam_bms_gap_small"].fillna(0) * 2.00
+        score += df["dam_bms_gap_small"].fillna(0) * 0.0
 
     return score
