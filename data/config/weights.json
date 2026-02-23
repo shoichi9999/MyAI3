@@ -17,5 +17,7 @@
   "dam_breed_cap": 1.119,
   "dam_breed_penalty": 6.909,
   "b_sire_old": 0.0,
-  "_comment": "TOP10最適化 (8年LOO-CV: TOP10=14/80)"
+  "_comment": "TOP10最適化 (8年LOO-CV: TOP10=14/80)",
+  "b_foal_first": null,
+  "b_foal_middle": null
 }
