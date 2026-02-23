@@ -98,6 +98,11 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
         score += np.where(fn == 1, -W.get("b_foal_penalty", 14.97),
                           np.where(fn <= 4, W.get("b_foal_bonus", 6.24), 0))
 
+    # 種牡馬高齢ペナルティ（16歳超で年齢に応じた減点）
+    if "sire_age" in df.columns:
+        sa = df["sire_age"].fillna(12)
+        score -= np.maximum(0, sa - 16) * W.get("b_sire_old", 0.0)
+
     # セリ価格ボーナス
     if "sale_price_log" in df.columns:
         sp = df["sale_price_log"].fillna(0)

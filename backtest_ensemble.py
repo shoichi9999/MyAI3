@@ -113,7 +113,7 @@ def run_backtest(target_year, all_data, alpha=0.5):
     # (1) Heuristic
     h_scores = heuristic_score(df).values
 
-    # (2) LightGBM (LOYO)
+    # (2) LightGBM (LOYO) — TOP50分類 + スタッキング
     ml_proba = train_predict_loyo(all_data, target_year, top_n=50)
 
     # (3) Ensemble
@@ -141,7 +141,7 @@ def main():
                         help="評価対象年（省略時は --all が必要）")
     parser.add_argument("--all", action="store_true",
                         help="全年度で実行して集計")
-    parser.add_argument("--alpha", type=float, default=0.5,
+    parser.add_argument("--alpha", type=float, default=0.6,
                         help="ヒューリスティックの重み (0=ML only, 1=heuristic only)")
     args = parser.parse_args()
 
@@ -156,6 +156,11 @@ def main():
         if df is not None:
             all_data[y] = df
             print(f"  {y}年: {len(df)}頭")
+
+    # スタッキング: ヒューリスティックスコアを全年度に事前追加
+    for y, df in all_data.items():
+        all_data[y] = df.copy()
+        all_data[y]["h_score"] = heuristic_score(df).values
 
     print(f"\n  alpha = {args.alpha} (H={args.alpha:.0%}, ML={1-args.alpha:.0%})")
 

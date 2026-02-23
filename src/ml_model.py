@@ -1,9 +1,9 @@
 """
 LightGBM ベースの POG 予測モデル。
 
-デビュー前特徴量から TOP50 入りを予測する 2 値分類モデルを
+デビュー前特徴量から TOP10 入りを予測する 2 値分類モデルを
 Leave-One-Year-Out CV で学習・評価する。
-ヒューリスティックスコアとのアンサンブルにも対応。
+ヒューリスティックスコアをスタッキング特徴量として利用可能。
 """
 
 import numpy as np
@@ -16,6 +16,7 @@ FEATURE_COLS = [
     "sex",
     "sire_ei",
     "bms_ei",
+    "sire_2yo_ei",
     "dam_prize",
     "sire_prize",
     "trainer_score",
@@ -36,8 +37,11 @@ FEATURE_COLS = [
     "dam_breeding_age",
 ]
 
+# スタッキング時に追加する特徴量
+STACKING_COLS = FEATURE_COLS + ["h_score"]
 
-def _make_label(prize: pd.Series, top_n: int = 50) -> np.ndarray:
+
+def _make_label(prize: pd.Series, top_n: int = 10) -> np.ndarray:
     """賞金上位 top_n 頭を正例(1)とする 2 値ラベル。"""
     threshold_idx = np.argsort(-prize.values)[:top_n]
     label = np.zeros(len(prize), dtype=int)
@@ -48,7 +52,7 @@ def _make_label(prize: pd.Series, top_n: int = 50) -> np.ndarray:
 def train_predict_loyo(
     all_data: dict[int, pd.DataFrame],
     target_year: int,
-    top_n: int = 50,
+    top_n: int = 10,
     lgb_params: dict | None = None,
 ) -> np.ndarray:
     """Leave-One-Year-Out で target_year の予測確率を返す。
@@ -57,17 +61,18 @@ def train_predict_loyo(
     ----------
     all_data : dict[int, DataFrame]
         {year: feature_matrix_with_prize_num} 年度→特徴量DF
+        h_score カラムがあればスタッキング特徴量として利用
     target_year : int
         予測対象年度（この年をテストに使う）
     top_n : int
-        正例とする賞金上位 N 頭
+        正例とする賞金上位 N 頭（デフォルト: 10）
     lgb_params : dict, optional
         LightGBM のハイパーパラメータ
 
     Returns
     -------
     np.ndarray
-        target_year の各馬の予測確率（高いほど TOP50 入り可能性大）
+        target_year の各馬の予測確率（高いほど TOP10 入り可能性大）
     """
     if lgb_params is None:
         lgb_params = {
@@ -75,28 +80,32 @@ def train_predict_loyo(
             "metric": "binary_logloss",
             "boosting_type": "gbdt",
             "num_leaves": 31,
-            "learning_rate": 0.05,
+            "learning_rate": 0.03,
             "feature_fraction": 0.8,
             "bagging_fraction": 0.8,
             "bagging_freq": 5,
-            "min_child_samples": 20,
+            "min_child_samples": 30,
             "scale_pos_weight": 1.0,
             "verbose": -1,
             "seed": 42,
         }
+
+    # スタッキング: h_scoreがあればスタッキング特徴量を使用
+    use_stacking = "h_score" in all_data[target_year].columns
+    feat_cols = STACKING_COLS if use_stacking else FEATURE_COLS
 
     # 訓練データ: target_year 以外の全年度
     train_frames = []
     for y, df in all_data.items():
         if y == target_year:
             continue
-        X = df[FEATURE_COLS].copy()
+        X = df[feat_cols].copy()
         label = _make_label(df["prize_num"], top_n)
         X["__label__"] = label
         train_frames.append(X)
 
     train_all = pd.concat(train_frames, ignore_index=True)
-    X_train = train_all[FEATURE_COLS]
+    X_train = train_all[feat_cols]
     y_train = train_all["__label__"]
 
     # 不均衡対応: scale_pos_weight を正例/負例比率に
@@ -106,14 +115,14 @@ def train_predict_loyo(
 
     # テストデータ
     test_df = all_data[target_year]
-    X_test = test_df[FEATURE_COLS]
+    X_test = test_df[feat_cols]
 
     # LightGBM 学習
     dtrain = lgb.Dataset(X_train, label=y_train)
     model = lgb.train(
         lgb_params,
         dtrain,
-        num_boost_round=300,
+        num_boost_round=500,
     )
 
     # 予測確率

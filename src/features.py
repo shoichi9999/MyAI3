@@ -119,6 +119,23 @@ WEIGHT_DAM_PRIZE = _WEIGHTS.get("w_dam_prize", 0.036)
 WEIGHT_BMS_EI = _WEIGHTS.get("w_bms_ei", 0.0235)
 
 
+def get_sire_2yo_ei(sire_name: str, leading_year: int = None) -> float:
+    """種牡馬の2歳EI（2歳産駒限定のアーニングインデックス）を返す。
+
+    data/sire_2yo_leading_{year}.json が存在する場合のみ有効。
+    """
+    if not sire_name:
+        return 0.0
+    if leading_year is not None:
+        data = _load_leading("sire_2yo_leading", leading_year).get(sire_name, {})
+    else:
+        data = _load_json("data/sire_2yo_leading_2024.json").get(sire_name, {})
+    try:
+        return float(data.get("ei", 0) or 0)
+    except (ValueError, TypeError):
+        return 0.0
+
+
 def get_sire_ei(sire_name: str, leading_year: int = None) -> float:
     """種牡馬のEI（アーニングインデックス）を返す。
 
@@ -305,6 +322,7 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
         # 産駒成績ベースの血統スコア（年度別リーディングを参照）
         row["sire_ei"] = get_sire_ei(horse.get("sire", ""), leading_year)
         row["bms_ei"] = get_bms_ei(horse.get("sire_of_dam", ""), leading_year)
+        row["sire_2yo_ei"] = get_sire_2yo_ei(horse.get("sire", ""), leading_year)
 
         # 母馬の獲得賞金（不明なら0 — 不明は不利な情報として扱う）
         row["dam_prize"] = get_dam_prize(horse.get("dam", ""))

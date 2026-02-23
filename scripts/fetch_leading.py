@@ -166,14 +166,77 @@ def save_leading(data: dict, path: str):
     print(f"  → {path}")
 
 
+def fetch_2yo_leading(year: int, max_pages: int = 5) -> dict:
+    """2歳種牡馬リーディングを取得する。
+
+    netkeiba.comの2歳リーディングページからデータを取得。
+    URL形式が不明なため複数パターンを試行する。
+
+    Returns
+    -------
+    dict
+        {name: {rank, progeny_prize, ei, ...}, ...}
+    """
+    print(f"\n=== 2歳種牡馬リーディング {year}年 ===")
+
+    # netkeiba 2歳リーディングのURL候補（要検証）
+    url_patterns = [
+        f"{BASE_URL}/?pid=sire_leading&year={year}&list=2",
+        f"{BASE_URL}/?pid=sire_leading&year={year}&kind=2",
+        f"{BASE_URL}/?pid=sire_leading&year={year}&generation=2",
+    ]
+
+    for url_base in url_patterns:
+        print(f"  試行: {url_base}")
+        try:
+            entries = fetch_leading_page("sire_leading", year, page=1)
+            # URLを直接指定してfetch
+            soup = _get_soup(url_base)
+            table = soup.find("table", class_="nk_tb_common")
+            if table and len(table.find_all("tr")) > 1:
+                print(f"  → URL確定: {url_base}")
+                break
+        except Exception:
+            continue
+    else:
+        print("  [WARN] 2歳リーディングのURLが見つかりません。")
+        print("  netkeiba.comの2歳種牡馬リーディングページのURLを確認してください。")
+        print("  確認後、fetch_leading_page() のURL引数を修正してください。")
+        return {}
+
+    # ページ送りで全件取得
+    all_data = {}
+    for page in range(1, max_pages + 1):
+        page_url = f"{url_base}&page={page}"
+        soup = _get_soup(page_url)
+        table = soup.find("table", class_="nk_tb_common")
+        if not table:
+            break
+        rows = table.find_all("tr")
+        if len(rows) < 2:
+            break
+        entries = fetch_leading_page("sire_leading", year, page)
+        if not entries:
+            break
+        for name, data in entries:
+            if name not in all_data:
+                all_data[name] = data
+        print(f"  ページ {page}: {len(entries)}件 (累計: {len(all_data)})")
+        if len(entries) < 20:
+            break
+
+    print(f"  合計: {len(all_data)}頭")
+    return all_data
+
+
 def main():
     parser = argparse.ArgumentParser(description="リーディングデータ取得")
     parser.add_argument("year", nargs="?", type=int, default=None,
                         help="対象年度（例: 2024）")
     parser.add_argument("--years", nargs="+", type=int, default=None,
                         help="複数年度を一括取得（例: --years 2015 2016 2017）")
-    parser.add_argument("--type", choices=["sire", "bms", "both"], default="both",
-                        help="取得タイプ（デフォルト: both）")
+    parser.add_argument("--type", choices=["sire", "bms", "both", "2yo"], default="both",
+                        help="取得タイプ（デフォルト: both, 2yo: 2歳リーディング）")
     args = parser.parse_args()
 
     if args.years:
@@ -191,6 +254,11 @@ def main():
         if args.type in ("bms", "both"):
             bms_data = fetch_leading("bms_leading", year)
             save_leading(bms_data, f"data/bms_leading_{year}.json")
+
+        if args.type == "2yo":
+            data_2yo = fetch_2yo_leading(year)
+            if data_2yo:
+                save_leading(data_2yo, f"data/sire_2yo_leading_{year}.json")
 
 
 if __name__ == "__main__":

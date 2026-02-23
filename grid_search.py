@@ -84,6 +84,11 @@ def parameterized_score(df: pd.DataFrame, params: dict) -> pd.Series:
     if "dam_bms_gap_small" in df.columns:
         score += df["dam_bms_gap_small"].fillna(0) * params["b_dam_bms_gap"]
 
+    # 種牡馬高齢ペナルティ
+    if "sire_age" in df.columns:
+        sa = df["sire_age"].fillna(12)
+        score -= np.maximum(0, sa - 16) * params.get("b_sire_old", 0)
+
     # セリ価格
     if "sale_price_log" in df.columns:
         sp = df["sale_price_log"].fillna(0)
@@ -242,6 +247,7 @@ def grid_search(years, objective="balanced"):
         "dam_breed_base": _w.get("dam_breed_base", 5.0),
         "dam_breed_cap": _w.get("dam_breed_cap", 2.0),
         "dam_breed_penalty": _w.get("dam_breed_penalty", 3.0),
+        "b_sire_old": _w.get("b_sire_old", 0.0),
     }
 
     current_cv = cv_score(all_data, current_params)
@@ -357,6 +363,12 @@ def _precompute_arrays(all_data):
             d["parents_young"] = np.zeros(n)
         # 母-母父年齢差
         d["dam_bms_gap"] = df["dam_bms_gap_small"].fillna(0).values if "dam_bms_gap_small" in df.columns else np.zeros(n)
+        # 種牡馬高齢ペナルティ（16歳超の超過年数）
+        if "sire_age" in df.columns:
+            sa = df["sire_age"].fillna(12).values
+            d["sire_old_excess"] = np.maximum(0, sa - 16)
+        else:
+            d["sire_old_excess"] = np.zeros(n)
         # セリ価格（正規化）
         if "sale_price_log" in df.columns:
             sp = df["sale_price_log"].fillna(0).values
@@ -410,6 +422,7 @@ def _fast_cv_score(precomputed, params):
             + d["sale_price_norm"] * params[11]     # b_sale_price
             + d["is_first_foal"] * (-params[12])    # b_foal_penalty
             + d["is_good_foal"] * params[13]        # b_foal_bonus
+            - d["sire_old_excess"] * params[17]     # b_sire_old
         )
         # 両親若齢（2パターン）
         if "parents_young" in d:
@@ -441,6 +454,7 @@ _PARAM_KEYS = [
     "w_trainer", "w_owner", "w_breeder", "b_early", "b_parents_young",
     "b_dam_bms_gap", "b_sale_price", "b_foal_penalty", "b_foal_bonus",
     "dam_breed_base", "dam_breed_cap", "dam_breed_penalty",
+    "b_sire_old",
 ]
 
 def _dict_to_arr(params):
@@ -478,6 +492,7 @@ def _random_search_top10(all_data, current_params, best_score):
         (1, 12),       # dam_breed_base
         (0, 8),        # dam_breed_cap
         (0, 8),        # dam_breed_penalty
+        (0, 5),        # b_sire_old
     ])
     lo = param_ranges[:, 0]
     hi = param_ranges[:, 1]
