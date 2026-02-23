@@ -1,0 +1,20 @@
+{
+  "_comment": "ヒューリスティックスコアの重みパラメータ（グリッドサーチv3）",
+  "w_sire_ei": 0.065,
+  "w_dam_prize": 0.036,
+  "w_bms_ei": 0.0235,
+  "w_first_crop": 0.455,
+  "w_trainer": 0.270,
+  "w_owner": 0.143,
+  "w_breeder": 0.0,
+  "b_sex": 16.47,
+  "b_early": 0.0,
+  "b_parents_young": 0.0,
+  "b_foal_penalty": -14.97,
+  "b_foal_bonus": 6.24,
+  "b_sale_price": 0.0,
+  "b_dam_bms_gap": 0.0,
+  "dam_breed_base": 5.0,
+  "dam_breed_cap": 2.0,
+  "dam_breed_penalty": 3.0
+}

@@ -105,90 +105,18 @@ def _load_extra_features(birth_year: int) -> dict:
     return EXTRA_FEATURES_CACHE[birth_year]
 
 
-# 有力調教師スコア（2歳戦〜クラシック実績ベース）
-ELITE_TRAINERS = {
-    "国枝栄": 92,
-    "堀宣行": 90,
-    "藤沢和雄": 88,
-    "友道康夫": 90,
-    "中内田充正": 89,
-    "木村哲也": 87,
-    "手塚貴久": 85,
-    "矢作芳人": 88,
-    "池江泰寿": 86,
-    "須貝尚介": 84,
-    "萩原清": 83,
-    "田中博康": 80,
-    "高野友和": 82,
-    "安田隆行": 83,
-    "音無秀孝": 81,
-    "斉藤崇史": 84,
-    "武幸四郎": 82,
-    "杉山晴紀": 81,
-    "福永祐一": 85,
-    "宮田敬介": 82,
-    "吉岡辰弥": 78,
-    "蛯名正義": 80,
-    "四位洋文": 78,
-}
+# エリートデータ・重み設定を外部JSONから読み込み（data/config/）
+ELITE_TRAINERS = _load_json("data/config/elite_trainers.json")
+ELITE_TRAINERS.pop("_comment", None)
+ELITE_OWNERS = _load_json("data/config/elite_owners.json")
+ELITE_OWNERS.pop("_comment", None)
+ELITE_BREEDERS = _load_json("data/config/elite_breeders.json")
+ELITE_BREEDERS.pop("_comment", None)
 
-
-# 有力馬主スコア（クラシック・重賞実績ベース）
-ELITE_OWNERS = {
-    "サンデーレーシング": 90,
-    "金子真人ホールディングス": 88,
-    "社台レースホース": 85,
-    "シルクレーシング": 82,
-    "キャロットファーム": 82,
-    "ダノックス": 78,
-    "藤田晋": 78,
-    "前田晋二": 80,
-    "近藤利一": 78,
-    "近藤旬子": 78,
-    "近藤英子": 75,
-    "吉田勝己": 85,
-    "吉田千津": 80,
-    "吉田照哉": 80,
-    "大塚亮一": 75,
-    "石川達絵": 75,
-    "前田幸治": 75,
-    "前田葉子": 75,
-    "三木正浩": 75,
-    "窪田芳郎": 74,
-    "キャピタル・システム": 74,
-    "Ｇリビエール・レーシング": 74,
-    "ＫＲジャパン": 76,
-    "国本哲秀": 73,
-    "岡田牧雄": 73,
-    "寺田千代乃": 73,
-    "西川光一": 75,
-    "八木良司": 74,
-    "土井肇": 76,
-    "タマモ": 73,
-    "ＴＯＲＡＣＩＮＧ": 78,
-}
-
-
-# 生産牧場スコア（POG上位輩出実績ベース）
-ELITE_BREEDERS = {
-    "ノーザンファーム": 95,
-    "社台ファーム": 88,
-    "社台コーポレーション白老ファーム": 85,
-    "追分ファーム": 82,
-    "ノースヒルズ": 80,
-    "下河辺牧場": 78,
-    "ダーレー・ジャパン・ファーム": 80,
-    "レイクヴィラファーム": 75,
-    "ケイアイファーム": 74,
-    "岡田スタッド": 74,
-    "ビッグレッドファーム": 73,
-    "コスモヴューファーム": 72,
-}
-
-# ヒューリスティックスコアの重み配分（データ修正後グリッドサーチ v3）
-WEIGHT_SIRE_EI = 0.065
-WEIGHT_DAM_PRIZE = 0.036
-WEIGHT_BMS_EI = 0.0235
+_WEIGHTS = _load_json("data/config/weights.json")
+WEIGHT_SIRE_EI = _WEIGHTS.get("w_sire_ei", 0.065)
+WEIGHT_DAM_PRIZE = _WEIGHTS.get("w_dam_prize", 0.036)
+WEIGHT_BMS_EI = _WEIGHTS.get("w_bms_ei", 0.0235)
 
 
 def get_sire_ei(sire_name: str, leading_year: int = None) -> float:

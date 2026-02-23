@@ -221,15 +221,27 @@ def grid_search(years, objective="balanced"):
 
     print(f"\n  利用年度: {sorted(all_data.keys())} ({len(all_data)}年分)")
 
-    # 現行パラメータ（model.py の値に合わせる — TOP10最適化v2）
+    # 現行パラメータ（data/config/weights.json から読み込み）
+    from src.model import _load_weights
+    _w = _load_weights()
     current_params = {
-        "b_sex": 16.47,
-        "w_sire_ei": 0.065, "w_dam_prize": 0.036, "w_bms_ei": 0.036,
-        "w_first_crop": 0.355,
-        "b_early": 6.10, "b_parents_young": 1.71, "b_dam_bms_gap": 0.0,
-        "b_sale_price": 1.94, "b_foal_penalty": 14.97, "b_foal_bonus": 6.24,
-        "w_trainer": 0.270, "w_owner": 0.143, "w_breeder": 0.0,
-        "dam_breed_base": 1.84, "dam_breed_cap": 6.76, "dam_breed_penalty": 7.25,
+        "b_sex": _w.get("b_sex", 16.47),
+        "w_sire_ei": _w.get("w_sire_ei", 0.065),
+        "w_dam_prize": _w.get("w_dam_prize", 0.036),
+        "w_bms_ei": _w.get("w_bms_ei", 0.0235),
+        "w_first_crop": _w.get("w_first_crop", 0.455),
+        "b_early": _w.get("b_early", 0.0),
+        "b_parents_young": _w.get("b_parents_young", 0.0),
+        "b_dam_bms_gap": _w.get("b_dam_bms_gap", 0.0),
+        "b_sale_price": _w.get("b_sale_price", 0.0),
+        "b_foal_penalty": _w.get("b_foal_penalty", 14.97),
+        "b_foal_bonus": _w.get("b_foal_bonus", 6.24),
+        "w_trainer": _w.get("w_trainer", 0.270),
+        "w_owner": _w.get("w_owner", 0.143),
+        "w_breeder": _w.get("w_breeder", 0.0),
+        "dam_breed_base": _w.get("dam_breed_base", 5.0),
+        "dam_breed_cap": _w.get("dam_breed_cap", 2.0),
+        "dam_breed_penalty": _w.get("dam_breed_penalty", 3.0),
     }
 
     current_cv = cv_score(all_data, current_params)
@@ -257,6 +269,15 @@ def grid_search(years, objective="balanced"):
     for k, v in sorted(best_params.items()):
         print(f"    {k}: {v}")
     print(f"\n  CVスコア: {best_score:.2f} (現行: {current_cv:.2f}, 差: {best_score - current_cv:+.2f})")
+
+    # weights.json に書き戻し
+    import json as _json
+    weights_path = "data/config/weights.json"
+    save_weights = dict(best_params)
+    save_weights["_comment"] = "グリッドサーチ自動更新"
+    with open(weights_path, "w", encoding="utf-8") as _f:
+        _json.dump(save_weights, _f, ensure_ascii=False, indent=2)
+    print(f"\n  → {weights_path} に保存しました")
 
     # 変更点
     print(f"\n--- 変更点 ---")
