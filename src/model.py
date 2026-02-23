@@ -98,4 +98,13 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
         dba = df["dam_breeding_age"]
         score += np.where(dba.isna(), 0, (1.84 - dba).clip(-7.25, 6.76))
 
+    # 生産牧場スコアボーナス（仮重み — グリッドサーチ再実行で要最適化）
+    if "breeder_score" in df.columns:
+        bs = df["breeder_score"].fillna(50)
+        score += (bs - 50) * 0.150
+
+    # 母-母父年齢差ボーナス（15歳以下 — 仮重み）
+    if "dam_bms_gap_small" in df.columns:
+        score += df["dam_bms_gap_small"].fillna(0) * 2.00
+
     return score
