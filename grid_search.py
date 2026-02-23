@@ -47,11 +47,13 @@ def parameterized_score(df: pd.DataFrame, params: dict) -> pd.Series:
         if cap > 0:
             score += (ei.clip(upper=cap) / cap) * 100 * w_bms
 
-    # 初年度種牡馬ボーナス
+    # 初年度種牡馬ボーナス（年内正規化）
     if "sire_prize" in df.columns and "sire_ei" in df.columns:
         is_first_crop = df["sire_ei"].fillna(0) == 0
         sire_prize_log = np.log1p(df["sire_prize"].fillna(0))
-        score += is_first_crop * sire_prize_log * params["w_first_crop"]
+        fc_max = sire_prize_log[is_first_crop].max() if is_first_crop.any() else 0
+        normalized = (sire_prize_log / fc_max) if fc_max > 0 else sire_prize_log * 0
+        score += is_first_crop * normalized * params["w_first_crop"]
 
     # 母馬賞金
     if "dam_prize" in df.columns:
@@ -334,11 +336,14 @@ def _precompute_arrays(all_data):
             d["bms_ei_norm"] = (np.clip(ei, 0, cap) / cap * 100) if cap > 0 else np.zeros(n)
         else:
             d["bms_ei_norm"] = np.zeros(n)
-        # 初年度種牡馬ボーナス
+        # 初年度種牡馬ボーナス（年内正規化）
         if "sire_prize" in df.columns and "sire_ei" in df.columns:
             is_first = (df["sire_ei"].fillna(0) == 0).values.astype(float)
             sp_log = np.log1p(df["sire_prize"].fillna(0).values)
-            d["first_crop_val"] = is_first * sp_log
+            fc_mask = is_first.astype(bool)
+            fc_max = sp_log[fc_mask].max() if fc_mask.any() else 1.0
+            normalized = (sp_log / fc_max) if fc_max > 0 else np.zeros(n)
+            d["first_crop_val"] = is_first * normalized
         else:
             d["first_crop_val"] = np.zeros(n)
         # 母馬賞金（対数正規化）
@@ -479,7 +484,7 @@ def _random_search_top10(all_data, current_params, best_score):
         (0.0, 0.50),   # w_sire_ei
         (0.0, 0.30),   # w_dam_prize
         (0.0, 0.35),   # w_bms_ei
-        (0.0, 3.0),    # w_first_crop
+        (0.0, 25.0),   # w_first_crop (正規化後は[0,1]なのでpt単位)
         (0.0, 0.50),   # w_trainer
         (0.0, 0.50),   # w_owner
         (0.0, 0.50),   # w_breeder

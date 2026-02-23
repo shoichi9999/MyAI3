@@ -59,11 +59,13 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
         if cap > 0:
             score += (ei.clip(upper=cap) / cap) * 100 * W.get("w_bms_ei", 0.0235)
 
-    # 初年度種牡馬ボーナス（産駒EIが未知の種牡馬に、自身の現役賞金で補正）
+    # 初年度種牡馬ボーナス（年内正規化: 初年度種牡馬間の相対順位でスコア付け）
     if "sire_prize" in df.columns and "sire_ei" in df.columns:
         is_first_crop = df["sire_ei"].fillna(0) == 0
         sire_prize_log = np.log1p(df["sire_prize"].fillna(0))
-        score += is_first_crop * sire_prize_log * W.get("w_first_crop", 0.455)
+        fc_max = sire_prize_log[is_first_crop].max() if is_first_crop.any() else 0
+        normalized = (sire_prize_log / fc_max) if fc_max > 0 else sire_prize_log * 0
+        score += is_first_crop * normalized * W.get("w_first_crop", 0.455)
 
     # 母馬獲得賞金（対数 + 99パーセンタイル正規化）
     if "dam_prize" in df.columns:
