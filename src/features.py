@@ -348,6 +348,13 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
         sale_price = extra.get("sale_price")
         row["sale_price_log"] = np.log1p(sale_price) if sale_price else 0.0
         foal_number = extra.get("foal_number")
+        # extra_featuresにない場合、dam_foalsから直接計算
+        if not foal_number:
+            dam_id_fn = str(horse.get("dam_id", "")) if pd.notna(horse.get("dam_id")) else ""
+            if dam_id_fn:
+                fl = DAM_FOALS.get(dam_id_fn, [])
+                if fl and str(hid) in fl:
+                    foal_number = len(fl) - fl.index(str(hid))
         row["foal_number"] = foal_number if foal_number else 3.0  # デフォルト: 3番仔
 
         # --- 母馬の繁殖入り年齢（初仔生年 - 母馬生年 = 引退時期の近似） ---

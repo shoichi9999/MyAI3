@@ -95,7 +95,7 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
     # 産駒番号（初仔ペナルティ、2-4番仔ボーナス）
     if "foal_number" in df.columns:
         fn = df["foal_number"].fillna(3)
-        score += np.where(fn == 1, W.get("b_foal_penalty", -14.97),
+        score += np.where(fn == 1, -W.get("b_foal_penalty", 14.97),
                           np.where(fn <= 4, W.get("b_foal_bonus", 6.24), 0))
 
     # セリ価格ボーナス

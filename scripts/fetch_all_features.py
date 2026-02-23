@@ -222,7 +222,8 @@ def fetch_all_features(birth_year: int, max_horses: int = None, top: int = None)
         dam_id = entry.get("dam_id") or (str(row.get("dam_id", "")) if pd.notna(row.get("dam_id")) else "")
         if dam_id and "foal_number" not in entry:
             foal_list = dam_foals_cache.get(dam_id, [])
-            entry["foal_number"] = (foal_list.index(hid) + 1) if hid in foal_list else None
+            # dam_foalsリストは降順（新しい順）→ 末尾が初仔
+            entry["foal_number"] = (len(foal_list) - foal_list.index(hid)) if hid in foal_list else None
             ef_cache[hid] = entry
 
     _save_cache(ef_path, ef_cache)
