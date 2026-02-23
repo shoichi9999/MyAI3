@@ -1,17 +1,19 @@
 """
 グリッドサーチ — ヒューリスティックスコアの重み最適化。
 
+ダービー/オークスTOP5予測を最大化するようにパラメータを探索する。
+
 使い方:
   python grid_search.py --years 2019
 """
 
 import argparse
 import itertools
+import json
 import os
 
 import numpy as np
 import pandas as pd
-from scipy.stats import spearmanr
 
 from src.features import build_feature_matrix
 
@@ -120,67 +122,94 @@ def parameterized_score(df: pd.DataFrame, params: dict) -> pd.Series:
 
 
 # ------------------------------------------------------------------
+# クラシック結果データ
+# ------------------------------------------------------------------
+
+def _load_classic_results() -> dict:
+    path = "data/classic_results.json"
+    if os.path.exists(path):
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}
+
+_CLASSIC = _load_classic_results()
+
+
+def _get_classic_ids(birth_year: int) -> tuple[set, set]:
+    """(derby_top5_ids, oaks_top5_ids) を返す。"""
+    derby = set(_CLASSIC.get("derby", {}).get(str(birth_year), []))
+    oaks = set(_CLASSIC.get("oaks", {}).get(str(birth_year), []))
+    return derby, oaks
+
+
+# ------------------------------------------------------------------
 # 評価
 # ------------------------------------------------------------------
 
-def evaluate_single(df: pd.DataFrame, params: dict) -> dict:
-    """1年度のデータで評価する。"""
+def evaluate_single(df: pd.DataFrame, params: dict, birth_year: int = None) -> dict:
+    """1年度のデータでダービー/オークスTOP5予測を評価する。"""
     scores = parameterized_score(df, params).values
-    y_true = df["prize_num"].values
+    horse_ids = df["horse_id"].astype(str).values
+    sex = df["sex"].values
 
-    corr, _ = spearmanr(scores, y_true)
-    if np.isnan(corr):
-        corr = 0.0
+    if birth_year is None:
+        birth_year = df.get("_birth_year", 2020)
+
+    derby_top5, oaks_top5 = _get_classic_ids(birth_year)
+    classic_top10 = derby_top5 | oaks_top5
 
     results = {}
-    for n in [10, 30, 50, 100]:
-        pred_idx = set(np.argsort(-scores)[:n])
-        actual_idx = set(np.argsort(-y_true)[:n])
-        results[f"top{n}"] = len(pred_idx & actual_idx)
 
-    overall_avg = y_true.mean()
-    pred_top30_avg = y_true[np.argsort(-scores)[:30]].mean()
-    ratio = pred_top30_avg / overall_avg if overall_avg > 0 else 0
+    # 全体: 予測TOP N にクラシック馬が何頭入るか
+    for n in [10, 20, 30, 50, 100]:
+        pred_idx = np.argsort(-scores)[:n]
+        pred_ids = set(horse_ids[pred_idx])
+        results[f"top{n}_total"] = len(pred_ids & classic_top10)
 
-    return {
-        "spearman": corr,
-        "top10": results["top10"],
-        "top30": results["top30"],
-        "top50": results["top50"],
-        "top100": results["top100"],
-        "prize_ratio": ratio,
-    }
+    # 牡馬内でダービー評価
+    male_mask = sex == 1
+    if male_mask.any() and derby_top5:
+        male_scores = scores[male_mask]
+        male_ids = horse_ids[male_mask]
+        for n in [10, 20, 30]:
+            pred_idx = np.argsort(-male_scores)[:n]
+            pred_ids = set(male_ids[pred_idx])
+            results[f"male_top{n}_derby"] = len(pred_ids & derby_top5)
+
+    # 牝馬内でオークス評価
+    female_mask = sex == 0
+    if female_mask.any() and oaks_top5:
+        female_scores = scores[female_mask]
+        female_ids = horse_ids[female_mask]
+        for n in [10, 20, 30]:
+            pred_idx = np.argsort(-female_scores)[:n]
+            pred_ids = set(female_ids[pred_idx])
+            results[f"female_top{n}_oaks"] = len(pred_ids & oaks_top5)
+
+    return results
 
 
-def composite_score(metrics: dict, objective: str = "balanced") -> float:
-    """複合スコア。objectiveで重み付けを切り替える。"""
-    if objective == "top10":
-        # TOP10を絶対的に優先。TOP30は同スコア時のタイブレーカーのみ
-        return (
-            metrics["top10"] * 100.0
-            + metrics["top30"] * 1.0
-            + metrics["spearman"] * 0.1
-        )
-    # balanced（従来）
+def composite_score(metrics: dict, objective: str = "classic") -> float:
+    """複合スコア（ダービー/オークスTOP5予測向け）。"""
+    # 性別別TOP10でのダービー/オークスヒット数を最大化
+    derby_hits = metrics.get("male_top10_derby", 0)
+    oaks_hits = metrics.get("female_top10_oaks", 0)
+    total_30 = metrics.get("top30_total", 0)
+    total_50 = metrics.get("top50_total", 0)
+
     return (
-        metrics["top30"] * 2.0
-        + metrics["top10"] * 3.0
-        + metrics["top100"] * 0.5
-        + metrics["prize_ratio"] * 0.3
-        + metrics["spearman"] * 10
+        (derby_hits + oaks_hits) * 100.0  # 性別別TOP10ヒットが最重要
+        + total_30 * 5.0                  # 全体TOP30
+        + total_50 * 1.0                  # 全体TOP50
     )
-
-
-# グローバル設定（grid_search関数内で設定）
-_OBJECTIVE = "balanced"
 
 
 def cv_score(all_data: dict, params: dict) -> float:
     """全年度の composite_score 平均を返す。"""
     scores = []
-    for df in all_data.values():
-        m = evaluate_single(df, params)
-        scores.append(composite_score(m, _OBJECTIVE))
+    for year, df in all_data.items():
+        m = evaluate_single(df, params, birth_year=year)
+        scores.append(composite_score(m))
     return np.mean(scores)
 
 
@@ -188,20 +217,16 @@ def cv_score(all_data: dict, params: dict) -> float:
 # データ読み込み
 # ------------------------------------------------------------------
 
-def _parse_prize(x) -> float:
-    if pd.isna(x) or str(x).strip() == "":
-        return 0.0
-    return float(str(x).replace(",", "").replace("万", "").strip())
-
-
 def load_year(year: int) -> pd.DataFrame | None:
     csv_path = f"data/horses_{year}.csv"
     if not os.path.exists(csv_path):
         return None
+    # クラシック結果がない年はスキップ
+    derby, oaks = _get_classic_ids(year)
+    if not derby and not oaks:
+        return None
     horses = pd.read_csv(csv_path)
-    horses["prize_num"] = horses["total_prize"].apply(_parse_prize)
     features = build_feature_matrix(horses, birth_year=year)
-    features["prize_num"] = horses["prize_num"].values
     return features
 
 
@@ -255,8 +280,11 @@ def grid_search(years, objective="balanced"):
     current_cv = cv_score(all_data, current_params)
     print(f"\n  現行パラメータのCVスコア: {current_cv:.2f}")
     for y, df in sorted(all_data.items()):
-        m = evaluate_single(df, current_params)
-        print(f"    {y}年: Spearman={m['spearman']:.4f} TOP10={m['top10']} TOP30={m['top30']} TOP100={m['top100']} 賞金倍率={m['prize_ratio']:.2f}x")
+        m = evaluate_single(df, current_params, birth_year=y)
+        d = m.get("male_top10_derby", 0)
+        o = m.get("female_top10_oaks", 0)
+        t30 = m.get("top30_total", 0)
+        print(f"    {y}年: ダービー牡TOP10={d}/5  オークス牝TOP10={o}/5  全体TOP30={t30}/10")
 
     best_score = current_cv
     best_params = dict(current_params)
@@ -299,17 +327,21 @@ def grid_search(years, objective="balanced"):
 
     # 年度別詳細
     print(f"\n--- 年度別パフォーマンス比較 ---")
-    print(f"{'年':>6} | {'指標':>10} | {'現行':>8} | {'最適化':>8} | {'差':>8}")
-    print("-" * 60)
+    print(f"{'年':>6} | {'指標':>12} | {'現行':>6} | {'最適化':>6} | {'差':>6}")
+    print("-" * 55)
     for y in sorted(all_data.keys()):
-        m_old = evaluate_single(all_data[y], current_params)
-        m_new = evaluate_single(all_data[y], best_params)
-        print(f"  {y} | {'Spearman':>10} | {m_old['spearman']:8.4f} | {m_new['spearman']:8.4f} | {m_new['spearman']-m_old['spearman']:+8.4f}")
-        print(f"       | {'TOP10':>10} | {m_old['top10']:8d} | {m_new['top10']:8d} | {m_new['top10']-m_old['top10']:+8d}")
-        print(f"       | {'TOP30':>10} | {m_old['top30']:8d} | {m_new['top30']:8d} | {m_new['top30']-m_old['top30']:+8d}")
-        print(f"       | {'TOP100':>10} | {m_old['top100']:8d} | {m_new['top100']:8d} | {m_new['top100']-m_old['top100']:+8d}")
-        print(f"       | {'賞金倍率':>10} | {m_old['prize_ratio']:8.2f}x | {m_new['prize_ratio']:8.2f}x | {m_new['prize_ratio']-m_old['prize_ratio']:+8.2f}")
-        print("-" * 60)
+        m_old = evaluate_single(all_data[y], current_params, birth_year=y)
+        m_new = evaluate_single(all_data[y], best_params, birth_year=y)
+        d_old = m_old.get("male_top10_derby", 0)
+        d_new = m_new.get("male_top10_derby", 0)
+        o_old = m_old.get("female_top10_oaks", 0)
+        o_new = m_new.get("female_top10_oaks", 0)
+        t30_old = m_old.get("top30_total", 0)
+        t30_new = m_new.get("top30_total", 0)
+        print(f"  {y} | {'牡TOP10ダビ':>12} | {d_old:>5}/5 | {d_new:>5}/5 | {d_new-d_old:>+5}")
+        print(f"       | {'牝TOP10オク':>12} | {o_old:>5}/5 | {o_new:>5}/5 | {o_new-o_old:>+5}")
+        print(f"       | {'全体TOP30':>12} | {t30_old:>4}/10 | {t30_new:>4}/10 | {t30_new-t30_old:>+5}")
+        print("-" * 55)
 
     return best_params
 
@@ -397,10 +429,24 @@ def _precompute_arrays(all_data):
         else:
             d["dam_breed_notna"] = np.zeros(n)
             d["dam_breed_age"] = np.zeros(n)
-        # 正解データ
-        d["prize"] = df["prize_num"].values
-        d["actual_top10"] = set(np.argsort(-d["prize"])[:10])
-        d["actual_top30"] = set(np.argsort(-d["prize"])[:30])
+        # クラシック結果データ
+        horse_ids = df["horse_id"].astype(str).values
+        sex_vals = df["sex"].values if "sex" in df.columns else np.full(n, 0.5)
+        derby_top5, oaks_top5 = _get_classic_ids(year)
+        classic_top10 = derby_top5 | oaks_top5
+
+        d["horse_ids"] = horse_ids
+        d["sex_vals"] = sex_vals
+        d["derby_idx"] = set(i for i, hid in enumerate(horse_ids) if hid in derby_top5)
+        d["oaks_idx"] = set(i for i, hid in enumerate(horse_ids) if hid in oaks_top5)
+        d["classic_idx"] = set(i for i, hid in enumerate(horse_ids) if hid in classic_top10)
+        d["male_mask"] = (sex_vals == 1)
+        d["female_mask"] = (sex_vals == 0)
+        # male/female index mapping
+        d["male_indices"] = np.where(d["male_mask"])[0]
+        d["female_indices"] = np.where(d["female_mask"])[0]
+        d["derby_in_males"] = set(i for i, gi in enumerate(d["male_indices"]) if horse_ids[gi] in derby_top5)
+        d["oaks_in_females"] = set(i for i, gi in enumerate(d["female_indices"]) if horse_ids[gi] in oaks_top5)
 
         precomputed[year] = d
     return precomputed
@@ -439,16 +485,28 @@ def _fast_cv_score(precomputed, params):
         breed_val = np.clip(params[14] - d["dam_breed_age"], -params[16], params[15])
         score += d["dam_breed_notna"] * breed_val
 
-        # TOP10/TOP30 計算
-        pred_top10 = set(np.argpartition(-score, 10)[:10])
-        pred_top30 = set(np.argpartition(-score, 30)[:30])
+        # 性別別TOP10でクラシックヒット計算
+        # 牡馬TOP10でダービーヒット
+        derby_hits = 0
+        if len(d["male_indices"]) >= 10 and d["derby_in_males"]:
+            male_scores = score[d["male_indices"]]
+            male_top10 = set(np.argpartition(-male_scores, 10)[:10])
+            derby_hits = len(male_top10 & d["derby_in_males"])
 
-        top10_match = len(pred_top10 & d["actual_top10"])
-        top30_match = len(pred_top30 & d["actual_top30"])
+        # 牝馬TOP10でオークスヒット
+        oaks_hits = 0
+        if len(d["female_indices"]) >= 10 and d["oaks_in_females"]:
+            female_scores = score[d["female_indices"]]
+            female_top10 = set(np.argpartition(-female_scores, 10)[:10])
+            oaks_hits = len(female_top10 & d["oaks_in_females"])
 
-        # Spearmanは高コストなので簡易版: TOP10支配なので省略可能
-        # composite: top10 * 100 + top30 * 1 + spearman * 0.1
-        total_score += top10_match * 100.0 + top30_match * 1.0
+        # 全体TOP30でクラシックヒット
+        n_horses = len(score)
+        top30_k = min(30, n_horses)
+        pred_top30 = set(np.argpartition(-score, top30_k)[:top30_k])
+        top30_match = len(pred_top30 & d["classic_idx"])
+
+        total_score += (derby_hits + oaks_hits) * 100.0 + top30_match * 5.0
 
     return total_score / n_years
 
@@ -512,13 +570,15 @@ def _random_search_top10(all_data, current_params, best_score):
 
     def _show_top10(arr, label=""):
         params = _arr_to_dict(arr)
-        top10s = []
-        total = 0
+        items = []
+        total_hits = 0
         for y in sorted(all_data.keys()):
-            m = evaluate_single(all_data[y], params)
-            top10s.append(f"{y}:{m['top10']}")
-            total += m['top10']
-        print(f"  {label} TOP10合計={total} [{', '.join(top10s)}]")
+            m = evaluate_single(all_data[y], params, birth_year=y)
+            d = m.get("male_top10_derby", 0)
+            o = m.get("female_top10_oaks", 0)
+            items.append(f"{y}:D{d}O{o}")
+            total_hits += d + o
+        print(f"  {label} ヒット合計={total_hits} [{', '.join(items)}]")
 
     t_start = time.time()
 
@@ -813,10 +873,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="グリッドサーチ（重み最適化）")
     parser.add_argument("--years", nargs="+", type=int,
                         default=[2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022],
-                        help="使用する年度リスト")
-    parser.add_argument("--objective", choices=["balanced", "top10"],
-                        default="balanced",
-                        help="最適化目的: balanced(従来) / top10(TOP10最大化)")
+                        help="使用する年度リスト（生年）")
+    parser.add_argument("--objective", choices=["classic", "top10"],
+                        default="top10",
+                        help="最適化目的: classic(バランス) / top10(ヒット数最大化)")
     args = parser.parse_args()
 
     best = grid_search(args.years, objective=args.objective)

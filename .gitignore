@@ -10,4 +10,5 @@ models/*.pkl
 .DS_Store
 data/*.csv
 data/*.json
+!data/classic_results.json
 *.log
