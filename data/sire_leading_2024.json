@@ -1,0 +1,4062 @@
+{
+  "キズナ": {
+    "horse_id": "2010105827",
+    "rank": 1,
+    "runners": 342,
+    "winners": 131,
+    "win_rate": 0.383,
+    "ei": 1.87,
+    "progeny_prize": 425123.5,
+    "representative": "ジャスティンミラノ"
+  },
+  "ロードカナロア": {
+    "horse_id": "2008103552",
+    "rank": 2,
+    "runners": 346,
+    "winners": 102,
+    "win_rate": 0.295,
+    "ei": 1.68,
+    "progeny_prize": 385055.3,
+    "representative": "ベラジオオペラ"
+  },
+  "エピファネイア": {
+    "horse_id": "2010104155",
+    "rank": 3,
+    "runners": 334,
+    "winners": 84,
+    "win_rate": 0.251,
+    "ei": 1.45,
+    "progeny_prize": 320067.2,
+    "representative": "ダノンデサイル"
+  },
+  "ドゥラメンテ": {
+    "horse_id": "2012104511",
+    "rank": 4,
+    "runners": 283,
+    "winners": 82,
+    "win_rate": 0.29,
+    "ei": 1.28,
+    "progeny_prize": 239620.9,
+    "representative": "ルガル"
+  },
+  "ハーツクライ": {
+    "horse_id": "2001103038",
+    "rank": 5,
+    "runners": 163,
+    "winners": 45,
+    "win_rate": 0.276,
+    "ei": 1.99,
+    "progeny_prize": 214973.9,
+    "representative": "ドウデュース"
+  },
+  "モーリス": {
+    "horse_id": "2011100655",
+    "rank": 6,
+    "runners": 269,
+    "winners": 78,
+    "win_rate": 0.29,
+    "ei": 1.2,
+    "progeny_prize": 214897.6,
+    "representative": "ダノンマッキンリー"
+  },
+  "ルーラーシップ": {
+    "horse_id": "2007103143",
+    "rank": 7,
+    "runners": 234,
+    "winners": 61,
+    "win_rate": 0.261,
+    "ei": 1.36,
+    "progeny_prize": 210509.2,
+    "representative": "ソウルラッシュ"
+  },
+  "ハービンジャー": {
+    "horse_id": "000a011996",
+    "rank": 8,
+    "runners": 184,
+    "winners": 47,
+    "win_rate": 0.255,
+    "ei": 1.64,
+    "progeny_prize": 200444.7,
+    "representative": "チェルヴィニア"
+  },
+  "ドレフォン": {
+    "horse_id": "000a013b82",
+    "rank": 9,
+    "runners": 240,
+    "winners": 66,
+    "win_rate": 0.275,
+    "ei": 1.22,
+    "progeny_prize": 194389.1,
+    "representative": "ミッキーファイト"
+  },
+  "ディープインパクト": {
+    "horse_id": "2002100816",
+    "rank": 10,
+    "runners": 128,
+    "winners": 23,
+    "win_rate": 0.18,
+    "ei": 2.11,
+    "progeny_prize": 178893.6,
+    "representative": "シャフリヤール"
+  },
+  "キタサンブラック": {
+    "horse_id": "2012102013",
+    "rank": 11,
+    "runners": 151,
+    "winners": 54,
+    "win_rate": 0.358,
+    "ei": 1.76,
+    "progeny_prize": 176691.0,
+    "representative": "ウィルソンテソーロ"
+  },
+  "スワーヴリチャード": {
+    "horse_id": "2014106083",
+    "rank": 12,
+    "runners": 112,
+    "winners": 25,
+    "win_rate": 0.223,
+    "ei": 2.0,
+    "progeny_prize": 148847.9,
+    "representative": "レガレイラ"
+  },
+  "リオンディーズ": {
+    "horse_id": "2013105915",
+    "rank": 13,
+    "runners": 194,
+    "winners": 31,
+    "win_rate": 0.16,
+    "ei": 1.12,
+    "progeny_prize": 144384.9,
+    "representative": "テーオーロイヤル"
+  },
+  "ダイワメジャー": {
+    "horse_id": "2001103114",
+    "rank": 14,
+    "runners": 155,
+    "winners": 38,
+    "win_rate": 0.245,
+    "ei": 1.31,
+    "progeny_prize": 134202.2,
+    "representative": "アスコリピチェーノ"
+  },
+  "ゴールドシップ": {
+    "horse_id": "2009102739",
+    "rank": 15,
+    "runners": 171,
+    "winners": 39,
+    "win_rate": 0.228,
+    "ei": 1.17,
+    "progeny_prize": 133205.3,
+    "representative": "メイショウタバル"
+  },
+  "リアルスティール": {
+    "horse_id": "2012104889",
+    "rank": 16,
+    "runners": 202,
+    "winners": 53,
+    "win_rate": 0.262,
+    "ei": 0.95,
+    "progeny_prize": 127275.6,
+    "representative": "チカッパ"
+  },
+  "ヘニーヒューズ": {
+    "horse_id": "000a011155",
+    "rank": 17,
+    "runners": 172,
+    "winners": 45,
+    "win_rate": 0.262,
+    "ei": 1.03,
+    "progeny_prize": 117259.2,
+    "representative": "タガノビューティー"
+  },
+  "ジャスタウェイ": {
+    "horse_id": "2009106461",
+    "rank": 18,
+    "runners": 138,
+    "winners": 44,
+    "win_rate": 0.319,
+    "ei": 1.26,
+    "progeny_prize": 115375.1,
+    "representative": "ヤマニンウルス"
+  },
+  "キングカメハメハ": {
+    "horse_id": "2001103460",
+    "rank": 19,
+    "runners": 66,
+    "winners": 17,
+    "win_rate": 0.258,
+    "ei": 2.61,
+    "progeny_prize": 114375.7,
+    "representative": "ペプチドナイル"
+  },
+  "ミッキーアイル": {
+    "horse_id": "2011103916",
+    "rank": 20,
+    "runners": 145,
+    "winners": 32,
+    "win_rate": 0.221,
+    "ei": 1.14,
+    "progeny_prize": 109839.1,
+    "representative": "ナムラクレア"
+  },
+  "イスラボニータ": {
+    "horse_id": "2011103565",
+    "rank": 21,
+    "runners": 152,
+    "winners": 36,
+    "win_rate": 0.237,
+    "ei": 1.09,
+    "progeny_prize": 109750.8,
+    "representative": "トゥードジボン"
+  },
+  "シニスターミニスター": {
+    "horse_id": "000a011099",
+    "rank": 22,
+    "runners": 141,
+    "winners": 50,
+    "win_rate": 0.355,
+    "ei": 1.15,
+    "progeny_prize": 107527.0,
+    "representative": "グランブリッジ"
+  },
+  "サトノダイヤモンド": {
+    "horse_id": "2013106101",
+    "rank": 23,
+    "runners": 155,
+    "winners": 36,
+    "win_rate": 0.232,
+    "ei": 0.94,
+    "progeny_prize": 96333.3,
+    "representative": "シンリョクカ"
+  },
+  "シルバーステート": {
+    "horse_id": "2013105903",
+    "rank": 24,
+    "runners": 180,
+    "winners": 37,
+    "win_rate": 0.206,
+    "ei": 0.79,
+    "progeny_prize": 94410.3,
+    "representative": "リカンカブール"
+  },
+  "ビッグアーサー": {
+    "horse_id": "2011103328",
+    "rank": 25,
+    "runners": 135,
+    "winners": 27,
+    "win_rate": 0.2,
+    "ei": 1.0,
+    "progeny_prize": 89740.9,
+    "representative": "トウシンマカオ"
+  },
+  "レイデオロ": {
+    "horse_id": "2014106201",
+    "rank": 26,
+    "runners": 169,
+    "winners": 38,
+    "win_rate": 0.225,
+    "ei": 0.7,
+    "progeny_prize": 78213.0,
+    "representative": "アドマイヤテラ"
+  },
+  "マジェスティックウォリアー": {
+    "horse_id": "000a011e9c",
+    "rank": 27,
+    "runners": 154,
+    "winners": 32,
+    "win_rate": 0.208,
+    "ei": 0.76,
+    "progeny_prize": 77450.9,
+    "representative": "ラムジェット"
+  },
+  "オルフェーヴル": {
+    "horse_id": "2008102636",
+    "rank": 28,
+    "runners": 180,
+    "winners": 30,
+    "win_rate": 0.167,
+    "ei": 0.61,
+    "progeny_prize": 73136.5,
+    "representative": "マコトヴェリーキー"
+  },
+  "ホッコータルマエ": {
+    "horse_id": "2009100921",
+    "rank": 29,
+    "runners": 136,
+    "winners": 31,
+    "win_rate": 0.228,
+    "ei": 0.81,
+    "progeny_prize": 72834.7,
+    "representative": "メイショウフンジン"
+  },
+  "ブリックスアンドモルタル": {
+    "horse_id": "000a014377",
+    "rank": 30,
+    "runners": 159,
+    "winners": 36,
+    "win_rate": 0.226,
+    "ei": 0.69,
+    "progeny_prize": 72573.7,
+    "representative": "アンモシエラ"
+  },
+  "アジアエクスプレス": {
+    "horse_id": "2011110091",
+    "rank": 31,
+    "runners": 103,
+    "winners": 24,
+    "win_rate": 0.233,
+    "ei": 1.03,
+    "progeny_prize": 70034.8,
+    "representative": "ピューロマジック"
+  },
+  "スクリーンヒーロー": {
+    "horse_id": "2004103328",
+    "rank": 32,
+    "runners": 83,
+    "winners": 20,
+    "win_rate": 0.241,
+    "ei": 1.22,
+    "progeny_prize": 67163.6,
+    "representative": "ウインカーネリアン"
+  },
+  "マインドユアビスケッツ": {
+    "horse_id": "000a01392e",
+    "rank": 33,
+    "runners": 124,
+    "winners": 27,
+    "win_rate": 0.218,
+    "ei": 0.82,
+    "progeny_prize": 67023.0,
+    "representative": "ホウオウビスケッツ"
+  },
+  "コパノリッキー": {
+    "horse_id": "2010106548",
+    "rank": 34,
+    "runners": 103,
+    "winners": 23,
+    "win_rate": 0.223,
+    "ei": 0.84,
+    "progeny_prize": 57417.5,
+    "representative": "シンメデージー"
+  },
+  "デクラレーションオブウォー": {
+    "horse_id": "000a0136f6",
+    "rank": 35,
+    "runners": 130,
+    "winners": 29,
+    "win_rate": 0.223,
+    "ei": 0.66,
+    "progeny_prize": 57009.0,
+    "representative": "シランケド"
+  },
+  "パイロ": {
+    "horse_id": "000a01176a",
+    "rank": 36,
+    "runners": 104,
+    "winners": 27,
+    "win_rate": 0.26,
+    "ei": 0.83,
+    "progeny_prize": 56949.9,
+    "representative": "ベルピット"
+  },
+  "ダノンレジェンド": {
+    "horse_id": "2010110102",
+    "rank": 37,
+    "runners": 88,
+    "winners": 27,
+    "win_rate": 0.307,
+    "ei": 0.97,
+    "progeny_prize": 56881.9,
+    "representative": "サヨノネイチヤ"
+  },
+  "ディスクリートキャット": {
+    "horse_id": "000a0113a1",
+    "rank": 38,
+    "runners": 88,
+    "winners": 25,
+    "win_rate": 0.284,
+    "ei": 0.95,
+    "progeny_prize": 55650.9,
+    "representative": "エイシンワンド"
+  },
+  "ニューイヤーズデイ": {
+    "horse_id": "000a014589",
+    "rank": 39,
+    "runners": 114,
+    "winners": 31,
+    "win_rate": 0.272,
+    "ei": 0.73,
+    "progeny_prize": 55424.6,
+    "representative": "エートラックス"
+  },
+  "キンシャサノキセキ": {
+    "horse_id": "2003110212",
+    "rank": 40,
+    "runners": 103,
+    "winners": 17,
+    "win_rate": 0.165,
+    "ei": 0.8,
+    "progeny_prize": 54581.6,
+    "representative": "ペアポルックス"
+  },
+  "リアルインパクト": {
+    "horse_id": "2008103244",
+    "rank": 41,
+    "runners": 92,
+    "winners": 24,
+    "win_rate": 0.261,
+    "ei": 0.87,
+    "progeny_prize": 52780.0,
+    "representative": "モズメイメイ"
+  },
+  "マクフィ": {
+    "horse_id": "000a011c77",
+    "rank": 42,
+    "runners": 108,
+    "winners": 16,
+    "win_rate": 0.148,
+    "ei": 0.72,
+    "progeny_prize": 51387.0,
+    "representative": "マルカイグアス"
+  },
+  "サトノクラウン": {
+    "horse_id": "2012104668",
+    "rank": 43,
+    "runners": 106,
+    "winners": 16,
+    "win_rate": 0.151,
+    "ei": 0.61,
+    "progeny_prize": 42604.0,
+    "representative": "タスティエーラ"
+  },
+  "サトノアラジン": {
+    "horse_id": "2011104063",
+    "rank": 44,
+    "runners": 109,
+    "winners": 23,
+    "win_rate": 0.211,
+    "ei": 0.58,
+    "progeny_prize": 42198.9,
+    "representative": "プリモカリーナ"
+  },
+  "グレーターロンドン": {
+    "horse_id": "2012101402",
+    "rank": 45,
+    "runners": 44,
+    "winners": 16,
+    "win_rate": 0.364,
+    "ei": 1.39,
+    "progeny_prize": 40649.0,
+    "representative": "スターターン"
+  },
+  "ダノンバラード": {
+    "horse_id": "2008103548",
+    "rank": 46,
+    "runners": 81,
+    "winners": 18,
+    "win_rate": 0.222,
+    "ei": 0.75,
+    "progeny_prize": 40377.1,
+    "representative": "グラニット"
+  },
+  "バゴ": {
+    "horse_id": "2001190004",
+    "rank": 47,
+    "runners": 81,
+    "winners": 13,
+    "win_rate": 0.16,
+    "ei": 0.74,
+    "progeny_prize": 39982.2,
+    "representative": "ステラヴェローチェ"
+  },
+  "ブラックタイド": {
+    "horse_id": "2001103312",
+    "rank": 48,
+    "runners": 82,
+    "winners": 18,
+    "win_rate": 0.22,
+    "ei": 0.73,
+    "progeny_prize": 39851.1,
+    "representative": "エコロヴァルツ"
+  },
+  "ファインニードル": {
+    "horse_id": "2013100612",
+    "rank": 49,
+    "runners": 70,
+    "winners": 18,
+    "win_rate": 0.257,
+    "ei": 0.84,
+    "progeny_prize": 39099.4,
+    "representative": "クルゼイロドスル"
+  },
+  "ロゴタイプ": {
+    "horse_id": "2010103783",
+    "rank": 50,
+    "runners": 64,
+    "winners": 13,
+    "win_rate": 0.203,
+    "ei": 0.92,
+    "progeny_prize": 39086.0,
+    "representative": "オメガギネス"
+  },
+  "アメリカンペイトリオット": {
+    "horse_id": "000a013bba",
+    "rank": 51,
+    "runners": 101,
+    "winners": 20,
+    "win_rate": 0.198,
+    "ei": 0.57,
+    "progeny_prize": 38302.9,
+    "representative": "ニシノコウダイ"
+  },
+  "サンダースノー": {
+    "horse_id": "000a013a06",
+    "rank": 52,
+    "runners": 108,
+    "winners": 26,
+    "win_rate": 0.241,
+    "ei": 0.53,
+    "progeny_prize": 38091.8,
+    "representative": "テンカジョウ"
+  },
+  "アルアイン": {
+    "horse_id": "2014106046",
+    "rank": 53,
+    "runners": 84,
+    "winners": 11,
+    "win_rate": 0.131,
+    "ei": 0.63,
+    "progeny_prize": 35276.1,
+    "representative": "コスモキュランダ"
+  },
+  "タリスマニック": {
+    "horse_id": "000a013425",
+    "rank": 54,
+    "runners": 61,
+    "winners": 18,
+    "win_rate": 0.295,
+    "ei": 0.86,
+    "progeny_prize": 34674.8,
+    "representative": "アンクルクロス"
+  },
+  "パレスマリス": {
+    "horse_id": "000a014a1a",
+    "rank": 55,
+    "runners": 6,
+    "winners": 4,
+    "win_rate": 0.667,
+    "ei": 8.51,
+    "progeny_prize": 33857.6,
+    "representative": "ジャンタルマンタル"
+  },
+  "カリフォルニアクローム": {
+    "horse_id": "000a012602",
+    "rank": 56,
+    "runners": 113,
+    "winners": 17,
+    "win_rate": 0.15,
+    "ei": 0.45,
+    "progeny_prize": 33709.1,
+    "representative": "ワイドラトゥール"
+  },
+  "ワールドエース": {
+    "horse_id": "2009106353",
+    "rank": 57,
+    "runners": 79,
+    "winners": 8,
+    "win_rate": 0.101,
+    "ei": 0.63,
+    "progeny_prize": 33033.9,
+    "representative": "ジュンブロッサム"
+  },
+  "ヴィクトワールピサ": {
+    "horse_id": "2007102923",
+    "rank": 58,
+    "runners": 65,
+    "winners": 12,
+    "win_rate": 0.185,
+    "ei": 0.76,
+    "progeny_prize": 32648.8,
+    "representative": "エポックヴィーナス"
+  },
+  "American Pharoah": {
+    "horse_id": "000a012aad",
+    "rank": 59,
+    "runners": 40,
+    "winners": 20,
+    "win_rate": 0.5,
+    "ei": 1.15,
+    "progeny_prize": 30500.9,
+    "representative": "エスカル"
+  },
+  "カレンブラックヒル": {
+    "horse_id": "2009106230",
+    "rank": 60,
+    "runners": 82,
+    "winners": 12,
+    "win_rate": 0.146,
+    "ei": 0.56,
+    "progeny_prize": 30277.1,
+    "representative": "ジュンウィンダム"
+  },
+  "ジョーカプチーノ": {
+    "horse_id": "2006100529",
+    "rank": 61,
+    "runners": 39,
+    "winners": 9,
+    "win_rate": 0.231,
+    "ei": 1.14,
+    "progeny_prize": 29519.5,
+    "representative": "サンデイビス"
+  },
+  "ディーマジェスティ": {
+    "horse_id": "2013104704",
+    "rank": 62,
+    "runners": 56,
+    "winners": 8,
+    "win_rate": 0.143,
+    "ei": 0.79,
+    "progeny_prize": 29343.2,
+    "representative": "ディマイザキッド"
+  },
+  "Siyouni": {
+    "horse_id": "000a012056",
+    "rank": 63,
+    "runners": 6,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 7.38,
+    "progeny_prize": 29340.7,
+    "representative": "シンエンペラー"
+  },
+  "サートゥルナーリア": {
+    "horse_id": "2016104505",
+    "rank": 64,
+    "runners": 79,
+    "winners": 26,
+    "win_rate": 0.329,
+    "ei": 0.55,
+    "progeny_prize": 28749.7,
+    "representative": "クラウディアイ"
+  },
+  "Dark Angel": {
+    "horse_id": "000a0122b4",
+    "rank": 65,
+    "runners": 10,
+    "winners": 4,
+    "win_rate": 0.4,
+    "ei": 4.29,
+    "progeny_prize": 28420.6,
+    "representative": "マッドクール"
+  },
+  "ナダル": {
+    "horse_id": "000a016e99",
+    "rank": 66,
+    "runners": 56,
+    "winners": 26,
+    "win_rate": 0.464,
+    "ei": 0.76,
+    "progeny_prize": 28099.4,
+    "representative": "プロミストジーン"
+  },
+  "ラブリーデイ": {
+    "horse_id": "2010104298",
+    "rank": 67,
+    "runners": 56,
+    "winners": 12,
+    "win_rate": 0.214,
+    "ei": 0.75,
+    "progeny_prize": 27993.8,
+    "representative": "ゾンニッヒ"
+  },
+  "エスポワールシチー": {
+    "horse_id": "2005102837",
+    "rank": 68,
+    "runners": 50,
+    "winners": 13,
+    "win_rate": 0.26,
+    "ei": 0.82,
+    "progeny_prize": 27054.8,
+    "representative": "スマイルウィ"
+  },
+  "レッドファルクス": {
+    "horse_id": "2011104416",
+    "rank": 69,
+    "runners": 72,
+    "winners": 14,
+    "win_rate": 0.194,
+    "ei": 0.56,
+    "progeny_prize": 26543.4,
+    "representative": "トーアアイギス"
+  },
+  "シャンハイボビー": {
+    "horse_id": "000a0127e4",
+    "rank": 70,
+    "runners": 78,
+    "winners": 15,
+    "win_rate": 0.192,
+    "ei": 0.5,
+    "progeny_prize": 26037.9,
+    "representative": "カッティングジェム"
+  },
+  "ダンカーク": {
+    "horse_id": "000a012185",
+    "rank": 71,
+    "runners": 64,
+    "winners": 9,
+    "win_rate": 0.141,
+    "ei": 0.61,
+    "progeny_prize": 25738.3,
+    "representative": "カピリナ"
+  },
+  "ディープブリランテ": {
+    "horse_id": "2009105084",
+    "rank": 72,
+    "runners": 49,
+    "winners": 5,
+    "win_rate": 0.102,
+    "ei": 0.79,
+    "progeny_prize": 25630.2,
+    "representative": "エルトンバローズ"
+  },
+  "ロジャーバローズ": {
+    "horse_id": "2016106065",
+    "rank": 73,
+    "runners": 59,
+    "winners": 8,
+    "win_rate": 0.136,
+    "ei": 0.63,
+    "progeny_prize": 24693.6,
+    "representative": "オーキッドロマンス"
+  },
+  "ラニ": {
+    "horse_id": "2013110045",
+    "rank": 74,
+    "runners": 28,
+    "winners": 7,
+    "win_rate": 0.25,
+    "ei": 1.25,
+    "progeny_prize": 23232.8,
+    "representative": "バトゥーキ"
+  },
+  "ミッキーロケット": {
+    "horse_id": "2013106099",
+    "rank": 75,
+    "runners": 28,
+    "winners": 9,
+    "win_rate": 0.321,
+    "ei": 1.25,
+    "progeny_prize": 23155.0,
+    "representative": "タイセイフェリーク"
+  },
+  "エイシンヒカリ": {
+    "horse_id": "2011101273",
+    "rank": 76,
+    "runners": 39,
+    "winners": 10,
+    "win_rate": 0.256,
+    "ei": 0.9,
+    "progeny_prize": 23146.0,
+    "representative": "エイシンスポッター"
+  },
+  "Into Mischief": {
+    "horse_id": "000a0125a7",
+    "rank": 77,
+    "runners": 20,
+    "winners": 12,
+    "win_rate": 0.6,
+    "ei": 1.71,
+    "progeny_prize": 22621.2,
+    "representative": "アメリカンステージ"
+  },
+  "ビーチパトロール": {
+    "horse_id": "000a0141f9",
+    "rank": 78,
+    "runners": 61,
+    "winners": 8,
+    "win_rate": 0.131,
+    "ei": 0.55,
+    "progeny_prize": 22304.4,
+    "representative": "サンマルパトロール"
+  },
+  "Frankel": {
+    "horse_id": "000a01239b",
+    "rank": 79,
+    "runners": 22,
+    "winners": 8,
+    "win_rate": 0.364,
+    "ei": 1.51,
+    "progeny_prize": 22023.4,
+    "representative": "レイベリング"
+  },
+  "アドマイヤマーズ": {
+    "horse_id": "2016104422",
+    "rank": 80,
+    "runners": 43,
+    "winners": 16,
+    "win_rate": 0.372,
+    "ei": 0.73,
+    "progeny_prize": 20760.2,
+    "representative": "ジャルディニエ"
+  },
+  "シュヴァルグラン": {
+    "horse_id": "2012104759",
+    "rank": 81,
+    "runners": 78,
+    "winners": 13,
+    "win_rate": 0.167,
+    "ei": 0.38,
+    "progeny_prize": 19898.8,
+    "representative": "メリオーレム"
+  },
+  "アイルハヴアナザー": {
+    "horse_id": "000a011ed3",
+    "rank": 82,
+    "runners": 14,
+    "winners": 2,
+    "win_rate": 0.143,
+    "ei": 2.14,
+    "progeny_prize": 19870.1,
+    "representative": "ウインマーベル"
+  },
+  "エイシンフラッシュ": {
+    "horse_id": "2007102951",
+    "rank": 83,
+    "runners": 62,
+    "winners": 9,
+    "win_rate": 0.145,
+    "ei": 0.46,
+    "progeny_prize": 19002.2,
+    "representative": "タケトンボ"
+  },
+  "ストロングリターン": {
+    "horse_id": "2006102934",
+    "rank": 84,
+    "runners": 56,
+    "winners": 8,
+    "win_rate": 0.143,
+    "ei": 0.51,
+    "progeny_prize": 18819.4,
+    "representative": "エクセスリターン"
+  },
+  "ザファクター": {
+    "horse_id": "000a0130d0",
+    "rank": 85,
+    "runners": 26,
+    "winners": 7,
+    "win_rate": 0.269,
+    "ei": 1.08,
+    "progeny_prize": 18632.0,
+    "representative": "サンライズアリオン"
+  },
+  "Acclamation": {
+    "horse_id": "000a0122b0",
+    "rank": 86,
+    "runners": 1,
+    "winners": 1,
+    "win_rate": 1.0,
+    "ei": 27.72,
+    "progeny_prize": 18378.0,
+    "representative": "ロマンチックウォリアー"
+  },
+  "モズアスコット": {
+    "horse_id": "2014110031",
+    "rank": 87,
+    "runners": 47,
+    "winners": 9,
+    "win_rate": 0.191,
+    "ei": 0.59,
+    "progeny_prize": 18370.5,
+    "representative": "ベアバッキューン"
+  },
+  "フリオーソ": {
+    "horse_id": "2004106867",
+    "rank": 88,
+    "runners": 26,
+    "winners": 5,
+    "win_rate": 0.192,
+    "ei": 1.01,
+    "progeny_prize": 17413.5,
+    "representative": "クロジシジョー"
+  },
+  "トーセンラー": {
+    "horse_id": "2008102985",
+    "rank": 89,
+    "runners": 39,
+    "winners": 7,
+    "win_rate": 0.179,
+    "ei": 0.67,
+    "progeny_prize": 17204.6,
+    "representative": "ドロップオブライト"
+  },
+  "Justify": {
+    "horse_id": "000a013f2d",
+    "rank": 90,
+    "runners": 27,
+    "winners": 10,
+    "win_rate": 0.37,
+    "ei": 0.95,
+    "progeny_prize": 16990.4,
+    "representative": "オーサムリザルト"
+  },
+  "モーニン": {
+    "horse_id": "2012110091",
+    "rank": 91,
+    "runners": 60,
+    "winners": 12,
+    "win_rate": 0.2,
+    "ei": 0.42,
+    "progeny_prize": 16690.3,
+    "representative": "ブルーサン"
+  },
+  "タワーオブロンドン": {
+    "horse_id": "2015101621",
+    "rank": 92,
+    "runners": 46,
+    "winners": 8,
+    "win_rate": 0.174,
+    "ei": 0.55,
+    "progeny_prize": 16649.1,
+    "representative": "パンジャタワー"
+  },
+  "ルヴァンスレーヴ": {
+    "horse_id": "2015104189",
+    "rank": 93,
+    "runners": 74,
+    "winners": 11,
+    "win_rate": 0.149,
+    "ei": 0.34,
+    "progeny_prize": 16532.0,
+    "representative": "ソルジャーフィルド"
+  },
+  "ノヴェリスト": {
+    "horse_id": "000a012230",
+    "rank": 94,
+    "runners": 29,
+    "winners": 5,
+    "win_rate": 0.172,
+    "ei": 0.86,
+    "progeny_prize": 16514.4,
+    "representative": "アウスヴァール"
+  },
+  "ベストウォーリア": {
+    "horse_id": "2010110127",
+    "rank": 95,
+    "runners": 37,
+    "winners": 6,
+    "win_rate": 0.162,
+    "ei": 0.65,
+    "progeny_prize": 15957.7,
+    "representative": "グッジョブ"
+  },
+  "スピルバーグ": {
+    "horse_id": "2009105961",
+    "rank": 96,
+    "runners": 20,
+    "winners": 2,
+    "win_rate": 0.1,
+    "ei": 1.11,
+    "progeny_prize": 14697.5,
+    "representative": "セオ"
+  },
+  "メイショウボーラー": {
+    "horse_id": "2001100650",
+    "rank": 97,
+    "runners": 35,
+    "winners": 5,
+    "win_rate": 0.143,
+    "ei": 0.6,
+    "progeny_prize": 13871.9,
+    "representative": "メイショウコガシラ"
+  },
+  "アポロキングダム": {
+    "horse_id": "2003110139",
+    "rank": 98,
+    "runners": 8,
+    "winners": 2,
+    "win_rate": 0.25,
+    "ei": 2.5,
+    "progeny_prize": 13278.5,
+    "representative": "ガビーズシスター"
+  },
+  "アドマイヤムーン": {
+    "horse_id": "2003102991",
+    "rank": 99,
+    "runners": 37,
+    "winners": 8,
+    "win_rate": 0.216,
+    "ei": 0.53,
+    "progeny_prize": 13075.6,
+    "representative": "オオキニ"
+  },
+  "ロージズインメイ": {
+    "horse_id": "000a010a10",
+    "rank": 100,
+    "runners": 28,
+    "winners": 8,
+    "win_rate": 0.286,
+    "ei": 0.68,
+    "progeny_prize": 12620.0,
+    "representative": "ホウオウルーレット"
+  },
+  "Arrogate": {
+    "horse_id": "000a013798",
+    "rank": 101,
+    "runners": 11,
+    "winners": 3,
+    "win_rate": 0.273,
+    "ei": 1.73,
+    "progeny_prize": 12606.8,
+    "representative": "ミスティックロア"
+  },
+  "ゴールドアクター": {
+    "horse_id": "2011105266",
+    "rank": 102,
+    "runners": 30,
+    "winners": 6,
+    "win_rate": 0.2,
+    "ei": 0.63,
+    "progeny_prize": 12447.5,
+    "representative": "ゴールドバランサー"
+  },
+  "Lemon Drop Kid": {
+    "horse_id": "000a0022d0",
+    "rank": 103,
+    "runners": 1,
+    "winners": 1,
+    "win_rate": 1.0,
+    "ei": 18.62,
+    "progeny_prize": 12344.4,
+    "representative": "レモンポップ"
+  },
+  "Saxon Warrior": {
+    "horse_id": "2015100991",
+    "rank": 104,
+    "runners": 21,
+    "winners": 6,
+    "win_rate": 0.286,
+    "ei": 0.85,
+    "progeny_prize": 11780.8,
+    "representative": "エラトー"
+  },
+  "Speightstown": {
+    "horse_id": "000a011200",
+    "rank": 105,
+    "runners": 9,
+    "winners": 3,
+    "win_rate": 0.333,
+    "ei": 1.94,
+    "progeny_prize": 11576.3,
+    "representative": "マニバドラ"
+  },
+  "スズカコーズウェイ": {
+    "horse_id": "2004104345",
+    "rank": 106,
+    "runners": 13,
+    "winners": 2,
+    "win_rate": 0.154,
+    "ei": 1.34,
+    "progeny_prize": 11573.3,
+    "representative": "サンデーファンデー"
+  },
+  "ヴァンセンヌ": {
+    "horse_id": "2009106525",
+    "rank": 107,
+    "runners": 21,
+    "winners": 3,
+    "win_rate": 0.143,
+    "ei": 0.83,
+    "progeny_prize": 11507.8,
+    "representative": "イロゴトシ"
+  },
+  "トーセンジョーダン": {
+    "horse_id": "2006103169",
+    "rank": 108,
+    "runners": 10,
+    "winners": 3,
+    "win_rate": 0.3,
+    "ei": 1.69,
+    "progeny_prize": 11187.7,
+    "representative": "フタイテンロック"
+  },
+  "Gun Runner": {
+    "horse_id": "000a0138fb",
+    "rank": 109,
+    "runners": 11,
+    "winners": 3,
+    "win_rate": 0.273,
+    "ei": 1.51,
+    "progeny_prize": 11046.4,
+    "representative": "ガンウルフ"
+  },
+  "エスケンデレヤ": {
+    "horse_id": "000a012cc0",
+    "rank": 110,
+    "runners": 17,
+    "winners": 3,
+    "win_rate": 0.176,
+    "ei": 0.95,
+    "progeny_prize": 10759.6,
+    "representative": "ショウナンライシン"
+  },
+  "ベーカバド": {
+    "horse_id": "000a011dc0",
+    "rank": 111,
+    "runners": 12,
+    "winners": 4,
+    "win_rate": 0.333,
+    "ei": 1.35,
+    "progeny_prize": 10750.0,
+    "representative": "プリンスミノル"
+  },
+  "キングヘイロー": {
+    "horse_id": "1995104427",
+    "rank": 112,
+    "runners": 3,
+    "winners": 1,
+    "win_rate": 0.333,
+    "ei": 5.21,
+    "progeny_prize": 10372.1,
+    "representative": "リフレーミング"
+  },
+  "Farhh": {
+    "horse_id": "000a0120b6",
+    "rank": 113,
+    "runners": 1,
+    "winners": 1,
+    "win_rate": 1.0,
+    "ei": 15.37,
+    "progeny_prize": 10192.4,
+    "representative": "オフトレイル"
+  },
+  "ミスターメロディ": {
+    "horse_id": "2015110096",
+    "rank": 114,
+    "runners": 33,
+    "winners": 4,
+    "win_rate": 0.121,
+    "ei": 0.45,
+    "progeny_prize": 9890.5,
+    "representative": "スリールミニョン"
+  },
+  "Too Darn Hot": {
+    "horse_id": "000a014032",
+    "rank": 115,
+    "runners": 5,
+    "winners": 4,
+    "win_rate": 0.8,
+    "ei": 2.94,
+    "progeny_prize": 9738.8,
+    "representative": "エトヴプレ"
+  },
+  "フィエールマン": {
+    "horse_id": "2015105075",
+    "rank": 116,
+    "runners": 38,
+    "winners": 5,
+    "win_rate": 0.132,
+    "ei": 0.36,
+    "progeny_prize": 9193.0,
+    "representative": "ロードガレリア"
+  },
+  "Kingman": {
+    "horse_id": "000a0124ab",
+    "rank": 117,
+    "runners": 12,
+    "winners": 6,
+    "win_rate": 0.5,
+    "ei": 1.14,
+    "progeny_prize": 9081.5,
+    "representative": "プリティディーヴァ"
+  },
+  "トビーズコーナー": {
+    "horse_id": "000a011fed",
+    "rank": 118,
+    "runners": 15,
+    "winners": 4,
+    "win_rate": 0.267,
+    "ei": 0.9,
+    "progeny_prize": 8950.0,
+    "representative": "リケアマロン"
+  },
+  "トランセンド": {
+    "horse_id": "2006104736",
+    "rank": 119,
+    "runners": 28,
+    "winners": 2,
+    "win_rate": 0.071,
+    "ei": 0.48,
+    "progeny_prize": 8860.7,
+    "representative": "パラシュラーマ"
+  },
+  "クロフネ": {
+    "horse_id": "1998110135",
+    "rank": 120,
+    "runners": 12,
+    "winners": 1,
+    "win_rate": 0.083,
+    "ei": 1.09,
+    "progeny_prize": 8661.0,
+    "representative": "ママコチャ"
+  },
+  "フォーウィールドライブ": {
+    "horse_id": "000a01b93e",
+    "rank": 121,
+    "runners": 44,
+    "winners": 3,
+    "win_rate": 0.068,
+    "ei": 0.3,
+    "progeny_prize": 8650.0,
+    "representative": "ドライブアウェイ"
+  },
+  "Lope de Vega": {
+    "horse_id": "000a012919",
+    "rank": 122,
+    "runners": 2,
+    "winners": 1,
+    "win_rate": 0.5,
+    "ei": 6.49,
+    "progeny_prize": 8611.4,
+    "representative": "ホールネス"
+  },
+  "アイファーソング": {
+    "horse_id": "2008100386",
+    "rank": 123,
+    "runners": 10,
+    "winners": 4,
+    "win_rate": 0.4,
+    "ei": 1.23,
+    "progeny_prize": 8179.1,
+    "representative": "アイファーテイオー"
+  },
+  "アニマルキングダム": {
+    "horse_id": "000a011dad",
+    "rank": 124,
+    "runners": 51,
+    "winners": 4,
+    "win_rate": 0.078,
+    "ei": 0.23,
+    "progeny_prize": 7827.0,
+    "representative": "プリフロオールイン"
+  },
+  "ネオユニヴァース": {
+    "horse_id": "2000101426",
+    "rank": 125,
+    "runners": 8,
+    "winners": 3,
+    "win_rate": 0.375,
+    "ei": 1.47,
+    "progeny_prize": 7821.8,
+    "representative": "サクラトゥジュール"
+  },
+  "ゼンノロブロイ": {
+    "horse_id": "2000101517",
+    "rank": 126,
+    "runners": 6,
+    "winners": 2,
+    "win_rate": 0.333,
+    "ei": 1.96,
+    "progeny_prize": 7798.5,
+    "representative": "サトノルフィアン"
+  },
+  "Night of Thunder": {
+    "horse_id": "000a013801",
+    "rank": 127,
+    "runners": 3,
+    "winners": 2,
+    "win_rate": 0.667,
+    "ei": 3.87,
+    "progeny_prize": 7700.5,
+    "representative": "ソンシ"
+  },
+  "ウインブライト": {
+    "horse_id": "2014100222",
+    "rank": 128,
+    "runners": 49,
+    "winners": 5,
+    "win_rate": 0.102,
+    "ei": 0.24,
+    "progeny_prize": 7696.2,
+    "representative": "バセリーナ"
+  },
+  "Mendelssohn": {
+    "horse_id": "000a014f32",
+    "rank": 129,
+    "runners": 10,
+    "winners": 5,
+    "win_rate": 0.5,
+    "ei": 1.16,
+    "progeny_prize": 7683.4,
+    "representative": "ボールドゾーン"
+  },
+  "ローズキングダム": {
+    "horse_id": "2007103404",
+    "rank": 130,
+    "runners": 3,
+    "winners": 1,
+    "win_rate": 0.333,
+    "ei": 3.79,
+    "progeny_prize": 7546.5,
+    "representative": "サペラヴィ"
+  },
+  "フェノーメノ": {
+    "horse_id": "2009106599",
+    "rank": 131,
+    "runners": 19,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.59,
+    "progeny_prize": 7450.5,
+    "representative": "ナッジ"
+  },
+  "ネロ": {
+    "horse_id": "2011103722",
+    "rank": 132,
+    "runners": 15,
+    "winners": 2,
+    "win_rate": 0.133,
+    "ei": 0.73,
+    "progeny_prize": 7287.2,
+    "representative": "ディアドコス"
+  },
+  "ヤマカツエース": {
+    "horse_id": "2012102774",
+    "rank": 133,
+    "runners": 13,
+    "winners": 4,
+    "win_rate": 0.308,
+    "ei": 0.84,
+    "progeny_prize": 7213.2,
+    "representative": "ダイシンヤマト"
+  },
+  "ドリームジャーニー": {
+    "horse_id": "2004102753",
+    "rank": 134,
+    "runners": 10,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 1.07,
+    "progeny_prize": 7106.2,
+    "representative": "ニューツーリズム"
+  },
+  "グランプリボス": {
+    "horse_id": "2008103388",
+    "rank": 135,
+    "runners": 11,
+    "winners": 2,
+    "win_rate": 0.182,
+    "ei": 0.97,
+    "progeny_prize": 7067.4,
+    "representative": "モズミギカタアガリ"
+  },
+  "Shalaa": {
+    "horse_id": "000a0142a5",
+    "rank": 136,
+    "runners": 2,
+    "winners": 2,
+    "win_rate": 1.0,
+    "ei": 5.23,
+    "progeny_prize": 6940.3,
+    "representative": "インビンシブルパパ"
+  },
+  "ジャングルポケット": {
+    "horse_id": "1998101786",
+    "rank": 137,
+    "runners": 15,
+    "winners": 2,
+    "win_rate": 0.133,
+    "ei": 0.69,
+    "progeny_prize": 6884.3,
+    "representative": "ナニハサテオキ"
+  },
+  "トゥザグローリー": {
+    "horse_id": "2007103265",
+    "rank": 138,
+    "runners": 22,
+    "winners": 2,
+    "win_rate": 0.091,
+    "ei": 0.47,
+    "progeny_prize": 6841.7,
+    "representative": "サヨノグローリー"
+  },
+  "リーチザクラウン": {
+    "horse_id": "2006102923",
+    "rank": 139,
+    "runners": 28,
+    "winners": 3,
+    "win_rate": 0.107,
+    "ei": 0.35,
+    "progeny_prize": 6536.2,
+    "representative": "アーテルアストレア"
+  },
+  "ワンアンドオンリー": {
+    "horse_id": "2011105072",
+    "rank": 140,
+    "runners": 13,
+    "winners": 4,
+    "win_rate": 0.308,
+    "ei": 0.76,
+    "progeny_prize": 6535.2,
+    "representative": "ピーターサイト"
+  },
+  "マンハッタンカフェ": {
+    "horse_id": "1998101554",
+    "rank": 141,
+    "runners": 3,
+    "winners": 1,
+    "win_rate": 0.333,
+    "ei": 3.28,
+    "progeny_prize": 6525.0,
+    "representative": "ダンディズム"
+  },
+  "ホークビル": {
+    "horse_id": "000a01327c",
+    "rank": 142,
+    "runners": 43,
+    "winners": 4,
+    "win_rate": 0.093,
+    "ei": 0.23,
+    "progeny_prize": 6484.7,
+    "representative": "ホワイトビーチ"
+  },
+  "バンドワゴン": {
+    "horse_id": "2011104010",
+    "rank": 143,
+    "runners": 8,
+    "winners": 3,
+    "win_rate": 0.375,
+    "ei": 1.2,
+    "progeny_prize": 6381.6,
+    "representative": "バンドマスター"
+  },
+  "No Nay Never": {
+    "horse_id": "000a013cf5",
+    "rank": 144,
+    "runners": 6,
+    "winners": 4,
+    "win_rate": 0.667,
+    "ei": 1.59,
+    "progeny_prize": 6344.7,
+    "representative": "ラブコメディ"
+  },
+  "シスキン": {
+    "horse_id": "000a01aa3d",
+    "rank": 145,
+    "runners": 5,
+    "winners": 3,
+    "win_rate": 0.6,
+    "ei": 1.9,
+    "progeny_prize": 6295.8,
+    "representative": "テリオスララ"
+  },
+  "Frosted": {
+    "horse_id": "000a012b42",
+    "rank": 146,
+    "runners": 6,
+    "winners": 4,
+    "win_rate": 0.667,
+    "ei": 1.57,
+    "progeny_prize": 6253.1,
+    "representative": "ジャスパーノワール"
+  },
+  "トゥザワールド": {
+    "horse_id": "2011103975",
+    "rank": 147,
+    "runners": 23,
+    "winners": 3,
+    "win_rate": 0.13,
+    "ei": 0.41,
+    "progeny_prize": 6248.0,
+    "representative": "マコトロクサノホコ"
+  },
+  "ゴールドドリーム": {
+    "horse_id": "2013106119",
+    "rank": 148,
+    "runners": 35,
+    "winners": 5,
+    "win_rate": 0.143,
+    "ei": 0.26,
+    "progeny_prize": 6137.0,
+    "representative": "グランジョルノ"
+  },
+  "レガーロ": {
+    "horse_id": "2013105464",
+    "rank": 149,
+    "runners": 1,
+    "winners": 1,
+    "win_rate": 1.0,
+    "ei": 9.11,
+    "progeny_prize": 6042.8,
+    "representative": "アウトレンジ"
+  },
+  "Pioneerof the Nile": {
+    "horse_id": "000a0122f5",
+    "rank": 150,
+    "runners": 2,
+    "winners": 1,
+    "win_rate": 0.5,
+    "ei": 4.33,
+    "progeny_prize": 5736.1,
+    "representative": "バハルダール"
+  },
+  "ヘンリーバローズ": {
+    "horse_id": "2015104813",
+    "rank": 151,
+    "runners": 14,
+    "winners": 4,
+    "win_rate": 0.286,
+    "ei": 0.61,
+    "progeny_prize": 5668.3,
+    "representative": "ジェットマグナム"
+  },
+  "Quality Road": {
+    "horse_id": "000a011cff",
+    "rank": 152,
+    "runners": 9,
+    "winners": 3,
+    "win_rate": 0.333,
+    "ei": 0.95,
+    "progeny_prize": 5666.0,
+    "representative": "ビートエモーション"
+  },
+  "Twirling Candy": {
+    "horse_id": "000a01316b",
+    "rank": 153,
+    "runners": 3,
+    "winners": 3,
+    "win_rate": 1.0,
+    "ei": 2.84,
+    "progeny_prize": 5654.1,
+    "representative": "ドゥータップ"
+  },
+  "ニシケンモノノフ": {
+    "horse_id": "2011105438",
+    "rank": 154,
+    "runners": 12,
+    "winners": 2,
+    "win_rate": 0.167,
+    "ei": 0.71,
+    "progeny_prize": 5609.7,
+    "representative": "ペイシャフラワー"
+  },
+  "トーホウジャッカル": {
+    "horse_id": "2011100482",
+    "rank": 155,
+    "runners": 8,
+    "winners": 2,
+    "win_rate": 0.25,
+    "ei": 1.04,
+    "progeny_prize": 5527.4,
+    "representative": "トーホウキザン"
+  },
+  "Curlin": {
+    "horse_id": "000a011734",
+    "rank": 156,
+    "runners": 5,
+    "winners": 3,
+    "win_rate": 0.6,
+    "ei": 1.66,
+    "progeny_prize": 5512.2,
+    "representative": "ビヨンドザファザー"
+  },
+  "サウスヴィグラス": {
+    "horse_id": "1996110138",
+    "rank": 157,
+    "runners": 12,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.68,
+    "progeny_prize": 5392.7,
+    "representative": "ヨドノゴールド"
+  },
+  "Kantharos": {
+    "horse_id": "000a013014",
+    "rank": 158,
+    "runners": 3,
+    "winners": 3,
+    "win_rate": 1.0,
+    "ei": 2.7,
+    "progeny_prize": 5378.3,
+    "representative": "ラックスアットゼア"
+  },
+  "ハクサンムーン": {
+    "horse_id": "2009102527",
+    "rank": 159,
+    "runners": 14,
+    "winners": 3,
+    "win_rate": 0.214,
+    "ei": 0.58,
+    "progeny_prize": 5359.0,
+    "representative": "ハクサンバード"
+  },
+  "Zoustar": {
+    "horse_id": "000a013f8e",
+    "rank": 160,
+    "runners": 4,
+    "winners": 2,
+    "win_rate": 0.5,
+    "ei": 2.01,
+    "progeny_prize": 5338.6,
+    "representative": "スリーアイランド"
+  },
+  "Invincible Spirit": {
+    "horse_id": "000a01056d",
+    "rank": 161,
+    "runners": 6,
+    "winners": 2,
+    "win_rate": 0.333,
+    "ei": 1.33,
+    "progeny_prize": 5297.1,
+    "representative": "コーティアスマナー"
+  },
+  "メイショウサムソン": {
+    "horse_id": "2003102205",
+    "rank": 162,
+    "runners": 19,
+    "winners": 1,
+    "win_rate": 0.053,
+    "ei": 0.42,
+    "progeny_prize": 5266.2,
+    "representative": "メイショウウネビ"
+  },
+  "Maclean's Music": {
+    "horse_id": "000a0139af",
+    "rank": 163,
+    "runners": 2,
+    "winners": 1,
+    "win_rate": 0.5,
+    "ei": 3.89,
+    "progeny_prize": 5160.5,
+    "representative": "ウェイワードアクト"
+  },
+  "Tapit": {
+    "horse_id": "000a011248",
+    "rank": 164,
+    "runners": 9,
+    "winners": 2,
+    "win_rate": 0.222,
+    "ei": 0.86,
+    "progeny_prize": 5111.2,
+    "representative": "バニシングポイント"
+  },
+  "マツリダゴッホ": {
+    "horse_id": "2003104570",
+    "rank": 165,
+    "runners": 28,
+    "winners": 2,
+    "win_rate": 0.071,
+    "ei": 0.27,
+    "progeny_prize": 5017.1,
+    "representative": "スキピオ"
+  },
+  "Ghostzapper": {
+    "horse_id": "000a010525",
+    "rank": 166,
+    "runners": 4,
+    "winners": 1,
+    "win_rate": 0.25,
+    "ei": 1.88,
+    "progeny_prize": 4993.1,
+    "representative": "シアージスト"
+  },
+  "Liam's Map": {
+    "horse_id": "000a01372b",
+    "rank": 167,
+    "runners": 5,
+    "winners": 2,
+    "win_rate": 0.4,
+    "ei": 1.5,
+    "progeny_prize": 4986.2,
+    "representative": "セクシーブーケ"
+  },
+  "バンブーエール": {
+    "horse_id": "2003104100",
+    "rank": 168,
+    "runners": 8,
+    "winners": 3,
+    "win_rate": 0.375,
+    "ei": 0.9,
+    "progeny_prize": 4797.0,
+    "representative": "サンオークレア"
+  },
+  "Runhappy": {
+    "horse_id": "000a014a1b",
+    "rank": 169,
+    "runners": 1,
+    "winners": 1,
+    "win_rate": 1.0,
+    "ei": 7.18,
+    "progeny_prize": 4757.0,
+    "representative": "シゲルソロソロ"
+  },
+  "Point of Entry": {
+    "horse_id": "000a01293c",
+    "rank": 170,
+    "runners": 2,
+    "winners": 1,
+    "win_rate": 0.5,
+    "ei": 3.52,
+    "progeny_prize": 4672.3,
+    "representative": "エアサージュ"
+  },
+  "プリサイスエンド": {
+    "horse_id": "000a00fe9b",
+    "rank": 171,
+    "runners": 7,
+    "winners": 3,
+    "win_rate": 0.429,
+    "ei": 0.99,
+    "progeny_prize": 4589.6,
+    "representative": "サパテアール"
+  },
+  "アレスバローズ": {
+    "horse_id": "2012102017",
+    "rank": 172,
+    "runners": 6,
+    "winners": 2,
+    "win_rate": 0.333,
+    "ei": 1.15,
+    "progeny_prize": 4583.4,
+    "representative": "ケイテンアイジン"
+  },
+  "Stormy Atlantic": {
+    "horse_id": "000a010b85",
+    "rank": 173,
+    "runners": 1,
+    "winners": 1,
+    "win_rate": 1.0,
+    "ei": 6.87,
+    "progeny_prize": 4557.1,
+    "representative": "アサクサゲンキ"
+  },
+  "ローエングリン": {
+    "horse_id": "1999106738",
+    "rank": 174,
+    "runners": 5,
+    "winners": 2,
+    "win_rate": 0.4,
+    "ei": 1.34,
+    "progeny_prize": 4427.0,
+    "representative": "グッドヒューマー"
+  },
+  "マスタリー": {
+    "horse_id": "000a0143b4",
+    "rank": 175,
+    "runners": 2,
+    "winners": 1,
+    "win_rate": 0.5,
+    "ei": 3.32,
+    "progeny_prize": 4398.8,
+    "representative": "テリフィックプラン"
+  },
+  "クリエイターII": {
+    "horse_id": "000a013630",
+    "rank": 176,
+    "runners": 15,
+    "winners": 2,
+    "win_rate": 0.133,
+    "ei": 0.44,
+    "progeny_prize": 4362.9,
+    "representative": "サノノゴールド"
+  },
+  "ミッキーグローリー": {
+    "horse_id": "2013103999",
+    "rank": 177,
+    "runners": 24,
+    "winners": 2,
+    "win_rate": 0.083,
+    "ei": 0.27,
+    "progeny_prize": 4360.0,
+    "representative": "アデランテ"
+  },
+  "Toronado": {
+    "horse_id": "000a014fff",
+    "rank": 178,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 6.57,
+    "progeny_prize": 4354.0,
+    "representative": "ビクターザウィナー"
+  },
+  "Uncle Mo": {
+    "horse_id": "000a011ffb",
+    "rank": 179,
+    "runners": 7,
+    "winners": 4,
+    "win_rate": 0.571,
+    "ei": 0.94,
+    "progeny_prize": 4345.0,
+    "representative": "カンジ"
+  },
+  "Unified": {
+    "horse_id": "000a01c067",
+    "rank": 180,
+    "runners": 2,
+    "winners": 2,
+    "win_rate": 1.0,
+    "ei": 3.26,
+    "progeny_prize": 4328.2,
+    "representative": "エコロアレス"
+  },
+  "アドミラブル": {
+    "horse_id": "2014105979",
+    "rank": 181,
+    "runners": 19,
+    "winners": 2,
+    "win_rate": 0.105,
+    "ei": 0.33,
+    "progeny_prize": 4130.0,
+    "representative": "ナムラトロム"
+  },
+  "ガルボ": {
+    "horse_id": "2007101163",
+    "rank": 182,
+    "runners": 9,
+    "winners": 1,
+    "win_rate": 0.111,
+    "ei": 0.69,
+    "progeny_prize": 4094.2,
+    "representative": "メジャーデビュー"
+  },
+  "アスカクリチャン": {
+    "horse_id": "2007104599",
+    "rank": 183,
+    "runners": 13,
+    "winners": 1,
+    "win_rate": 0.077,
+    "ei": 0.47,
+    "progeny_prize": 4092.9,
+    "representative": "クリノアルバトロス"
+  },
+  "スマートファルコン": {
+    "horse_id": "2005100097",
+    "rank": 184,
+    "runners": 15,
+    "winners": 2,
+    "win_rate": 0.133,
+    "ei": 0.39,
+    "progeny_prize": 3916.0,
+    "representative": "シャマル"
+  },
+  "ニホンピロアワーズ": {
+    "horse_id": "2007100191",
+    "rank": 185,
+    "runners": 6,
+    "winners": 2,
+    "win_rate": 0.333,
+    "ei": 0.97,
+    "progeny_prize": 3875.8,
+    "representative": "ニホンピロハーバー"
+  },
+  "リヤンドファミユ": {
+    "horse_id": "2010104396",
+    "rank": 186,
+    "runners": 4,
+    "winners": 1,
+    "win_rate": 0.25,
+    "ei": 1.4,
+    "progeny_prize": 3709.3,
+    "representative": "マメコ"
+  },
+  "ヘニーハウンド": {
+    "horse_id": "2008110097",
+    "rank": 187,
+    "runners": 6,
+    "winners": 2,
+    "win_rate": 0.333,
+    "ei": 0.91,
+    "progeny_prize": 3638.0,
+    "representative": "オーバーザドリーム"
+  },
+  "グラスワンダー": {
+    "horse_id": "1995108676",
+    "rank": 188,
+    "runners": 2,
+    "winners": 2,
+    "win_rate": 1.0,
+    "ei": 2.66,
+    "progeny_prize": 3529.6,
+    "representative": "マイネルエニグマ"
+  },
+  "ケープブランコ": {
+    "horse_id": "000a011b06",
+    "rank": 189,
+    "runners": 11,
+    "winners": 1,
+    "win_rate": 0.091,
+    "ei": 0.48,
+    "progeny_prize": 3527.2,
+    "representative": "アラレタバシル"
+  },
+  "Yoshida": {
+    "horse_id": "2014106077",
+    "rank": 190,
+    "runners": 6,
+    "winners": 2,
+    "win_rate": 0.333,
+    "ei": 0.88,
+    "progeny_prize": 3490.4,
+    "representative": "デュアルウィルダー"
+  },
+  "トーセンファントム": {
+    "horse_id": "2007102870",
+    "rank": 191,
+    "runners": 2,
+    "winners": 2,
+    "win_rate": 1.0,
+    "ei": 2.62,
+    "progeny_prize": 3477.2,
+    "representative": "トーセンサンダー"
+  },
+  "バトルプラン": {
+    "horse_id": "000a0118e8",
+    "rank": 192,
+    "runners": 21,
+    "winners": 3,
+    "win_rate": 0.143,
+    "ei": 0.24,
+    "progeny_prize": 3350.8,
+    "representative": "ユメノホノオ"
+  },
+  "ワークフォース": {
+    "horse_id": "000a011a7f",
+    "rank": 193,
+    "runners": 3,
+    "winners": 1,
+    "win_rate": 0.333,
+    "ei": 1.64,
+    "progeny_prize": 3266.5,
+    "representative": "パトリック"
+  },
+  "スノードラゴン": {
+    "horse_id": "2008104268",
+    "rank": 194,
+    "runners": 6,
+    "winners": 2,
+    "win_rate": 0.333,
+    "ei": 0.81,
+    "progeny_prize": 3238.4,
+    "representative": "イグニション"
+  },
+  "Kitten's Joy": {
+    "horse_id": "000a0119b3",
+    "rank": 195,
+    "runners": 4,
+    "winners": 3,
+    "win_rate": 0.75,
+    "ei": 1.17,
+    "progeny_prize": 3103.0,
+    "representative": "エイムインライフ"
+  },
+  "War Front": {
+    "horse_id": "000a011d00",
+    "rank": 196,
+    "runners": 8,
+    "winners": 1,
+    "win_rate": 0.125,
+    "ei": 0.57,
+    "progeny_prize": 3010.7,
+    "representative": "ワールズコライド"
+  },
+  "Havana Gold": {
+    "horse_id": "000a0148fc",
+    "rank": 197,
+    "runners": 1,
+    "winners": 1,
+    "win_rate": 1.0,
+    "ei": 4.54,
+    "progeny_prize": 3009.2,
+    "representative": "ゴールデンシロップ"
+  },
+  "ヤングマンパワー": {
+    "horse_id": "2012104685",
+    "rank": 198,
+    "runners": 6,
+    "winners": 1,
+    "win_rate": 0.167,
+    "ei": 0.75,
+    "progeny_prize": 2998.7,
+    "representative": "ツルマウカタチ"
+  },
+  "エピカリス": {
+    "horse_id": "2014103121",
+    "rank": 199,
+    "runners": 23,
+    "winners": 1,
+    "win_rate": 0.043,
+    "ei": 0.19,
+    "progeny_prize": 2930.0,
+    "representative": "サントノーレ"
+  },
+  "アポロケンタッキー": {
+    "horse_id": "2012110098",
+    "rank": 200,
+    "runners": 11,
+    "winners": 1,
+    "win_rate": 0.091,
+    "ei": 0.39,
+    "progeny_prize": 2870.0,
+    "representative": "ケンタッキースカイ"
+  },
+  "Practical Joke": {
+    "horse_id": "000a0139d1",
+    "rank": 201,
+    "runners": 7,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.62,
+    "progeny_prize": 2859.0,
+    "representative": "ダブルジョーク"
+  },
+  "レッドスパーダ": {
+    "horse_id": "2006105511",
+    "rank": 202,
+    "runners": 4,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 1.07,
+    "progeny_prize": 2842.1,
+    "representative": "ディーエストッキー"
+  },
+  "ショウナンバッハ": {
+    "horse_id": "2011106394",
+    "rank": 203,
+    "runners": 6,
+    "winners": 1,
+    "win_rate": 0.167,
+    "ei": 0.71,
+    "progeny_prize": 2817.0,
+    "representative": "ショウナンラウール"
+  },
+  "Cajun Breeze": {
+    "horse_id": "000a01ebc4",
+    "rank": 204,
+    "runners": 1,
+    "winners": 1,
+    "win_rate": 1.0,
+    "ei": 4.24,
+    "progeny_prize": 2810.0,
+    "representative": "アメリカンマーチ"
+  },
+  "Golden Horn": {
+    "horse_id": "000a012adf",
+    "rank": 205,
+    "runners": 5,
+    "winners": 1,
+    "win_rate": 0.2,
+    "ei": 0.84,
+    "progeny_prize": 2774.0,
+    "representative": "アークドール"
+  },
+  "ハードスパン": {
+    "horse_id": "000a0116a1",
+    "rank": 206,
+    "runners": 3,
+    "winners": 1,
+    "win_rate": 0.333,
+    "ei": 1.38,
+    "progeny_prize": 2750.4,
+    "representative": "ハードワイヤード"
+  },
+  "ウインバリアシオン": {
+    "horse_id": "2008103206",
+    "rank": 207,
+    "runners": 5,
+    "winners": 1,
+    "win_rate": 0.2,
+    "ei": 0.83,
+    "progeny_prize": 2745.2,
+    "representative": "ハヤテノフクノスケ"
+  },
+  "Khozan": {
+    "horse_id": "000a017939",
+    "rank": 208,
+    "runners": 2,
+    "winners": 1,
+    "win_rate": 0.5,
+    "ei": 2.04,
+    "progeny_prize": 2705.0,
+    "representative": "ジャスパーロブスト"
+  },
+  "Nyquist": {
+    "horse_id": "000a013047",
+    "rank": 209,
+    "runners": 4,
+    "winners": 1,
+    "win_rate": 0.25,
+    "ei": 1.01,
+    "progeny_prize": 2690.0,
+    "representative": "エアサンサーラ"
+  },
+  "ケイムホーム": {
+    "horse_id": "000a0108d1",
+    "rank": 210,
+    "runners": 7,
+    "winners": 2,
+    "win_rate": 0.286,
+    "ei": 0.58,
+    "progeny_prize": 2671.6,
+    "representative": "ベルウッドウズメ"
+  },
+  "Bayern": {
+    "horse_id": "000a012900",
+    "rank": 211,
+    "runners": 1,
+    "winners": 1,
+    "win_rate": 1.0,
+    "ei": 4.02,
+    "progeny_prize": 2666.4,
+    "representative": "マイネルカーライル"
+  },
+  "レインボーライン": {
+    "horse_id": "2013106183",
+    "rank": 212,
+    "runners": 15,
+    "winners": 2,
+    "win_rate": 0.133,
+    "ei": 0.27,
+    "progeny_prize": 2660.0,
+    "representative": "ケンシレインボー"
+  },
+  "ノーブルミッション": {
+    "horse_id": "000a0126a3",
+    "rank": 213,
+    "runners": 38,
+    "winners": 1,
+    "win_rate": 0.026,
+    "ei": 0.1,
+    "progeny_prize": 2579.0,
+    "representative": "ハードワーカー"
+  },
+  "スマートオーディン": {
+    "horse_id": "2013101522",
+    "rank": 214,
+    "runners": 4,
+    "winners": 1,
+    "win_rate": 0.25,
+    "ei": 0.97,
+    "progeny_prize": 2578.6,
+    "representative": "ルクスレゼルヴァ"
+  },
+  "Malibu Moon": {
+    "horse_id": "000a010c8e",
+    "rank": 215,
+    "runners": 4,
+    "winners": 1,
+    "win_rate": 0.25,
+    "ei": 0.96,
+    "progeny_prize": 2545.8,
+    "representative": "ソレルビュレット"
+  },
+  "パドトロワ": {
+    "horse_id": "2007102760",
+    "rank": 216,
+    "runners": 19,
+    "winners": 2,
+    "win_rate": 0.105,
+    "ei": 0.2,
+    "progeny_prize": 2488.0,
+    "representative": "ランランガール"
+  },
+  "タートルボウル": {
+    "horse_id": "000a012045",
+    "rank": 217,
+    "runners": 5,
+    "winners": 1,
+    "win_rate": 0.2,
+    "ei": 0.73,
+    "progeny_prize": 2403.8,
+    "representative": "ゴールデンヒーラー"
+  },
+  "Gleneagles": {
+    "horse_id": "000a0128fa",
+    "rank": 218,
+    "runners": 2,
+    "winners": 1,
+    "win_rate": 0.5,
+    "ei": 1.8,
+    "progeny_prize": 2385.0,
+    "representative": "エメラルドビーチ"
+  },
+  "ゴールドアリュール": {
+    "horse_id": "1999106689",
+    "rank": 219,
+    "runners": 5,
+    "winners": 1,
+    "win_rate": 0.2,
+    "ei": 0.71,
+    "progeny_prize": 2349.4,
+    "representative": "マックス"
+  },
+  "カラヴァッジオ": {
+    "horse_id": "000a014315",
+    "rank": 220,
+    "runners": 5,
+    "winners": 1,
+    "win_rate": 0.2,
+    "ei": 0.71,
+    "progeny_prize": 2338.2,
+    "representative": "アグリ"
+  },
+  "Iffraaj": {
+    "horse_id": "000a0111d1",
+    "rank": 221,
+    "runners": 6,
+    "winners": 3,
+    "win_rate": 0.5,
+    "ei": 0.56,
+    "progeny_prize": 2242.0,
+    "representative": "エクストラバック"
+  },
+  "Showcasing": {
+    "horse_id": "000a013495",
+    "rank": 222,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 3.38,
+    "progeny_prize": 2239.0,
+    "representative": "ペースセッティング"
+  },
+  "レッドベルジュール": {
+    "horse_id": "2017105638",
+    "rank": 223,
+    "runners": 5,
+    "winners": 2,
+    "win_rate": 0.4,
+    "ei": 0.67,
+    "progeny_prize": 2220.0,
+    "representative": "ウィルオレオール"
+  },
+  "Havana Grey": {
+    "horse_id": "000a01bbdc",
+    "rank": 224,
+    "runners": 1,
+    "winners": 1,
+    "win_rate": 1.0,
+    "ei": 3.18,
+    "progeny_prize": 2108.5,
+    "representative": "ヤクシマ"
+  },
+  "シビルウォー": {
+    "horse_id": "2005102317",
+    "rank": 225,
+    "runners": 2,
+    "winners": 1,
+    "win_rate": 0.5,
+    "ei": 1.58,
+    "progeny_prize": 2092.4,
+    "representative": "パープルアドミラル"
+  },
+  "Mor Spirit": {
+    "horse_id": "000a01c066",
+    "rank": 226,
+    "runners": 2,
+    "winners": 1,
+    "win_rate": 0.5,
+    "ei": 1.55,
+    "progeny_prize": 2053.2,
+    "representative": "オルゴーリオ"
+  },
+  "クリーンエコロジー": {
+    "horse_id": "2008100563",
+    "rank": 227,
+    "runners": 1,
+    "winners": 1,
+    "win_rate": 1.0,
+    "ei": 3.0,
+    "progeny_prize": 1989.2,
+    "representative": "サウンドブライアン"
+  },
+  "Catholic Boy": {
+    "horse_id": "000a01bdd4",
+    "rank": 228,
+    "runners": 3,
+    "winners": 2,
+    "win_rate": 0.667,
+    "ei": 0.99,
+    "progeny_prize": 1964.8,
+    "representative": "マジカルシャイン"
+  },
+  "Omaha Beach": {
+    "horse_id": "000a014577",
+    "rank": 229,
+    "runners": 3,
+    "winners": 2,
+    "win_rate": 0.667,
+    "ei": 0.92,
+    "progeny_prize": 1823.0,
+    "representative": "トクシージェネラル"
+  },
+  "Capitalist": {
+    "horse_id": "000a01d389",
+    "rank": 230,
+    "runners": 1,
+    "winners": 1,
+    "win_rate": 1.0,
+    "ei": 2.75,
+    "progeny_prize": 1820.0,
+    "representative": "サンドロナイト"
+  },
+  "Soldier's Call": {
+    "horse_id": "000a01d54e",
+    "rank": 231,
+    "runners": 1,
+    "winners": 1,
+    "win_rate": 1.0,
+    "ei": 2.73,
+    "progeny_prize": 1810.0,
+    "representative": "マーブルマウンテン"
+  },
+  "Union Rags": {
+    "horse_id": "000a012d4c",
+    "rank": 232,
+    "runners": 4,
+    "winners": 2,
+    "win_rate": 0.5,
+    "ei": 0.66,
+    "progeny_prize": 1760.0,
+    "representative": "スナッピードレッサ"
+  },
+  "スニッツェル": {
+    "horse_id": "000a010eaa",
+    "rank": 233,
+    "runners": 1,
+    "winners": 1,
+    "win_rate": 1.0,
+    "ei": 2.64,
+    "progeny_prize": 1747.8,
+    "representative": "コスモアディラート"
+  },
+  "ショウナンカンプ": {
+    "horse_id": "1998102595",
+    "rank": 234,
+    "runners": 1,
+    "winners": 1,
+    "win_rate": 1.0,
+    "ei": 2.63,
+    "progeny_prize": 1740.7,
+    "representative": "ショウナンマッハ"
+  },
+  "Blue Point": {
+    "horse_id": "000a01bd91",
+    "rank": 235,
+    "runners": 6,
+    "winners": 1,
+    "win_rate": 0.167,
+    "ei": 0.43,
+    "progeny_prize": 1712.4,
+    "representative": "マックアルイーン"
+  },
+  "マクマホン": {
+    "horse_id": "000a0143ac",
+    "rank": 236,
+    "runners": 13,
+    "winners": 1,
+    "win_rate": 0.077,
+    "ei": 0.2,
+    "progeny_prize": 1708.0,
+    "representative": "トーセンアウローラ"
+  },
+  "Constitution": {
+    "horse_id": "000a012973",
+    "rank": 237,
+    "runners": 6,
+    "winners": 2,
+    "win_rate": 0.333,
+    "ei": 0.43,
+    "progeny_prize": 1698.0,
+    "representative": "ジューンエオス"
+  },
+  "Complexity": {
+    "horse_id": "000a01e6b1",
+    "rank": 238,
+    "runners": 1,
+    "winners": 1,
+    "win_rate": 1.0,
+    "ei": 2.5,
+    "progeny_prize": 1656.4,
+    "representative": "シンフォーエバー"
+  },
+  "セレスハント": {
+    "horse_id": "2005101116",
+    "rank": 239,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 2.5,
+    "progeny_prize": 1655.0,
+    "representative": "オテンバムスメ"
+  },
+  "Shamardal": {
+    "horse_id": "000a010c92",
+    "rank": 240,
+    "runners": 1,
+    "winners": 1,
+    "win_rate": 1.0,
+    "ei": 2.49,
+    "progeny_prize": 1653.6,
+    "representative": "エンタングルメント"
+  },
+  "タイムパラドックス": {
+    "horse_id": "1998101683",
+    "rank": 241,
+    "runners": 3,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.83,
+    "progeny_prize": 1646.0,
+    "representative": "タイムモーメント"
+  },
+  "シゲルカガ": {
+    "horse_id": "2011103048",
+    "rank": 242,
+    "runners": 4,
+    "winners": 1,
+    "win_rate": 0.25,
+    "ei": 0.62,
+    "progeny_prize": 1645.0,
+    "representative": "ブレーザー"
+  },
+  "ナカヤマフェスタ": {
+    "horse_id": "2006102424",
+    "rank": 243,
+    "runners": 6,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.41,
+    "progeny_prize": 1612.0,
+    "representative": "バビット"
+  },
+  "Candy Ride": {
+    "horse_id": "000a01132a",
+    "rank": 244,
+    "runners": 1,
+    "winners": 1,
+    "win_rate": 1.0,
+    "ei": 2.41,
+    "progeny_prize": 1600.0,
+    "representative": "キャンディドライヴ"
+  },
+  "ステイゴールド": {
+    "horse_id": "1994108729",
+    "rank": 245,
+    "runners": 6,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.39,
+    "progeny_prize": 1563.0,
+    "representative": "ザスリーサーティ"
+  },
+  "ヴァンキッシュラン": {
+    "horse_id": "2013105718",
+    "rank": 246,
+    "runners": 5,
+    "winners": 1,
+    "win_rate": 0.2,
+    "ei": 0.47,
+    "progeny_prize": 1557.0,
+    "representative": "ローランド"
+  },
+  "ウォータービルド": {
+    "horse_id": "2014104010",
+    "rank": 247,
+    "runners": 3,
+    "winners": 1,
+    "win_rate": 0.333,
+    "ei": 0.77,
+    "progeny_prize": 1526.0,
+    "representative": "ウォータークラーク"
+  },
+  "ナムラタイタン": {
+    "horse_id": "2006101408",
+    "rank": 248,
+    "runners": 3,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.76,
+    "progeny_prize": 1520.0,
+    "representative": "ショウガマッタナシ"
+  },
+  "Galileo": {
+    "horse_id": "000a00232b",
+    "rank": 249,
+    "runners": 1,
+    "winners": 1,
+    "win_rate": 1.0,
+    "ei": 2.2,
+    "progeny_prize": 1456.1,
+    "representative": "ミスガリレオアスク"
+  },
+  "ゴールデンバローズ": {
+    "horse_id": "2012110100",
+    "rank": 250,
+    "runners": 2,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 1.06,
+    "progeny_prize": 1412.0,
+    "representative": "フジユージーン"
+  },
+  "Al Wukair": {
+    "horse_id": "000a013ffc",
+    "rank": 251,
+    "runners": 1,
+    "winners": 1,
+    "win_rate": 1.0,
+    "ei": 2.13,
+    "progeny_prize": 1410.0,
+    "representative": "クリノアドバンス"
+  },
+  "ミュゼスルタン": {
+    "horse_id": "2012104118",
+    "rank": 252,
+    "runners": 10,
+    "winners": 1,
+    "win_rate": 0.1,
+    "ei": 0.21,
+    "progeny_prize": 1406.0,
+    "representative": "カセノタイガー"
+  },
+  "Collected": {
+    "horse_id": "000a013d74",
+    "rank": 253,
+    "runners": 4,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.51,
+    "progeny_prize": 1360.0,
+    "representative": "コレクテイニア"
+  },
+  "オーヴァルエース": {
+    "horse_id": "2016102280",
+    "rank": 254,
+    "runners": 7,
+    "winners": 1,
+    "win_rate": 0.143,
+    "ei": 0.29,
+    "progeny_prize": 1355.0,
+    "representative": "ペイシャヴァルツー"
+  },
+  "グァンチャーレ": {
+    "horse_id": "2012100407",
+    "rank": 255,
+    "runners": 6,
+    "winners": 1,
+    "win_rate": 0.167,
+    "ei": 0.33,
+    "progeny_prize": 1308.0,
+    "representative": "セールヴォラン"
+  },
+  "エーシントップ": {
+    "horse_id": "2010110058",
+    "rank": 256,
+    "runners": 7,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.28,
+    "progeny_prize": 1296.8,
+    "representative": "エイシンエイト"
+  },
+  "Preservationist": {
+    "horse_id": "000a01fe88",
+    "rank": 257,
+    "runners": 1,
+    "winners": 1,
+    "win_rate": 1.0,
+    "ei": 1.9,
+    "progeny_prize": 1259.9,
+    "representative": "ユウトザユウト"
+  },
+  "トーセンホマレボシ": {
+    "horse_id": "2009106092",
+    "rank": 258,
+    "runners": 2,
+    "winners": 1,
+    "win_rate": 0.5,
+    "ei": 0.94,
+    "progeny_prize": 1240.0,
+    "representative": "トーセンサウダージ"
+  },
+  "Dialed In": {
+    "horse_id": "000a0139c7",
+    "rank": 259,
+    "runners": 1,
+    "winners": 1,
+    "win_rate": 1.0,
+    "ei": 1.81,
+    "progeny_prize": 1200.0,
+    "representative": "ニルアドミラリ"
+  },
+  "アグニシャイン": {
+    "horse_id": "2014105880",
+    "rank": 260,
+    "runners": 1,
+    "winners": 1,
+    "win_rate": 1.0,
+    "ei": 1.79,
+    "progeny_prize": 1190.0,
+    "representative": "サラフォーコン"
+  },
+  "ミッキースワロー": {
+    "horse_id": "2014106160",
+    "rank": 261,
+    "runners": 2,
+    "winners": 1,
+    "win_rate": 0.5,
+    "ei": 0.9,
+    "progeny_prize": 1188.0,
+    "representative": "スワローシチー"
+  },
+  "Le Havre": {
+    "horse_id": "000a01198f",
+    "rank": 262,
+    "runners": 4,
+    "winners": 1,
+    "win_rate": 0.25,
+    "ei": 0.43,
+    "progeny_prize": 1151.0,
+    "representative": "サルヴェージワーク"
+  },
+  "Street Boss": {
+    "horse_id": "000a0116a2",
+    "rank": 263,
+    "runners": 1,
+    "winners": 1,
+    "win_rate": 1.0,
+    "ei": 1.73,
+    "progeny_prize": 1148.0,
+    "representative": "ドッビアーコ"
+  },
+  "Volatile": {
+    "horse_id": "000a01a780",
+    "rank": 264,
+    "runners": 1,
+    "winners": 1,
+    "win_rate": 1.0,
+    "ei": 1.71,
+    "progeny_prize": 1134.9,
+    "representative": "テーオーエルビス"
+  },
+  "Lea": {
+    "horse_id": "000a012904",
+    "rank": 265,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 1.68,
+    "progeny_prize": 1112.0,
+    "representative": "テーオーグランビル"
+  },
+  "ハットトリック": {
+    "horse_id": "2001103018",
+    "rank": 266,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 1.67,
+    "progeny_prize": 1107.8,
+    "representative": "エアファンディタ"
+  },
+  "Mitole": {
+    "horse_id": "000a01b998",
+    "rank": 267,
+    "runners": 3,
+    "winners": 1,
+    "win_rate": 0.333,
+    "ei": 0.54,
+    "progeny_prize": 1068.0,
+    "representative": "ジャスパーソレイユ"
+  },
+  "Take Charge Indy": {
+    "horse_id": "000a012fb0",
+    "rank": 268,
+    "runners": 2,
+    "winners": 1,
+    "win_rate": 0.5,
+    "ei": 0.78,
+    "progeny_prize": 1040.0,
+    "representative": "キアニーナ"
+  },
+  "Shackleford": {
+    "horse_id": "000a012d4d",
+    "rank": 269,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 1.55,
+    "progeny_prize": 1027.2,
+    "representative": "エコロアイ"
+  },
+  "Authentic": {
+    "horse_id": "000a016e96",
+    "rank": 270,
+    "runners": 4,
+    "winners": 1,
+    "win_rate": 0.25,
+    "ei": 0.39,
+    "progeny_prize": 1025.0,
+    "representative": "サンダーロード"
+  },
+  "コパノリチャード": {
+    "horse_id": "2010106552",
+    "rank": 271,
+    "runners": 3,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.51,
+    "progeny_prize": 1012.8,
+    "representative": "エイシンジェンマ"
+  },
+  "Dubawi": {
+    "horse_id": "000a0115e2",
+    "rank": 272,
+    "runners": 3,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.5,
+    "progeny_prize": 998.0,
+    "representative": "アウセンザイター"
+  },
+  "ポアゾンブラック": {
+    "horse_id": "2009102733",
+    "rank": 273,
+    "runners": 4,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.37,
+    "progeny_prize": 993.0,
+    "representative": "イチネンエーグミ"
+  },
+  "スピリッツミノル": {
+    "horse_id": "2012103484",
+    "rank": 274,
+    "runners": 2,
+    "winners": 1,
+    "win_rate": 0.5,
+    "ei": 0.73,
+    "progeny_prize": 973.0,
+    "representative": "グラティアスミノル"
+  },
+  "Vekoma": {
+    "horse_id": "000a014579",
+    "rank": 275,
+    "runners": 2,
+    "winners": 1,
+    "win_rate": 0.5,
+    "ei": 0.73,
+    "progeny_prize": 970.0,
+    "representative": "マリブオレンジ"
+  },
+  "エポカドーロ": {
+    "horse_id": "2015102440",
+    "rank": 276,
+    "runners": 12,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.12,
+    "progeny_prize": 960.0,
+    "representative": "ヤマノアシオト"
+  },
+  "ゴールドヘイロー": {
+    "horse_id": "1997101264",
+    "rank": 276,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 1.45,
+    "progeny_prize": 960.0,
+    "representative": "カイトレッド"
+  },
+  "キングリオ": {
+    "horse_id": "2012104539",
+    "rank": 278,
+    "runners": 2,
+    "winners": 1,
+    "win_rate": 0.5,
+    "ei": 0.7,
+    "progeny_prize": 933.0,
+    "representative": "ジェンマ"
+  },
+  "ブルドッグボス": {
+    "horse_id": "2012105931",
+    "rank": 279,
+    "runners": 8,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.17,
+    "progeny_prize": 928.0,
+    "representative": "ブルドッグワイルド"
+  },
+  "Bernardini": {
+    "horse_id": "000a0111fe",
+    "rank": 280,
+    "runners": 3,
+    "winners": 1,
+    "win_rate": 0.333,
+    "ei": 0.46,
+    "progeny_prize": 920.0,
+    "representative": "ワイルデンウーリー"
+  },
+  "ベルシャザール": {
+    "horse_id": "2008103004",
+    "rank": 281,
+    "runners": 11,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.12,
+    "progeny_prize": 855.0,
+    "representative": "グランコージー"
+  },
+  "Wootton Bassett": {
+    "horse_id": "000a01322e",
+    "rank": 282,
+    "runners": 5,
+    "winners": 1,
+    "win_rate": 0.2,
+    "ei": 0.25,
+    "progeny_prize": 840.0,
+    "representative": "パーティハーン"
+  },
+  "シャープアステカ": {
+    "horse_id": "000a013e22",
+    "rank": 283,
+    "runners": 1,
+    "winners": 1,
+    "win_rate": 1.0,
+    "ei": 1.25,
+    "progeny_prize": 828.0,
+    "representative": "グランエシェゾー"
+  },
+  "Shancelot": {
+    "horse_id": "000a01538a",
+    "rank": 284,
+    "runners": 1,
+    "winners": 1,
+    "win_rate": 1.0,
+    "ei": 1.25,
+    "progeny_prize": 827.0,
+    "representative": "エコロアゼル"
+  },
+  "Sea The Stars": {
+    "horse_id": "000a011c78",
+    "rank": 285,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 1.21,
+    "progeny_prize": 800.0,
+    "representative": "フェヴリエ"
+  },
+  "ノボジャック": {
+    "horse_id": "1997110152",
+    "rank": 285,
+    "runners": 2,
+    "winners": 1,
+    "win_rate": 0.5,
+    "ei": 0.6,
+    "progeny_prize": 800.0,
+    "representative": "ジェットスピード"
+  },
+  "タイセイレジェンド": {
+    "horse_id": "2007103199",
+    "rank": 287,
+    "runners": 4,
+    "winners": 1,
+    "win_rate": 0.25,
+    "ei": 0.3,
+    "progeny_prize": 790.0,
+    "representative": "ティーズハクア"
+  },
+  "Tom's d'Etat": {
+    "horse_id": "000a01d644",
+    "rank": 288,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 1.18,
+    "progeny_prize": 785.0,
+    "representative": "チュウワチーフ"
+  },
+  "Army Mule": {
+    "horse_id": "000a01edfc",
+    "rank": 289,
+    "runners": 1,
+    "winners": 1,
+    "win_rate": 1.0,
+    "ei": 1.16,
+    "progeny_prize": 770.0,
+    "representative": "ジェネラーレ"
+  },
+  "アポロソニック": {
+    "horse_id": "2010110120",
+    "rank": 290,
+    "runners": 2,
+    "winners": 1,
+    "win_rate": 0.5,
+    "ei": 0.57,
+    "progeny_prize": 750.0,
+    "representative": "シシュフォス"
+  },
+  "ウィルテイクチャージ": {
+    "horse_id": "000a01372f",
+    "rank": 291,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 1.13,
+    "progeny_prize": 748.4,
+    "representative": "ヘルシャフト"
+  },
+  "Bolt d'Oro": {
+    "horse_id": "000a01bccc",
+    "rank": 292,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 1.12,
+    "progeny_prize": 744.0,
+    "representative": "フロムダスク"
+  },
+  "Cloud Computing": {
+    "horse_id": "000a0139ae",
+    "rank": 293,
+    "runners": 1,
+    "winners": 1,
+    "win_rate": 1.0,
+    "ei": 1.09,
+    "progeny_prize": 720.0,
+    "representative": "ゴールデンクラウド"
+  },
+  "Daaher": {
+    "horse_id": "000a014592",
+    "rank": 293,
+    "runners": 1,
+    "winners": 1,
+    "win_rate": 1.0,
+    "ei": 1.09,
+    "progeny_prize": 720.0,
+    "representative": "シーソーゲーム"
+  },
+  "Oscar Performance": {
+    "horse_id": "000a015fd6",
+    "rank": 293,
+    "runners": 3,
+    "winners": 1,
+    "win_rate": 0.333,
+    "ei": 0.36,
+    "progeny_prize": 720.0,
+    "representative": "エリカアンディーヴ"
+  },
+  "Ulysses": {
+    "horse_id": "000a0131da",
+    "rank": 293,
+    "runners": 1,
+    "winners": 1,
+    "win_rate": 1.0,
+    "ei": 1.09,
+    "progeny_prize": 720.0,
+    "representative": "シュヴァルボヌール"
+  },
+  "アロマカフェ": {
+    "horse_id": "2007104812",
+    "rank": 293,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 1.09,
+    "progeny_prize": 720.0,
+    "representative": "カフェベラノッテ"
+  },
+  "Nathaniel": {
+    "horse_id": "000a011bdb",
+    "rank": 298,
+    "runners": 5,
+    "winners": 1,
+    "win_rate": 0.2,
+    "ei": 0.22,
+    "progeny_prize": 713.0,
+    "representative": "アスクナサニエル"
+  },
+  "ゴールデンマンデラ": {
+    "horse_id": "2017110001",
+    "rank": 299,
+    "runners": 5,
+    "winners": 1,
+    "win_rate": 0.2,
+    "ei": 0.21,
+    "progeny_prize": 690.0,
+    "representative": "ヨッコサン"
+  },
+  "New Approach": {
+    "horse_id": "000a011656",
+    "rank": 300,
+    "runners": 6,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.17,
+    "progeny_prize": 684.0,
+    "representative": "ウラヤ"
+  },
+  "モンテロッソ": {
+    "horse_id": "000a011b05",
+    "rank": 301,
+    "runners": 16,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.06,
+    "progeny_prize": 664.0,
+    "representative": "ラストストーリー"
+  },
+  "City of Light": {
+    "horse_id": "000a014375",
+    "rank": 302,
+    "runners": 5,
+    "winners": 1,
+    "win_rate": 0.2,
+    "ei": 0.2,
+    "progeny_prize": 660.0,
+    "representative": "ライトスリー"
+  },
+  "Game Winner": {
+    "horse_id": "000a014386",
+    "rank": 302,
+    "runners": 1,
+    "winners": 1,
+    "win_rate": 1.0,
+    "ei": 1.0,
+    "progeny_prize": 660.0,
+    "representative": "メイショウアイナ"
+  },
+  "War of Will": {
+    "horse_id": "000a014598",
+    "rank": 304,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.98,
+    "progeny_prize": 650.0,
+    "representative": "シュパネントウィル"
+  },
+  "St Patrick's Day": {
+    "horse_id": "000a013fe1",
+    "rank": 305,
+    "runners": 2,
+    "winners": 1,
+    "win_rate": 0.5,
+    "ei": 0.48,
+    "progeny_prize": 630.0,
+    "representative": "パトジュニア"
+  },
+  "トーセンブライト": {
+    "horse_id": "2001103660",
+    "rank": 306,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.94,
+    "progeny_prize": 625.3,
+    "representative": "ジョエル"
+  },
+  "シンボリクリスエス": {
+    "horse_id": "1999110099",
+    "rank": 307,
+    "runners": 6,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.16,
+    "progeny_prize": 623.2,
+    "representative": "ツムタイザン"
+  },
+  "サトノアレス": {
+    "horse_id": "2014105493",
+    "rank": 308,
+    "runners": 5,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.18,
+    "progeny_prize": 609.0,
+    "representative": "アレスエルピーダ"
+  },
+  "Optimizer": {
+    "horse_id": "000a01a801",
+    "rank": 309,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.86,
+    "progeny_prize": 570.0,
+    "representative": "モズゴールドバレル"
+  },
+  "Lonhro": {
+    "horse_id": "000a011187",
+    "rank": 310,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.84,
+    "progeny_prize": 560.0,
+    "representative": "モズマサニャン"
+  },
+  "Harry Angel": {
+    "horse_id": "000a01a8a2",
+    "rank": 311,
+    "runners": 2,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.42,
+    "progeny_prize": 558.0,
+    "representative": "コスモララバイ"
+  },
+  "Dansili": {
+    "horse_id": "000a010a5f",
+    "rank": 312,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.83,
+    "progeny_prize": 550.0,
+    "representative": "フレッチア"
+  },
+  "ドリームバレンチノ": {
+    "horse_id": "2007104877",
+    "rank": 313,
+    "runners": 3,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.27,
+    "progeny_prize": 538.0,
+    "representative": "グランリージェント"
+  },
+  "Catalina Cruiser": {
+    "horse_id": "000a01401e",
+    "rank": 314,
+    "runners": 3,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.26,
+    "progeny_prize": 526.0,
+    "representative": "サウンドロックス"
+  },
+  "Bobby's Kitten": {
+    "horse_id": "000a013dc5",
+    "rank": 315,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.78,
+    "progeny_prize": 520.0,
+    "representative": "アルバミノル"
+  },
+  "グランデッツァ": {
+    "horse_id": "2009105989",
+    "rank": 315,
+    "runners": 4,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.2,
+    "progeny_prize": 520.0,
+    "representative": "ナリノヴァニーユ"
+  },
+  "ヤマニンセラフィム": {
+    "horse_id": "1999104188",
+    "rank": 315,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.78,
+    "progeny_prize": 520.0,
+    "representative": "サラフィエル"
+  },
+  "ワンダーアキュート": {
+    "horse_id": "2006106794",
+    "rank": 318,
+    "runners": 4,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.18,
+    "progeny_prize": 479.0,
+    "representative": "アキュートガール"
+  },
+  "Good Magic": {
+    "horse_id": "000a01a8ef",
+    "rank": 319,
+    "runners": 2,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.36,
+    "progeny_prize": 474.7,
+    "representative": "コスモジンバック"
+  },
+  "キングズベスト": {
+    "horse_id": "000a0022d2",
+    "rank": 320,
+    "runners": 4,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.18,
+    "progeny_prize": 464.8,
+    "representative": "ルクルト"
+  },
+  "Distorted Humor": {
+    "horse_id": "000a0022ea",
+    "rank": 321,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.7,
+    "progeny_prize": 464.0,
+    "representative": "モダナイズクィーン"
+  },
+  "ダノンシャーク": {
+    "horse_id": "2008105554",
+    "rank": 322,
+    "runners": 7,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.1,
+    "progeny_prize": 457.0,
+    "representative": "ダノンワンナップ"
+  },
+  "カルストンライトオ": {
+    "horse_id": "1998103333",
+    "rank": 323,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.67,
+    "progeny_prize": 442.0,
+    "representative": "カチヌキマリコ"
+  },
+  "Dandy Man": {
+    "horse_id": "000a012a41",
+    "rank": 324,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.66,
+    "progeny_prize": 440.0,
+    "representative": "サードウインド"
+  },
+  "Teofilo": {
+    "horse_id": "000a01139e",
+    "rank": 325,
+    "runners": 4,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.16,
+    "progeny_prize": 430.0,
+    "representative": "ラヴァーズティフ"
+  },
+  "Not This Time": {
+    "horse_id": "000a01be20",
+    "rank": 326,
+    "runners": 2,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.3,
+    "progeny_prize": 400.0,
+    "representative": "ロッシニアーナ"
+  },
+  "サングレーザー": {
+    "horse_id": "2014105304",
+    "rank": 326,
+    "runners": 5,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.12,
+    "progeny_prize": 400.0,
+    "representative": "アースグレーザー"
+  },
+  "I Am Invincible": {
+    "horse_id": "000a0144f0",
+    "rank": 328,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.6,
+    "progeny_prize": 399.0,
+    "representative": "トップスターサン"
+  },
+  "City Zip": {
+    "horse_id": "000a0127e6",
+    "rank": 329,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.59,
+    "progeny_prize": 392.7,
+    "representative": "ジッピーレーサー"
+  },
+  "Goldencents": {
+    "horse_id": "000a0144c7",
+    "rank": 330,
+    "runners": 3,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.19,
+    "progeny_prize": 373.0,
+    "representative": "エアメテオラ"
+  },
+  "Make Believe": {
+    "horse_id": "000a0141fa",
+    "rank": 331,
+    "runners": 2,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.27,
+    "progeny_prize": 360.0,
+    "representative": "ヴィダル"
+  },
+  "フサイチセブン": {
+    "horse_id": "2006101225",
+    "rank": 332,
+    "runners": 5,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.1,
+    "progeny_prize": 333.0,
+    "representative": "グランドルチル"
+  },
+  "エンパイアメーカー": {
+    "horse_id": "000a010542",
+    "rank": 333,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.5,
+    "progeny_prize": 330.0,
+    "representative": "グランドボヌール"
+  },
+  "カネヒキリ": {
+    "horse_id": "2002100978",
+    "rank": 334,
+    "runners": 2,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.24,
+    "progeny_prize": 320.0,
+    "representative": "フォガラ"
+  },
+  "インカンテーション": {
+    "horse_id": "2010104916",
+    "rank": 335,
+    "runners": 11,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.04,
+    "progeny_prize": 305.0,
+    "representative": "マザオ"
+  },
+  "Intello": {
+    "horse_id": "000a012293",
+    "rank": 336,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.45,
+    "progeny_prize": 300.0,
+    "representative": "ロゼフレア"
+  },
+  "Earthlight": {
+    "horse_id": "000a01488b",
+    "rank": 337,
+    "runners": 2,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.22,
+    "progeny_prize": 290.0,
+    "representative": "サンリットアワーズ"
+  },
+  "Fort Larned": {
+    "horse_id": "000a01293b",
+    "rank": 337,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.44,
+    "progeny_prize": 290.0,
+    "representative": "ロードジャスティス"
+  },
+  "Global Campaign": {
+    "horse_id": "000a01462a",
+    "rank": 337,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.44,
+    "progeny_prize": 290.0,
+    "representative": "エコロカディス"
+  },
+  "Race Day": {
+    "horse_id": "000a01426a",
+    "rank": 340,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.42,
+    "progeny_prize": 280.0,
+    "representative": "マイネルサブマリン"
+  },
+  "ユアーズトゥルーリ": {
+    "horse_id": "2016104391",
+    "rank": 340,
+    "runners": 7,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.06,
+    "progeny_prize": 280.0,
+    "representative": "アイランドピーク"
+  },
+  "サクラオリオン": {
+    "horse_id": "2002104686",
+    "rank": 342,
+    "runners": 3,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.12,
+    "progeny_prize": 243.0,
+    "representative": "キョウエイオリオン"
+  },
+  "ダノンシャンティ": {
+    "horse_id": "2007105709",
+    "rank": 343,
+    "runners": 10,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.04,
+    "progeny_prize": 238.0,
+    "representative": "エイシンダンシャク"
+  },
+  "Medaglia d'Oro": {
+    "horse_id": "000a010a65",
+    "rank": 344,
+    "runners": 4,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.09,
+    "progeny_prize": 235.0,
+    "representative": "ドナノーブル"
+  },
+  "Study of Man": {
+    "horse_id": "000a013ee7",
+    "rank": 345,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.34,
+    "progeny_prize": 223.0,
+    "representative": "コスモアミマネラ"
+  },
+  "クラウンレガーロ": {
+    "horse_id": "2010105639",
+    "rank": 345,
+    "runners": 3,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.11,
+    "progeny_prize": 223.0,
+    "representative": "マリノバレリーナ"
+  },
+  "Almanzor": {
+    "horse_id": "000a013230",
+    "rank": 347,
+    "runners": 3,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.11,
+    "progeny_prize": 220.0,
+    "representative": "ヤルヤン"
+  },
+  "New Bay": {
+    "horse_id": "000a012bc0",
+    "rank": 347,
+    "runners": 6,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.06,
+    "progeny_prize": 220.0,
+    "representative": "ラヴベイ"
+  },
+  "オウケンブルースリ": {
+    "horse_id": "2005102548",
+    "rank": 347,
+    "runners": 3,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.11,
+    "progeny_prize": 220.0,
+    "representative": "ジャズブルース"
+  },
+  "アンライバルド": {
+    "horse_id": "2006103308",
+    "rank": 350,
+    "runners": 3,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.11,
+    "progeny_prize": 217.0,
+    "representative": "エイノスケ"
+  },
+  "レーヴミストラル": {
+    "horse_id": "2012104929",
+    "rank": 351,
+    "runners": 5,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.06,
+    "progeny_prize": 200.0,
+    "representative": "エスメラルドエクラ"
+  },
+  "First Samurai": {
+    "horse_id": "000a011157",
+    "rank": 352,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.28,
+    "progeny_prize": 184.0,
+    "representative": "ヴァンデリオン"
+  },
+  "McKinzie": {
+    "horse_id": "000a0143b2",
+    "rank": 353,
+    "runners": 3,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.09,
+    "progeny_prize": 180.0,
+    "representative": "アメリカンビヨンド"
+  },
+  "アグネスデジタル": {
+    "horse_id": "1997110025",
+    "rank": 354,
+    "runners": 2,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.13,
+    "progeny_prize": 170.0,
+    "representative": "ラブリアージェ"
+  },
+  "バーディバーディ": {
+    "horse_id": "2007100567",
+    "rank": 354,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.26,
+    "progeny_prize": 170.0,
+    "representative": "ミエノサンダー"
+  },
+  "シルポート": {
+    "horse_id": "2005109202",
+    "rank": 356,
+    "runners": 6,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.04,
+    "progeny_prize": 169.0,
+    "representative": "ハクサンアマゾネス"
+  },
+  "Bated Breath": {
+    "horse_id": "000a019850",
+    "rank": 357,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.21,
+    "progeny_prize": 140.0,
+    "representative": "スターシャワー"
+  },
+  "Camelot": {
+    "horse_id": "000a011ed2",
+    "rank": 357,
+    "runners": 2,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.11,
+    "progeny_prize": 140.0,
+    "representative": "アルバスドラコ"
+  },
+  "アルデバランII": {
+    "horse_id": "000a010541",
+    "rank": 357,
+    "runners": 3,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.07,
+    "progeny_prize": 140.0,
+    "representative": "カミノカガヤキ"
+  },
+  "Connect": {
+    "horse_id": "000a01babf",
+    "rank": 360,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.17,
+    "progeny_prize": 114.0,
+    "representative": "ワールドコネクター"
+  },
+  "Improbable": {
+    "horse_id": "000a014595",
+    "rank": 361,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.17,
+    "progeny_prize": 110.0,
+    "representative": "カランダッシュ"
+  },
+  "Protectionist": {
+    "horse_id": "000a012a2e",
+    "rank": 361,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.17,
+    "progeny_prize": 110.0,
+    "representative": "ルラクソント"
+  },
+  "Karakontie": {
+    "horse_id": "2011103600",
+    "rank": 363,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.13,
+    "progeny_prize": 83.0,
+    "representative": "ワンハート"
+  },
+  "トウケイヘイロー": {
+    "horse_id": "2009101682",
+    "rank": 364,
+    "runners": 3,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.04,
+    "progeny_prize": 78.0,
+    "representative": "マサノロイヤル"
+  },
+  "Sottsass": {
+    "horse_id": "000a014680",
+    "rank": 365,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.11,
+    "progeny_prize": 72.0,
+    "representative": "ミリアドタレント"
+  },
+  "Thousand Words": {
+    "horse_id": "000a016ea1",
+    "rank": 365,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.11,
+    "progeny_prize": 72.0,
+    "representative": "エコロスヴァル"
+  },
+  "Invincible Army": {
+    "horse_id": "000a01b4f5",
+    "rank": 367,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.08,
+    "progeny_prize": 55.0,
+    "representative": "ユーベルメンシュ"
+  },
+  "Ribchester": {
+    "horse_id": "000a01353b",
+    "rank": 367,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.08,
+    "progeny_prize": 55.0,
+    "representative": "アイカムインピース"
+  },
+  "ギンザグリングラス": {
+    "horse_id": "2005106327",
+    "rank": 367,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.08,
+    "progeny_prize": 55.0,
+    "representative": "オリエンタルマック"
+  },
+  "ロンギングダンサー": {
+    "horse_id": "2009105855",
+    "rank": 367,
+    "runners": 2,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.04,
+    "progeny_prize": 55.0,
+    "representative": "ロンギングキイ"
+  },
+  "Adlerflug": {
+    "horse_id": "000a012caf",
+    "rank": 371,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "ゴリアット"
+  },
+  "Carpe Diem": {
+    "horse_id": "000a014112",
+    "rank": 371,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "エイシンアンヴァル"
+  },
+  "Central Banker": {
+    "horse_id": "000a013eed",
+    "rank": 371,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "ピアシック"
+  },
+  "Churchill": {
+    "horse_id": "000a0137af",
+    "rank": 371,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "クリプティクコード"
+  },
+  "Cracksman": {
+    "horse_id": "000a0137be",
+    "rank": 371,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "コスモバタール"
+  },
+  "Deep Field": {
+    "horse_id": "000a01b9d6",
+    "rank": 371,
+    "runners": 2,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "ムゲン"
+  },
+  "Dundeel": {
+    "horse_id": "000a014aa5",
+    "rank": 371,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "ボンウィークエンド"
+  },
+  "Dutch Art": {
+    "horse_id": "000a0121d7",
+    "rank": 371,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "ダルダヌス"
+  },
+  "English Channel": {
+    "horse_id": "000a011c20",
+    "rank": 371,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "カフジウヴァ"
+  },
+  "Exceed And Excel": {
+    "horse_id": "000a010a61",
+    "rank": 371,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "ロンドンテソーロ"
+  },
+  "Free Drop Billy": {
+    "horse_id": "000a01c0bd",
+    "rank": 371,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "スモーキンビリー"
+  },
+  "Jimmy Creed": {
+    "horse_id": "000a012a62",
+    "rank": 371,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "ジャスパーウィン"
+  },
+  "Klimt": {
+    "horse_id": "000a01bac0",
+    "rank": 371,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "ブラヴィーノ"
+  },
+  "Lord Nelson": {
+    "horse_id": "000a01ba24",
+    "rank": 371,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "オカンモシャチョウ"
+  },
+  "Masar": {
+    "horse_id": "000a013d93",
+    "rank": 371,
+    "runners": 2,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "メトロポリターナ"
+  },
+  "Mastercraftsman": {
+    "horse_id": "000a01249a",
+    "rank": 371,
+    "runners": 2,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "ボタニカルガーデン"
+  },
+  "Maximum Security": {
+    "horse_id": "000a014586",
+    "rank": 371,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "トーセンペネロペ"
+  },
+  "Mohaymen": {
+    "horse_id": "000a014f3b",
+    "rank": 371,
+    "runners": 2,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "ケルンコンサート"
+  },
+  "More Than Ready": {
+    "horse_id": "000a00fcdd",
+    "rank": 371,
+    "runners": 2,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "ジャングロ"
+  },
+  "Pinatubo": {
+    "horse_id": "000a0149d6",
+    "rank": 371,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "タカラクロロック"
+  },
+  "Pivotal": {
+    "horse_id": "000a002328",
+    "rank": 371,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "マラードザレコード"
+  },
+  "Postponed": {
+    "horse_id": "000a012bad",
+    "rank": 371,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "タイムトゥゴー"
+  },
+  "Raven's Pass": {
+    "horse_id": "000a011d04",
+    "rank": 371,
+    "runners": 2,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "デヴィルズマーブル"
+  },
+  "Renat": {
+    "horse_id": "000a01d54d",
+    "rank": 371,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "レヨンドゥソレイユ"
+  },
+  "Roaring Lion": {
+    "horse_id": "000a013d89",
+    "rank": 371,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "デッドリー"
+  },
+  "Sea The Moon": {
+    "horse_id": "000a012696",
+    "rank": 371,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "モントカイザー"
+  },
+  "Smooth Daddy": {
+    "horse_id": "000a01d476",
+    "rank": 371,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "トコトワ"
+  },
+  "So You Think": {
+    "horse_id": "000a011bda",
+    "rank": 371,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "ソーユーアクト"
+  },
+  "Super Saver": {
+    "horse_id": "000a012d51",
+    "rank": 371,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "スターリングナウ"
+  },
+  "The Autumn Sun": {
+    "horse_id": "000a01e732",
+    "rank": 371,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "マノア"
+  },
+  "Trapeze Artist": {
+    "horse_id": "000a01e731",
+    "rank": 371,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "フリアフロリダ"
+  },
+  "Twilight Son": {
+    "horse_id": "000a01b4f6",
+    "rank": 371,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "ライトスタッフ"
+  },
+  "U S Navy Flag": {
+    "horse_id": "000a01a7a0",
+    "rank": 371,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "ポテンザ"
+  },
+  "Vino Rosso": {
+    "horse_id": "000a014954",
+    "rank": 371,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "ゼンソレイユ"
+  },
+  "Violence": {
+    "horse_id": "000a013951",
+    "rank": 371,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "ジャスパーロイヤル"
+  },
+  "アーネストリー": {
+    "horse_id": "2005105410",
+    "rank": 371,
+    "runners": 1,
+    "winners": 0,
+    "win_rate": 0.0,
+    "ei": 0.0,
+    "progeny_prize": 0.0,
+    "representative": "クロッチ"
+  }
+}
