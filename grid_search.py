@@ -452,61 +452,94 @@ def _precompute_arrays(all_data):
     return precomputed
 
 
+def _compute_score_vec(d, params):
+    """事前計算配列からスコアベクトルを計算する。"""
+    score = (
+        d["sex_centered"] * params[0]          # b_sex
+        + d["sire_ei_norm"] * params[1]         # w_sire_ei
+        + d["dam_prize_norm"] * params[2]       # w_dam_prize
+        + d["bms_ei_norm"] * params[3]          # w_bms_ei
+        + d["first_crop_val"] * params[4]       # w_first_crop
+        + d["trainer_centered"] * params[5]     # w_trainer
+        + d["owner_centered"] * params[6]       # w_owner
+        + d["breeder_centered"] * params[7]     # w_breeder
+        + d["early_born"] * params[8]           # b_early
+        + d["dam_bms_gap"] * params[10]         # b_dam_bms_gap
+        + d["sale_price_norm"] * params[11]     # b_sale_price
+        + d["is_first_foal"] * (-params[12])    # b_foal_penalty
+        + d["is_good_foal"] * params[13]        # b_foal_bonus
+        - d["sire_old_excess"] * params[17]     # b_sire_old
+    )
+    if "parents_young" in d:
+        score += d["parents_young"] * params[9]
+    else:
+        score += d["parents_young_half"] * (params[9] / 2)
+    breed_val = np.clip(params[14] - d["dam_breed_age"], -params[16], params[15])
+    score += d["dam_breed_notna"] * breed_val
+    return score
+
+
 def _fast_cv_score(precomputed, params):
-    """事前計算配列を使った高速CVスコア。"""
+    """事前計算配列を使った高速CVスコア（ランク平滑化付き）。"""
     total_score = 0.0
     n_years = len(precomputed)
 
     for d in precomputed.values():
-        # ベクトル化されたスコア計算
-        score = (
-            d["sex_centered"] * params[0]          # b_sex
-            + d["sire_ei_norm"] * params[1]         # w_sire_ei
-            + d["dam_prize_norm"] * params[2]       # w_dam_prize
-            + d["bms_ei_norm"] * params[3]          # w_bms_ei
-            + d["first_crop_val"] * params[4]       # w_first_crop
-            + d["trainer_centered"] * params[5]     # w_trainer
-            + d["owner_centered"] * params[6]       # w_owner
-            + d["breeder_centered"] * params[7]     # w_breeder
-            + d["early_born"] * params[8]           # b_early
-            + d["dam_bms_gap"] * params[10]         # b_dam_bms_gap
-            + d["sale_price_norm"] * params[11]     # b_sale_price
-            + d["is_first_foal"] * (-params[12])    # b_foal_penalty
-            + d["is_good_foal"] * params[13]        # b_foal_bonus
-            - d["sire_old_excess"] * params[17]     # b_sire_old
-        )
-        # 両親若齢（2パターン）
-        if "parents_young" in d:
-            score += d["parents_young"] * params[9]
-        else:
-            score += d["parents_young_half"] * (params[9] / 2)
+        score = _compute_score_vec(d, params)
 
-        # 繁殖入り年齢（clip付き）
-        breed_val = np.clip(params[14] - d["dam_breed_age"], -params[16], params[15])
-        score += d["dam_breed_notna"] * breed_val
-
-        # 性別別TOP10でクラシックヒット計算
-        # 牡馬TOP10でダービーヒット
-        derby_hits = 0
-        if len(d["male_indices"]) >= 10 and d["derby_in_males"]:
+        # 牡馬TOP10/TOP20でダービーヒット
+        derby_hits_10 = 0
+        derby_hits_20 = 0
+        if len(d["male_indices"]) >= 20 and d["derby_in_males"]:
             male_scores = score[d["male_indices"]]
             male_top10 = set(np.argpartition(-male_scores, 10)[:10])
-            derby_hits = len(male_top10 & d["derby_in_males"])
+            derby_hits_10 = len(male_top10 & d["derby_in_males"])
+            male_top20 = set(np.argpartition(-male_scores, 20)[:20])
+            derby_hits_20 = len(male_top20 & d["derby_in_males"])
+        elif len(d["male_indices"]) >= 10 and d["derby_in_males"]:
+            male_scores = score[d["male_indices"]]
+            male_top10 = set(np.argpartition(-male_scores, 10)[:10])
+            derby_hits_10 = len(male_top10 & d["derby_in_males"])
+            derby_hits_20 = derby_hits_10
 
-        # 牝馬TOP10でオークスヒット
-        oaks_hits = 0
-        if len(d["female_indices"]) >= 10 and d["oaks_in_females"]:
+        # 牝馬TOP10/TOP20でオークスヒット
+        oaks_hits_10 = 0
+        oaks_hits_20 = 0
+        if len(d["female_indices"]) >= 20 and d["oaks_in_females"]:
             female_scores = score[d["female_indices"]]
             female_top10 = set(np.argpartition(-female_scores, 10)[:10])
-            oaks_hits = len(female_top10 & d["oaks_in_females"])
+            oaks_hits_10 = len(female_top10 & d["oaks_in_females"])
+            female_top20 = set(np.argpartition(-female_scores, 20)[:20])
+            oaks_hits_20 = len(female_top20 & d["oaks_in_females"])
+        elif len(d["female_indices"]) >= 10 and d["oaks_in_females"]:
+            female_scores = score[d["female_indices"]]
+            female_top10 = set(np.argpartition(-female_scores, 10)[:10])
+            oaks_hits_10 = len(female_top10 & d["oaks_in_females"])
+            oaks_hits_20 = oaks_hits_10
 
-        # 全体TOP30でクラシックヒット
+        # 全体TOP30/TOP50
         n_horses = len(score)
         top30_k = min(30, n_horses)
         pred_top30 = set(np.argpartition(-score, top30_k)[:top30_k])
         top30_match = len(pred_top30 & d["classic_idx"])
 
-        total_score += (derby_hits + oaks_hits) * 100.0 + top30_match * 5.0
+        top50_k = min(50, n_horses)
+        pred_top50 = set(np.argpartition(-score, top50_k)[:top50_k])
+        top50_match = len(pred_top50 & d["classic_idx"])
+
+        # ランク平滑化: クラシック馬のスコア合計（滑らかな勾配を提供）
+        smooth_bonus = 0.0
+        if d["classic_idx"]:
+            classic_score_sum = sum(score[idx] for idx in d["classic_idx"])
+            smooth_bonus = classic_score_sum * 0.01
+
+        total_score += (
+            (derby_hits_10 + oaks_hits_10) * 100.0   # 性別別TOP10が最重要
+            + (derby_hits_20 + oaks_hits_20) * 20.0   # 性別別TOP20
+            + top30_match * 5.0                        # 全体TOP30
+            + top50_match * 1.0                        # 全体TOP50
+            + smooth_bonus                             # ランク平滑化
+        )
 
     return total_score / n_years
 
@@ -528,43 +561,43 @@ def _arr_to_dict(arr):
 
 
 def _random_search_top10(all_data, current_params, best_score):
-    """マルチリスタート+ポピュレーションベース探索（TOP10最大化専用、高速版）。"""
+    """scipy Differential Evolution + ランダム局所探索（TOP10最大化）。"""
     import time
+    from scipy.optimize import differential_evolution
 
     # 事前計算（1回だけ）
     print("\n  特徴量を事前計算中...")
     precomputed = _precompute_arrays(all_data)
     print("  完了")
 
-    # パラメータの探索範囲
-    param_ranges = np.array([
-        (0, 20),       # b_sex
-        (0.0, 0.50),   # w_sire_ei
-        (0.0, 0.30),   # w_dam_prize
-        (0.0, 0.35),   # w_bms_ei
-        (0.0, 25.0),   # w_first_crop (正規化後は[0,1]なのでpt単位)
-        (0.0, 0.50),   # w_trainer
-        (0.0, 0.50),   # w_owner
-        (0.0, 0.50),   # w_breeder
-        (0, 15),       # b_early
-        (0, 15),       # b_parents_young
-        (0, 15),       # b_dam_bms_gap
-        (0, 15),       # b_sale_price
-        (0, 15),       # b_foal_penalty
-        (0, 10),       # b_foal_bonus
-        (1, 12),       # dam_breed_base
-        (0, 8),        # dam_breed_cap
-        (0, 8),        # dam_breed_penalty
-        (0, 5),        # b_sire_old
-    ])
-    lo = param_ranges[:, 0]
-    hi = param_ranges[:, 1]
+    # パラメータの探索範囲（やや広め）
+    bounds = [
+        (0, 25),       # b_sex
+        (0.0, 0.60),   # w_sire_ei
+        (0.0, 0.40),   # w_dam_prize
+        (0.0, 0.45),   # w_bms_ei
+        (0.0, 30.0),   # w_first_crop
+        (0.0, 0.60),   # w_trainer
+        (0.0, 0.60),   # w_owner
+        (0.0, 0.60),   # w_breeder
+        (0, 20),       # b_early
+        (0, 20),       # b_parents_young
+        (0, 20),       # b_dam_bms_gap
+        (0, 20),       # b_sale_price
+        (0, 20),       # b_foal_penalty
+        (0, 15),       # b_foal_bonus
+        (1, 15),       # dam_breed_base
+        (0, 10),       # dam_breed_cap
+        (0, 10),       # dam_breed_penalty
+        (0, 8),        # b_sire_old
+    ]
+    lo = np.array([b[0] for b in bounds])
+    hi = np.array([b[1] for b in bounds])
     span = hi - lo
     n_params = len(lo)
 
     current_arr = _dict_to_arr(current_params)
     best_arr = current_arr.copy()
-    # 事前計算版の現行スコア
     best_score_fast = _fast_cv_score(precomputed, current_arr)
     print(f"  現行スコア(高速版): {best_score_fast:.2f}")
 
@@ -583,132 +616,105 @@ def _random_search_top10(all_data, current_params, best_score):
     t_start = time.time()
 
     # ================================================================
-    # Phase 1: マルチシード広域探索 (5シード × 100k = 500k)
+    # Phase 1: Differential Evolution（5リスタート）
     # ================================================================
-    n_seeds = 5
-    n_phase1 = 100000
+    n_restarts = 5
     print(f"\n{'='*60}")
-    print(f"  Phase 1: マルチシード広域探索 ({n_seeds}シード × {n_phase1:,} = {n_seeds*n_phase1:,}回)")
+    print(f"  Phase 1: Differential Evolution ({n_restarts}リスタート)")
     print(f"{'='*60}")
 
-    pool_size = 50
-    pool = [(best_score_fast, best_arr.copy())]
+    def de_objective(x):
+        return -_fast_cv_score(precomputed, np.asarray(x))
 
-    for seed in range(n_seeds):
-        rng = np.random.default_rng(seed * 1000 + 42)
-        local_best = best_score_fast
-        local_arr = best_arr.copy()
-
-        for i in range(n_phase1):
-            p = rng.uniform(lo, hi)
-            s = _fast_cv_score(precomputed, p)
-            if s > local_best:
-                local_best = s
-                local_arr = p.copy()
-            if s > pool[-1][0] if len(pool) >= pool_size else True:
-                pool.append((s, p.copy()))
-
-        pool.sort(key=lambda x: -x[0])
-        pool = pool[:pool_size]
-
+    de_results = []
+    for i, seed in enumerate([42, 137, 314, 577, 2024]):
+        result = differential_evolution(
+            de_objective,
+            bounds,
+            maxiter=500,
+            popsize=15,
+            tol=1e-5,
+            seed=seed,
+            mutation=(0.5, 1.5),
+            recombination=0.7,
+            polish=False,
+            init='latinhypercube',
+        )
+        score = -result.fun
+        de_results.append((score, result.x.copy()))
         elapsed = time.time() - t_start
-        _show_top10(local_arr, f"Seed {seed} ({elapsed:.0f}s): score={local_best:.2f}")
+        print(f"  DE#{i} (seed={seed}): {score:.2f} ({elapsed:.0f}s, nfev={result.nfev})")
+        _show_top10(result.x, f"  DE#{i}")
 
-    best_score_fast, best_arr = pool[0]
+        if score > best_score_fast:
+            best_score_fast = score
+            best_arr = result.x.copy()
+
     print(f"\n  Phase 1 完了: best={best_score_fast:.2f} ({time.time()-t_start:.0f}s)")
     _show_top10(best_arr, "Best")
 
     # ================================================================
-    # Phase 2: トップ候補の局所探索 (上位30個 × 20k = 600k)
+    # Phase 2: DE結果の上位候補を局所探索（上位5 × 50k）
     # ================================================================
-    n_top = 30
-    n_phase2 = 20000
+    de_results.sort(key=lambda x: -x[0])
+    n_top = min(5, len(de_results))
+    n_phase2 = 50000
     print(f"\n{'='*60}")
-    print(f"  Phase 2: トップ{n_top}局所探索 ({n_top} × {n_phase2:,} = {n_top*n_phase2:,}回)")
+    print(f"  Phase 2: 上位{n_top}候補の局所探索 ({n_top} × {n_phase2:,} = {n_top*n_phase2:,}回)")
     print(f"{'='*60}")
 
     rng = np.random.default_rng(9999)
-    new_pool = list(pool[:pool_size])
-
-    for ci in range(min(n_top, len(pool))):
-        cand_score, cand_arr = pool[ci]
+    for ci in range(n_top):
+        cand_score, cand_arr = de_results[ci]
         local_best = cand_score
         local_arr = cand_arr.copy()
 
-        for i in range(n_phase2):
-            delta = rng.uniform(-0.15, 0.15, n_params) * span
+        for _ in range(n_phase2):
+            delta = rng.uniform(-0.10, 0.10, n_params) * span
             p = np.clip(local_arr + delta, lo, hi)
             s = _fast_cv_score(precomputed, p)
             if s > local_best:
                 local_best = s
                 local_arr = p.copy()
 
-        new_pool.append((local_best, local_arr.copy()))
-        if ci < 5:
-            _show_top10(local_arr, f"Cand {ci}: score={local_best:.2f}")
-
-    new_pool.sort(key=lambda x: -x[0])
-    new_pool = new_pool[:pool_size]
-    best_score_fast, best_arr = new_pool[0]
-    print(f"\n  Phase 2 完了: best={best_score_fast:.2f} ({time.time()-t_start:.0f}s)")
-    _show_top10(best_arr, "Best")
-
-    # ================================================================
-    # Phase 3: トップ10の微調整 (10 × 30k = 300k)
-    # ================================================================
-    n_fine = 10
-    n_phase3 = 30000
-    print(f"\n{'='*60}")
-    print(f"  Phase 3: トップ{n_fine}微調整 ({n_fine} × {n_phase3:,} = {n_fine*n_phase3:,}回)")
-    print(f"{'='*60}")
-
-    for ci in range(min(n_fine, len(new_pool))):
-        cand_score, cand_arr = new_pool[ci]
-        local_best = cand_score
-        local_arr = cand_arr.copy()
-
-        for i in range(n_phase3):
-            delta = rng.uniform(-0.05, 0.05, n_params) * span
-            p = np.clip(local_arr + delta, lo, hi)
-            s = _fast_cv_score(precomputed, p)
-            if s > local_best:
-                local_best = s
-                local_arr = p.copy()
-
-        if ci < 5:
-            _show_top10(local_arr, f"Fine {ci}: score={local_best:.2f}")
+        _show_top10(local_arr, f"Cand {ci}: score={local_best:.2f}")
         if local_best > best_score_fast:
             best_score_fast = local_best
             best_arr = local_arr.copy()
 
-    print(f"\n  Phase 3 完了: best={best_score_fast:.2f} ({time.time()-t_start:.0f}s)")
+    print(f"\n  Phase 2 完了: best={best_score_fast:.2f} ({time.time()-t_start:.0f}s)")
     _show_top10(best_arr, "Best")
 
     # ================================================================
-    # Phase 4: 最終超微調整 (100k at ±2%)
+    # Phase 3: 微調整（300k at ±5% → 200k at ±2%）
     # ================================================================
-    n_phase4 = 100000
     print(f"\n{'='*60}")
-    print(f"  Phase 4: 最終超微調整 ({n_phase4:,}回 at ±2%)")
+    print(f"  Phase 3: 微調整")
     print(f"{'='*60}")
 
-    for i in range(n_phase4):
-        delta = rng.uniform(-0.02, 0.02, n_params) * span
-        p = np.clip(best_arr + delta, lo, hi)
-        s = _fast_cv_score(precomputed, p)
-        if s > best_score_fast:
-            best_score_fast = s
-            best_arr = p.copy()
+    for step_size, n_iter, label in [
+        (0.05, 300000, "±5%"),
+        (0.02, 200000, "±2%"),
+    ]:
+        improved = 0
+        for _ in range(n_iter):
+            delta = rng.uniform(-step_size, step_size, n_params) * span
+            p = np.clip(best_arr + delta, lo, hi)
+            s = _fast_cv_score(precomputed, p)
+            if s > best_score_fast:
+                best_score_fast = s
+                best_arr = p.copy()
+                improved += 1
+        elapsed = time.time() - t_start
+        print(f"  {label}: {best_score_fast:.2f} (改善{improved}回, {elapsed:.0f}s)")
 
-    elapsed = time.time() - t_start
-    print(f"  Phase 4 完了: best={best_score_fast:.2f} ({elapsed:.0f}s)")
     _show_top10(best_arr, "Final")
 
     # dict形式で返す（元のcv_scoreで検算）
     best_params = _arr_to_dict(best_arr)
     best_score = cv_score(all_data, best_params)
     print(f"\n  検算(元スコア関数): {best_score:.2f}")
-    print(f"  総所要時間: {elapsed:.0f}秒")
+    print(f"  総所要時間: {time.time()-t_start:.0f}秒")
 
     return best_params, best_score
 
