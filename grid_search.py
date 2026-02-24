@@ -190,15 +190,25 @@ def evaluate_single(df: pd.DataFrame, params: dict, birth_year: int = None) -> d
 
 
 def composite_score(metrics: dict, objective: str = "classic") -> float:
-    """複合スコア（全体TOP10→クラシックTOP10ヒット数最大化）。"""
+    """複合スコア（全体TOP10 + 牡馬ダービー + 牝馬オークス）。"""
     top10 = metrics.get("top10_total", 0)
     top20 = metrics.get("top20_total", 0)
     top30 = metrics.get("top30_total", 0)
+
+    # 牡馬内ダービーヒット / 牝馬内オークスヒット
+    m_d10 = metrics.get("male_top10_derby", 0)
+    m_d20 = metrics.get("male_top20_derby", 0)
+    f_o10 = metrics.get("female_top10_oaks", 0)
+    f_o20 = metrics.get("female_top20_oaks", 0)
 
     return (
         top10 * 100.0   # 全体TOP10ヒットが最重要
         + top20 * 10.0  # TOP20
         + top30 * 3.0   # TOP30
+        + m_d10 * 80.0  # 牡馬TOP10内ダービーヒット
+        + m_d20 * 8.0   # 牡馬TOP20内ダービーヒット
+        + f_o10 * 80.0  # 牝馬TOP10内オークスヒット
+        + f_o20 * 8.0   # 牝馬TOP20内オークスヒット
     )
 
 
@@ -336,9 +346,15 @@ def grid_search(years, objective="balanced"):
         t20_new = m_new.get("top20_total", 0)
         t30_old = m_old.get("top30_total", 0)
         t30_new = m_new.get("top30_total", 0)
+        md10_old = m_old.get("male_top10_derby", 0)
+        md10_new = m_new.get("male_top10_derby", 0)
+        fo10_old = m_old.get("female_top10_oaks", 0)
+        fo10_new = m_new.get("female_top10_oaks", 0)
         print(f"  {y} | {'全体TOP10':>12} | {t10_old:>4}/10 | {t10_new:>4}/10 | {t10_new-t10_old:>+5}")
         print(f"       | {'全体TOP20':>12} | {t20_old:>4}/10 | {t20_new:>4}/10 | {t20_new-t20_old:>+5}")
         print(f"       | {'全体TOP30':>12} | {t30_old:>4}/10 | {t30_new:>4}/10 | {t30_new-t30_old:>+5}")
+        print(f"       | {'牡TOP10Derby':>12} | {md10_old:>4}/5  | {md10_new:>4}/5  | {md10_new-md10_old:>+5}")
+        print(f"       | {'牝TOP10Oaks':>12} | {fo10_old:>4}/5  | {fo10_new:>4}/5  | {fo10_new-fo10_old:>+5}")
         print("-" * 55)
 
     return best_params
@@ -478,7 +494,7 @@ def _compute_score_vec(d, params):
 
 
 def _fast_cv_score(precomputed, params):
-    """事前計算配列を使った高速CVスコア（全体TOP10ヒット最大化）。"""
+    """事前計算配列を使った高速CVスコア（全体TOP10 + 牡ダービー + 牝オークス）。"""
     total_score = 0.0
     n_years = len(precomputed)
 
@@ -499,6 +515,30 @@ def _fast_cv_score(precomputed, params):
         pred_top30 = set(np.argpartition(-score, top30_k)[:top30_k])
         top30_match = len(pred_top30 & d["classic_idx"])
 
+        # 牡馬TOP10/20内のダービーヒット
+        m_d10 = m_d20 = 0
+        male_idx = d["male_indices"]
+        if len(male_idx) > 0 and d["derby_idx"]:
+            male_scores = score[male_idx]
+            mk10 = min(10, len(male_scores))
+            m_top10 = set(np.argpartition(-male_scores, mk10)[:mk10])
+            m_d10 = len(m_top10 & d["derby_in_males"])
+            mk20 = min(20, len(male_scores))
+            m_top20 = set(np.argpartition(-male_scores, mk20)[:mk20])
+            m_d20 = len(m_top20 & d["derby_in_males"])
+
+        # 牝馬TOP10/20内のオークスヒット
+        f_o10 = f_o20 = 0
+        female_idx = d["female_indices"]
+        if len(female_idx) > 0 and d["oaks_idx"]:
+            female_scores = score[female_idx]
+            fk10 = min(10, len(female_scores))
+            f_top10 = set(np.argpartition(-female_scores, fk10)[:fk10])
+            f_o10 = len(f_top10 & d["oaks_in_females"])
+            fk20 = min(20, len(female_scores))
+            f_top20 = set(np.argpartition(-female_scores, fk20)[:fk20])
+            f_o20 = len(f_top20 & d["oaks_in_females"])
+
         # ランク平滑化: クラシック馬のスコア合計（滑らかな勾配を提供）
         smooth_bonus = 0.0
         if d["classic_idx"]:
@@ -509,6 +549,10 @@ def _fast_cv_score(precomputed, params):
             top10_match * 100.0    # 全体TOP10ヒットが最重要
             + top20_match * 10.0   # 全体TOP20
             + top30_match * 3.0    # 全体TOP30
+            + m_d10 * 80.0         # 牡馬TOP10内ダービーヒット
+            + m_d20 * 8.0          # 牡馬TOP20内ダービーヒット
+            + f_o10 * 80.0         # 牝馬TOP10内オークスヒット
+            + f_o20 * 8.0          # 牝馬TOP20内オークスヒット
             + smooth_bonus         # ランク平滑化
         )
 
@@ -576,12 +620,18 @@ def _random_search_top10(all_data, current_params, best_score):
         params = _arr_to_dict(arr)
         items = []
         total_hits = 0
+        derby_hits = 0
+        oaks_hits = 0
         for y in sorted(all_data.keys()):
             m = evaluate_single(all_data[y], params, birth_year=y)
             t10 = m.get("top10_total", 0)
-            items.append(f"{y}:{t10}")
+            md10 = m.get("male_top10_derby", 0)
+            fo10 = m.get("female_top10_oaks", 0)
+            items.append(f"{y}:{t10}(D{md10}O{fo10})")
             total_hits += t10
-        print(f"  {label} TOP10ヒット合計={total_hits}/80 [{', '.join(items)}]")
+            derby_hits += md10
+            oaks_hits += fo10
+        print(f"  {label} TOP10={total_hits}/80 牡D={derby_hits}/40 牝O={oaks_hits}/40 [{', '.join(items)}]")
 
     t_start = time.time()
 
