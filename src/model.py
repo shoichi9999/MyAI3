@@ -129,4 +129,22 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
     if "dam_bms_gap_small" in df.columns:
         score += df["dam_bms_gap_small"].fillna(0) * W.get("b_dam_bms_gap", 0.0)
 
+    # 母馬総産駒数ボーナス（適度な繁殖実績: 3-6頭がスイートスポット）
+    if "total_dam_foals" in df.columns:
+        tdf = df["total_dam_foals"].fillna(0)
+        score += np.where((tdf >= 3) & (tdf <= 6), W.get("b_dam_foals_sweet", 0.0), 0)
+
+    # 父EI × 母賞金交互作用（99パーセンタイル正規化）
+    if "sire_dam_interaction" in df.columns:
+        inter = df["sire_dam_interaction"].fillna(0)
+        cap = inter.quantile(0.99)
+        if cap > 0:
+            score += (inter.clip(upper=cap) / cap) * W.get("w_sire_dam_inter", 0.0)
+
+    # 調教師 × 生産者コンボ（エリート連携ボーナス）
+    if "trainer_breeder_combo" in df.columns:
+        combo = df["trainer_breeder_combo"].fillna(2500)
+        # 基準値: 50*50=2500（非エリート同士）
+        score += np.maximum(0, combo - 2500) * W.get("w_trainer_breeder", 0.0)
+
     return score

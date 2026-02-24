@@ -35,6 +35,9 @@ FEATURE_COLS = [
     "sale_price_log",
     "foal_number",
     "dam_breeding_age",
+    "total_dam_foals",
+    "sire_dam_interaction",
+    "trainer_breeder_combo",
 ]
 
 # スタッキング時に追加する特徴量

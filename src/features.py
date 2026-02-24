@@ -379,14 +379,26 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
         dam_breeding_age = np.nan
         dam_by = horse.get("dam_birth_year")
         dam_id = str(horse.get("dam_id", "")) if pd.notna(horse.get("dam_id")) else ""
+        foal_list = DAM_FOALS.get(dam_id, []) if dam_id else []
         if dam_id and pd.notna(dam_by):
-            foal_list = DAM_FOALS.get(dam_id, [])
             if foal_list:
                 # 産駒リストは降順（新しい順）→ 末尾が初仔
                 first_foal_by = _birth_year_from_id(foal_list[-1])
                 if first_foal_by is not None:
                     dam_breeding_age = first_foal_by - int(dam_by)
         row["dam_breeding_age"] = dam_breeding_age
+
+        # --- 母馬の総産駒数（繁殖実績の豊富さ） ---
+        row["total_dam_foals"] = len(foal_list) if foal_list else 0
+
+        # --- 特徴量交互作用（非線形シグナル） ---
+        # 父EI × 母賞金: 良血父 × 良血母のシナジー
+        sire_ei_val = row["sire_ei"]
+        dam_prize_val = row["dam_prize"]
+        row["sire_dam_interaction"] = sire_ei_val * np.log1p(dam_prize_val)
+
+        # 調教師 × 生産者: エリート牧場→エリート調教師パイプライン
+        row["trainer_breeder_combo"] = row["trainer_score"] * row["breeder_score"]
 
         feature_rows.append(row)
 

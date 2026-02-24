@@ -118,6 +118,23 @@ def parameterized_score(df: pd.DataFrame, params: dict) -> pd.Series:
                           (params["dam_breed_base"] - dba).clip(
                               -params["dam_breed_penalty"], params["dam_breed_cap"]))
 
+    # 母馬総産駒数ボーナス（3-6頭がスイートスポット）
+    if "total_dam_foals" in df.columns:
+        tdf = df["total_dam_foals"].fillna(0)
+        score += np.where((tdf >= 3) & (tdf <= 6), params.get("b_dam_foals_sweet", 0), 0)
+
+    # 父EI × 母賞金交互作用
+    if "sire_dam_interaction" in df.columns:
+        inter = df["sire_dam_interaction"].fillna(0)
+        cap = inter.quantile(0.99)
+        if cap > 0:
+            score += (inter.clip(upper=cap) / cap) * params.get("w_sire_dam_inter", 0)
+
+    # 調教師 × 生産者コンボ
+    if "trainer_breeder_combo" in df.columns:
+        combo = df["trainer_breeder_combo"].fillna(2500)
+        score += np.maximum(0, combo - 2500) * params.get("w_trainer_breeder", 0)
+
     return score
 
 
@@ -283,6 +300,9 @@ def grid_search(years, objective="balanced"):
         "dam_breed_cap": _w.get("dam_breed_cap", 2.0),
         "dam_breed_penalty": _w.get("dam_breed_penalty", 3.0),
         "b_sire_old": _w.get("b_sire_old", 0.0),
+        "b_dam_foals_sweet": _w.get("b_dam_foals_sweet", 0.0),
+        "w_sire_dam_inter": _w.get("w_sire_dam_inter", 0.0),
+        "w_trainer_breeder": _w.get("w_trainer_breeder", 0.0),
     }
 
     current_cv = cv_score(all_data, current_params)
@@ -443,6 +463,25 @@ def _precompute_arrays(all_data):
         else:
             d["dam_breed_notna"] = np.zeros(n)
             d["dam_breed_age"] = np.zeros(n)
+        # 母馬総産駒数スイートスポット（3-6頭）
+        if "total_dam_foals" in df.columns:
+            tdf = df["total_dam_foals"].fillna(0).values
+            d["dam_foals_sweet"] = ((tdf >= 3) & (tdf <= 6)).astype(float)
+        else:
+            d["dam_foals_sweet"] = np.zeros(n)
+        # 父EI × 母賞金交互作用（99パーセンタイル正規化）
+        if "sire_dam_interaction" in df.columns:
+            inter = df["sire_dam_interaction"].fillna(0).values
+            cap = np.percentile(inter, 99)
+            d["sire_dam_inter_norm"] = (np.clip(inter, 0, cap) / cap) if cap > 0 else np.zeros(n)
+        else:
+            d["sire_dam_inter_norm"] = np.zeros(n)
+        # 調教師 × 生産者コンボ（基準値2500超過分）
+        if "trainer_breeder_combo" in df.columns:
+            combo = df["trainer_breeder_combo"].fillna(2500).values
+            d["trainer_breeder_excess"] = np.maximum(0, combo - 2500)
+        else:
+            d["trainer_breeder_excess"] = np.zeros(n)
         # クラシック結果データ
         horse_ids = df["horse_id"].astype(str).values
         sex_vals = df["sex"].values if "sex" in df.columns else np.full(n, 0.5)
@@ -490,6 +529,10 @@ def _compute_score_vec(d, params):
         score += d["parents_young_half"] * (params[9] / 2)
     breed_val = np.clip(params[14] - d["dam_breed_age"], -params[16], params[15])
     score += d["dam_breed_notna"] * breed_val
+    # 新特徴量
+    score += d["dam_foals_sweet"] * params[18]         # b_dam_foals_sweet
+    score += d["sire_dam_inter_norm"] * params[19]     # w_sire_dam_inter
+    score += d["trainer_breeder_excess"] * params[20]  # w_trainer_breeder
     return score
 
 
@@ -566,6 +609,7 @@ _PARAM_KEYS = [
     "b_dam_bms_gap", "b_sale_price", "b_foal_penalty", "b_foal_bonus",
     "dam_breed_base", "dam_breed_cap", "dam_breed_penalty",
     "b_sire_old",
+    "b_dam_foals_sweet", "w_sire_dam_inter", "w_trainer_breeder",
 ]
 
 def _dict_to_arr(params):
@@ -605,6 +649,9 @@ def _random_search_top10(all_data, current_params, best_score):
         (0, 10),       # dam_breed_cap
         (0, 10),       # dam_breed_penalty
         (0, 8),        # b_sire_old
+        (0, 15),       # b_dam_foals_sweet
+        (0, 20),       # w_sire_dam_inter
+        (0, 0.05),     # w_trainer_breeder
     ]
     lo = np.array([b[0] for b in bounds])
     hi = np.array([b[1] for b in bounds])
