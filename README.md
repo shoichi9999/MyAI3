@@ -2,6 +2,7 @@
 
 競馬のPOG（ペーパーオーナーゲーム）で有望な2歳馬をランク付けするシステム。
 デビュー前に入手可能な情報のみを使い、ヒューリスティックスコアで**ダービー・オークスの好走馬**を予測する。
+LightGBMとのアンサンブル予測にも対応。
 
 ## コンセプト
 
@@ -9,39 +10,56 @@
 - **選出方法**: 性別問わず予測スコアTOP10を選出
 - **評価方法**: 選出した10頭がダービーTOP5・オークスTOP5に何頭入っているか
 - **最適化**: 8年分（2015〜2022年産）のLOO-CVでscipy Differential Evolutionによりパラメータ探索
+- **アンサンブル**: ヒューリスティックスコアとLightGBM予測をalphaブレンドで統合
 
 ## スコアリング
 
+### ヒューリスティックモデル
+
 血統スコア・人的要素をベースに、ボーナス/ペナルティを加減算する。
-重みは`data/config/weights.json`で管理。
+重みは`data/config/weights.json`で管理し、Differential Evolutionで最適化済み。
 
 | 要素 | 配点 | 説明 |
 |------|------|------|
 | 早生まれ | +19.9pt | 1〜4月生まれ |
-| 母父EI | 最大28.3pt | 母父馬の産駒EI（99%ile正規化×100×0.283） |
-| 母馬獲得賞金 | 最大27.6pt | 対数正規化 |
-| 初年度種牡馬 | 最大11.1pt | 年内正規化（同年の初年度種牡馬内での相対順位×重み） |
-| 母馬繁殖入り年齢 | -6.3〜+9.9pt | 若い繁殖入り（=良血）ほど加算 |
-| 調教師 | (スコア-50)×0.59 | 実績スコア（50基準） |
-| 馬主 | (スコア-50)×0.60 | 実績スコア（50基準） |
-| 生産牧場 | (スコア-50)×0.59 | 実績スコア（50基準） |
-| 産駒番号 | +4.6pt | 2〜4番仔にボーナス |
-| セリ価格 | 最大4.0pt | セリ価格（正規化後×重み） |
-| 種牡馬高齢 | -2.7pt/年 | 16歳超で年齢に応じた減点 |
-| 両親若齢 | +2.5pt | 父母とも13歳以下 |
-| 性別 | ±0.3pt | 牡馬に加算、牝馬に減算 |
+| 初年度種牡馬 | 最大10.2pt | 初年度種牡馬内の種牡馬賞金を正規化してスコア付け |
+| 母父EI | 最大9.3pt | 母父馬の産駒EI（99%ile正規化×100×0.093） |
+| 母馬獲得賞金 | 最大15.4pt | 対数正規化（99%ile） |
+| 産駒番号 | +5.6pt/-0pt | 2〜4番仔にボーナス（初仔ペナルティなし） |
+| 調教師 | (スコア-50)×0.60 | 実績スコア（50基準） |
+| 馬主 | (スコア-50)×0.53 | 実績スコア（50基準） |
+| 生産牧場 | (スコア-50)×0.39 | 実績スコア（50基準） |
+| 母馬繁殖入り年齢 | -7.1〜+9.8pt | 若い繁殖入り（=良血）ほど加算 |
+| セリ価格 | 最大0.6pt | セリ価格（正規化後×重み） |
+| 性別 | ±0.2pt | 牡馬に微加算、牝馬に微減算 |
+| 種牡馬高齢 | -4.0pt/年 | 16歳超で年齢に応じた減点 |
+| 母馬総産駒数 | +0.3pt | 3〜6頭の適正範囲にボーナス |
+| 父EI×母賞金交互作用 | ≈0pt | 重みほぼ0に収束 |
+| 調教師×生産者コンボ | ≈0pt | 重みほぼ0に収束 |
 | 父EI | ≈0pt | 重みほぼ0に収束 |
 
 EIデータは年度別リーディングを参照し、バックテスト時の未来データリークを防止する
 （生年Yの馬 → Y+1年のリーディングを使用）。
+
+### LightGBMモデル（実験的）
+
+`src/ml_model.py` にて25個の特徴量を使った2値分類モデルを実装。
+Leave-One-Year-Out CVで学習し、ヒューリスティックスコアをスタッキング特徴量として利用可能。
+
+- **アンサンブル**: `alpha`パラメータでブレンド比率を調整（0=ML only、1=heuristic only）
+- **現状**: alpha=1.0（ヒューリスティックのみ）が最良。MLモデルは追加データ/特徴量で改善の余地あり
 
 ## ファイル構成
 
 ```
 run.py                          エントリーポイント
 backtest.py                     バックテスト（ダービー/オークスTOP5予測精度検証）
-grid_search.py                  DE最適化（重みパラメータ探索）
+backtest_ensemble.py            アンサンブルバックテスト（ヒューリスティック×LightGBM）
+grid_search.py                  DE最適化（重みパラメータ探索、classic/top10目的関数）
 fetch_dam_prizes.py             母馬獲得賞金の一括取得
+fetch_sire_prizes.py            種牡馬賞金の取得
+fetch_all_years.py              全年度データの一括取得
+run_dam_pipeline.py             母馬データパイプライン
 
 scripts/
   fetch_leading.py              種牡馬/BMSリーディング取得（年度別）
@@ -49,8 +67,9 @@ scripts/
 
 src/
   scraper.py    netkeiba.comスクレイピング（馬一覧 + 親ID/生年）
-  features.py   特徴量生成（年度別EI・母馬賞金・調教師・牧場等）
+  features.py   特徴量生成（25特徴量: EI・母馬賞金・人的要素・交互作用等）
   model.py      ヒューリスティックスコア算出（重みはweights.jsonから読込）
+  ml_model.py   LightGBM予測モデル（LOYO-CV + スタッキング + アンサンブル）
   predictor.py  収集→予測パイプライン
 
 data/
@@ -60,10 +79,12 @@ data/
   bms_leading_YYYY.json         母父馬リーディング（年度別）
   dam_prizes.json               母馬獲得賞金
   dam_foals.json                母馬の産駒リスト（産駒番号算出用）
+  sire_prizes.json              種牡馬の競走成績賞金
   birth_dates_YYYY.json         生年月日キャッシュ
   extra_features_YYYY.json      セリ価格・産駒番号キャッシュ
+  foreign_birth_years.json      外国産馬メタデータ
   config/
-    weights.json                スコアリング重みパラメータ
+    weights.json                スコアリング重みパラメータ（DE最適化済み）
     elite_trainers.json         エリート調教師スコア
     elite_owners.json           エリート馬主スコア
     elite_breeders.json         エリート生産牧場スコア
@@ -73,6 +94,7 @@ data/
 
 ```bash
 pip install -r requirements.txt
+pip install lightgbm  # アンサンブル機能を使う場合
 
 # 全自動（データ収集→予測）
 python run.py --year 2024
@@ -92,12 +114,18 @@ python scripts/fetch_all_features.py 2024
 # 母馬獲得賞金の取得
 python fetch_dam_prizes.py --year 2024
 
-# バックテスト
+# バックテスト（ヒューリスティック）
 python backtest.py 2021
 python backtest.py --all
 
+# アンサンブルバックテスト
+python backtest_ensemble.py 2021
+python backtest_ensemble.py 2021 --alpha 0.3
+python backtest_ensemble.py --all --sweep   # alpha最適値を探索
+
 # 重み最適化（Differential Evolution）
 python grid_search.py --objective top10
+python grid_search.py --objective classic   # ダービー/オークスTOP5ベースの評価
 ```
 
 ## バックテスト結果（2015〜2022年産）
