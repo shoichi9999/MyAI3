@@ -135,6 +135,14 @@ def parameterized_score(df: pd.DataFrame, params: dict) -> pd.Series:
         combo = df["trainer_breeder_combo"].fillna(2500)
         score += np.maximum(0, combo - 2500) * params.get("w_trainer_breeder", 0)
 
+    # 兄姉のクラシック実績ボーナス（時点制約済み）
+    if "sibling_classic" in df.columns:
+        score += df["sibling_classic"].fillna(0) * params.get("b_sibling_classic", 0)
+
+    # 種牡馬クラシックTOP5輩出数（時点制約済み）
+    if "sire_classic_count" in df.columns:
+        score += df["sire_classic_count"].fillna(0) * params.get("w_sire_classic", 0)
+
     return score
 
 
@@ -303,6 +311,8 @@ def grid_search(years, objective="balanced"):
         "b_dam_foals_sweet": _w.get("b_dam_foals_sweet", 0.0),
         "w_sire_dam_inter": _w.get("w_sire_dam_inter", 0.0),
         "w_trainer_breeder": _w.get("w_trainer_breeder", 0.0),
+        "b_sibling_classic": _w.get("b_sibling_classic", 0.0),
+        "w_sire_classic": _w.get("w_sire_classic", 0.0),
     }
 
     current_cv = cv_score(all_data, current_params)
@@ -482,6 +492,10 @@ def _precompute_arrays(all_data):
             d["trainer_breeder_excess"] = np.maximum(0, combo - 2500)
         else:
             d["trainer_breeder_excess"] = np.zeros(n)
+        # 兄姉クラシック実績（時点制約済み）
+        d["sibling_classic"] = df["sibling_classic"].fillna(0).values if "sibling_classic" in df.columns else np.zeros(n)
+        # 種牡馬クラシック輩出数（時点制約済み）
+        d["sire_classic_count"] = df["sire_classic_count"].fillna(0).values if "sire_classic_count" in df.columns else np.zeros(n)
         # クラシック結果データ
         horse_ids = df["horse_id"].astype(str).values
         sex_vals = df["sex"].values if "sex" in df.columns else np.full(n, 0.5)
@@ -533,6 +547,8 @@ def _compute_score_vec(d, params):
     score += d["dam_foals_sweet"] * params[18]         # b_dam_foals_sweet
     score += d["sire_dam_inter_norm"] * params[19]     # w_sire_dam_inter
     score += d["trainer_breeder_excess"] * params[20]  # w_trainer_breeder
+    score += d["sibling_classic"] * params[21]         # b_sibling_classic
+    score += d["sire_classic_count"] * params[22]      # w_sire_classic
     return score
 
 
@@ -610,6 +626,7 @@ _PARAM_KEYS = [
     "dam_breed_base", "dam_breed_cap", "dam_breed_penalty",
     "b_sire_old",
     "b_dam_foals_sweet", "w_sire_dam_inter", "w_trainer_breeder",
+    "b_sibling_classic", "w_sire_classic",
 ]
 
 def _dict_to_arr(params):
@@ -652,6 +669,8 @@ def _random_search_top10(all_data, current_params, best_score):
         (0, 15),       # b_dam_foals_sweet
         (0, 20),       # w_sire_dam_inter
         (0, 0.05),     # w_trainer_breeder
+        (0, 30),       # b_sibling_classic
+        (0, 5),        # w_sire_classic
     ]
     lo = np.array([b[0] for b in bounds])
     hi = np.array([b[1] for b in bounds])

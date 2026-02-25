@@ -147,4 +147,12 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
         # 基準値: 50*50=2500（非エリート同士）
         score += np.maximum(0, combo - 2500) * W.get("w_trainer_breeder", 0.0)
 
+    # 兄姉のクラシック実績ボーナス（時点制約済み: birth_year-2以前の結果のみ）
+    if "sibling_classic" in df.columns:
+        score += df["sibling_classic"].fillna(0) * W.get("b_sibling_classic", 0.0)
+
+    # 種牡馬のクラシックTOP5輩出数（時点制約済み: birth_year-2以前の結果のみ）
+    if "sire_classic_count" in df.columns:
+        score += df["sire_classic_count"].fillna(0) * W.get("w_sire_classic", 0.0)
+
     return score

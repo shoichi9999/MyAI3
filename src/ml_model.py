@@ -38,6 +38,8 @@ FEATURE_COLS = [
     "total_dam_foals",
     "sire_dam_interaction",
     "trainer_breeder_combo",
+    "sibling_classic",
+    "sire_classic_count",
 ]
 
 # スタッキング時に追加する特徴量
