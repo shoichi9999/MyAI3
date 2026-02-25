@@ -143,6 +143,10 @@ def parameterized_score(df: pd.DataFrame, params: dict) -> pd.Series:
     if "sire_classic_count" in df.columns:
         score += df["sire_classic_count"].fillna(0) * params.get("w_sire_classic", 0)
 
+    # 輸入繁殖牝馬ボーナス
+    if "imported_dam" in df.columns:
+        score += df["imported_dam"].fillna(0) * params.get("b_imported_dam", 0)
+
     return score
 
 
@@ -313,6 +317,7 @@ def grid_search(years, objective="balanced"):
         "w_trainer_breeder": _w.get("w_trainer_breeder", 0.0),
         "b_sibling_classic": _w.get("b_sibling_classic", 0.0),
         "w_sire_classic": _w.get("w_sire_classic", 0.0),
+        "b_imported_dam": _w.get("b_imported_dam", 0.0),
     }
 
     current_cv = cv_score(all_data, current_params)
@@ -496,6 +501,8 @@ def _precompute_arrays(all_data):
         d["sibling_classic"] = df["sibling_classic"].fillna(0).values if "sibling_classic" in df.columns else np.zeros(n)
         # 種牡馬クラシック輩出数（時点制約済み）
         d["sire_classic_count"] = df["sire_classic_count"].fillna(0).values if "sire_classic_count" in df.columns else np.zeros(n)
+        # 輸入繁殖牝馬フラグ
+        d["imported_dam"] = df["imported_dam"].fillna(0).values if "imported_dam" in df.columns else np.zeros(n)
         # クラシック結果データ
         horse_ids = df["horse_id"].astype(str).values
         sex_vals = df["sex"].values if "sex" in df.columns else np.full(n, 0.5)
@@ -549,6 +556,7 @@ def _compute_score_vec(d, params):
     score += d["trainer_breeder_excess"] * params[20]  # w_trainer_breeder
     score += d["sibling_classic"] * params[21]         # b_sibling_classic
     score += d["sire_classic_count"] * params[22]      # w_sire_classic
+    score += d["imported_dam"] * params[23]            # b_imported_dam
     return score
 
 
@@ -627,6 +635,7 @@ _PARAM_KEYS = [
     "b_sire_old",
     "b_dam_foals_sweet", "w_sire_dam_inter", "w_trainer_breeder",
     "b_sibling_classic", "w_sire_classic",
+    "b_imported_dam",
 ]
 
 def _dict_to_arr(params):
@@ -671,6 +680,7 @@ def _random_search_top10(all_data, current_params, best_score):
         (0, 0.05),     # w_trainer_breeder
         (0, 30),       # b_sibling_classic
         (0, 5),        # w_sire_classic
+        (0, 20),       # b_imported_dam
     ]
     lo = np.array([b[0] for b in bounds])
     hi = np.array([b[1] for b in bounds])

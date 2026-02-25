@@ -155,4 +155,8 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
     if "sire_classic_count" in df.columns:
         score += df["sire_classic_count"].fillna(0) * W.get("w_sire_classic", 0.0)
 
+    # 輸入繁殖牝馬ボーナス（海外産の母馬 = dam_prize不明でも良血の可能性）
+    if "imported_dam" in df.columns:
+        score += df["imported_dam"].fillna(0) * W.get("b_imported_dam", 0.0)
+
     return score

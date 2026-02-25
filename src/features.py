@@ -465,6 +465,10 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
         sire_name = horse.get("sire", "")
         row["sire_classic_count"] = sire_classic_map.get(sire_name, 0)
 
+        # --- 輸入繁殖牝馬フラグ（dam_id が "000a" で始まる = 海外産馬） ---
+        dam_id_str = str(horse.get("dam_id", "")) if pd.notna(horse.get("dam_id")) else ""
+        row["imported_dam"] = 1 if dam_id_str.startswith("000a") else 0
+
         # --- 特徴量交互作用（非線形シグナル） ---
         # 父EI × 母賞金: 良血父 × 良血母のシナジー
         sire_ei_val = row["sire_ei"]

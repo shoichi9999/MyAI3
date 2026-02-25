@@ -2,2623 +2,2623 @@
   "ディープインパクト": {
     "rank": 1,
     "progeny_prize": 182.0,
-    "ei": "1,468",
-    "win_rate": "120"
+    "ei": 1.468,
+    "win_rate": 120
   },
   "ロードカナロア": {
     "rank": 2,
     "progeny_prize": 114.0,
-    "ei": "1,038",
-    "win_rate": "101"
+    "ei": 1.038,
+    "win_rate": 101
   },
   "ハーツクライ": {
     "rank": 3,
     "progeny_prize": 77.0,
-    "ei": "957",
-    "win_rate": "74"
+    "ei": 0.957,
+    "win_rate": 74
   },
   "キズナ": {
     "rank": 4,
     "progeny_prize": 62.0,
-    "ei": "681",
-    "win_rate": "90"
+    "ei": 0.681,
+    "win_rate": 90
   },
   "キングカメハメハ": {
     "rank": 5,
     "progeny_prize": 59.0,
-    "ei": "489",
-    "win_rate": "62"
+    "ei": 0.489,
+    "win_rate": 62
   },
   "エピファネイア": {
     "rank": 6,
     "progeny_prize": 76.0,
-    "ei": "770",
-    "win_rate": "66"
+    "ei": 0.77,
+    "win_rate": 66
   },
   "ルーラーシップ": {
     "rank": 7,
     "progeny_prize": 68.0,
-    "ei": "843",
-    "win_rate": "95"
+    "ei": 0.843,
+    "win_rate": 95
   },
   "オルフェーヴル": {
     "rank": 8,
     "progeny_prize": 48.0,
-    "ei": "561",
-    "win_rate": "63"
+    "ei": 0.561,
+    "win_rate": 63
   },
   "ダイワメジャー": {
     "rank": 9,
     "progeny_prize": 45.0,
-    "ei": "614",
-    "win_rate": "59"
+    "ei": 0.614,
+    "win_rate": 59
   },
   "ヘニーヒューズ": {
     "rank": 10,
     "progeny_prize": 1.0,
-    "ei": "74",
-    "win_rate": "71"
+    "ei": 0.074,
+    "win_rate": 71
   },
   "ドゥラメンテ": {
     "rank": 11,
     "progeny_prize": 61.0,
-    "ei": "618",
-    "win_rate": "76"
+    "ei": 0.618,
+    "win_rate": 76
   },
   "モーリス": {
     "rank": 12,
     "progeny_prize": 63.0,
-    "ei": "573",
-    "win_rate": "74"
+    "ei": 0.573,
+    "win_rate": 74
   },
   "スクリーンヒーロー": {
     "rank": 13,
     "progeny_prize": 35.0,
-    "ei": "430",
-    "win_rate": "43"
+    "ei": 0.43,
+    "win_rate": 43
   },
   "キンシャサノキセキ": {
     "rank": 14,
     "progeny_prize": 9.0,
-    "ei": "318",
-    "win_rate": "42"
+    "ei": 0.318,
+    "win_rate": 42
   },
   "ハービンジャー": {
     "rank": 15,
     "progeny_prize": 46.0,
-    "ei": "705",
-    "win_rate": "39"
+    "ei": 0.705,
+    "win_rate": 39
   },
   "ジャスタウェイ": {
     "rank": 16,
     "progeny_prize": 25.0,
-    "ei": "391",
-    "win_rate": "36"
+    "ei": 0.391,
+    "win_rate": 36
   },
   "シニスターミニスター": {
     "rank": 17,
     "progeny_prize": 0.0,
-    "ei": "14",
-    "win_rate": "48"
+    "ei": 0.014,
+    "win_rate": 48
   },
   "ゴールドシップ": {
     "rank": 18,
     "progeny_prize": 30.0,
-    "ei": "483",
-    "win_rate": "22"
+    "ei": 0.483,
+    "win_rate": 22
   },
   "パイロ": {
     "rank": 19,
     "progeny_prize": 1.0,
-    "ei": "39",
-    "win_rate": "30"
+    "ei": 0.039,
+    "win_rate": 30
   },
   "リオンディーズ": {
     "rank": 20,
     "progeny_prize": 38.0,
-    "ei": "358",
-    "win_rate": "48"
+    "ei": 0.358,
+    "win_rate": 48
   },
   "ブラックタイド": {
     "rank": 21,
     "progeny_prize": 21.0,
-    "ei": "391",
-    "win_rate": "32"
+    "ei": 0.391,
+    "win_rate": 32
   },
   "クロフネ": {
     "rank": 22,
     "progeny_prize": 11.0,
-    "ei": "119",
-    "win_rate": "23"
+    "ei": 0.119,
+    "win_rate": 23
   },
   "エイシンフラッシュ": {
     "rank": 23,
     "progeny_prize": 23.0,
-    "ei": "429",
-    "win_rate": "35"
+    "ei": 0.429,
+    "win_rate": 35
   },
   "ヴィクトワールピサ": {
     "rank": 24,
     "progeny_prize": 20.0,
-    "ei": "414",
-    "win_rate": "25"
+    "ei": 0.414,
+    "win_rate": 25
   },
   "アイルハヴアナザー": {
     "rank": 25,
     "progeny_prize": 4.0,
-    "ei": "75",
-    "win_rate": "21"
+    "ei": 0.075,
+    "win_rate": 21
   },
   "ゴールドアリュール": {
     "rank": 26,
     "progeny_prize": 2.0,
-    "ei": "31",
-    "win_rate": "14"
+    "ei": 0.031,
+    "win_rate": 14
   },
   "ミッキーアイル": {
     "rank": 27,
     "progeny_prize": 18.0,
-    "ei": "194",
-    "win_rate": "33"
+    "ei": 0.194,
+    "win_rate": 33
   },
   "マジェスティックウォリアー": {
     "rank": 28,
     "progeny_prize": 2.0,
-    "ei": "76",
-    "win_rate": "20"
+    "ei": 0.076,
+    "win_rate": 20
   },
   "ディープブリランテ": {
     "rank": 29,
     "progeny_prize": 11.0,
-    "ei": "283",
-    "win_rate": "23"
+    "ei": 0.283,
+    "win_rate": 23
   },
   "サウスヴィグラス": {
     "rank": 30,
     "progeny_prize": 0.0,
-    "ei": "6",
-    "win_rate": "27"
+    "ei": 0.006,
+    "win_rate": 27
   },
   "バゴ": {
     "rank": 31,
     "progeny_prize": 6.0,
-    "ei": "102",
-    "win_rate": "7"
+    "ei": 0.102,
+    "win_rate": 7
   },
   "ステイゴールド": {
     "rank": 32,
     "progeny_prize": 3.0,
-    "ei": "99",
-    "win_rate": "5"
+    "ei": 0.099,
+    "win_rate": 5
   },
   "マクフィ": {
     "rank": 33,
     "progeny_prize": 14.0,
-    "ei": "154",
-    "win_rate": "31"
+    "ei": 0.154,
+    "win_rate": 31
   },
   "ノヴェリスト": {
     "rank": 34,
     "progeny_prize": 19.0,
-    "ei": "252",
-    "win_rate": "22"
+    "ei": 0.252,
+    "win_rate": 22
   },
   "カレンブラックヒル": {
     "rank": 35,
     "progeny_prize": 10.0,
-    "ei": "138",
-    "win_rate": "27"
+    "ei": 0.138,
+    "win_rate": 27
   },
   "ディスクリートキャット": {
     "rank": 36,
     "progeny_prize": 6.0,
-    "ei": "134",
-    "win_rate": "32"
+    "ei": 0.134,
+    "win_rate": 32
   },
   "ホッコータルマエ": {
     "rank": 37,
     "progeny_prize": 0.0,
-    "ei": "14",
-    "win_rate": "33"
+    "ei": 0.014,
+    "win_rate": 33
   },
   "アドマイヤムーン": {
     "rank": 38,
     "progeny_prize": 16.0,
-    "ei": "258",
-    "win_rate": "13"
+    "ei": 0.258,
+    "win_rate": 13
   },
   "リアルインパクト": {
     "rank": 39,
     "progeny_prize": 8.0,
-    "ei": "146",
-    "win_rate": "17"
+    "ei": 0.146,
+    "win_rate": 17
   },
   "マツリダゴッホ": {
     "rank": 40,
     "progeny_prize": 12.0,
-    "ei": "247",
-    "win_rate": "12"
+    "ei": 0.247,
+    "win_rate": 12
   },
   "ダンカーク": {
     "rank": 41,
     "progeny_prize": 4.0,
-    "ei": "77",
-    "win_rate": "14"
+    "ei": 0.077,
+    "win_rate": 14
   },
   "ストロングリターン": {
     "rank": 42,
     "progeny_prize": 3.0,
-    "ei": "148",
-    "win_rate": "11"
+    "ei": 0.148,
+    "win_rate": 11
   },
   "ドレフォン": {
     "rank": 43,
     "progeny_prize": 10.0,
-    "ei": "131",
-    "win_rate": "28"
+    "ei": 0.131,
+    "win_rate": 28
   },
   "メイショウボーラー": {
     "rank": 44,
     "progeny_prize": 0.0,
-    "ei": "98",
-    "win_rate": "10"
+    "ei": 0.098,
+    "win_rate": 10
   },
   "エスポワールシチー": {
     "rank": 45,
     "progeny_prize": 1.0,
-    "ei": "30",
-    "win_rate": "18"
+    "ei": 0.03,
+    "win_rate": 18
   },
   "アジアエクスプレス": {
     "rank": 46,
     "progeny_prize": 1.0,
-    "ei": "37",
-    "win_rate": "26"
+    "ei": 0.037,
+    "win_rate": 26
   },
   "Kingman": {
     "rank": 47,
     "progeny_prize": 5.0,
-    "ei": "23",
-    "win_rate": "2"
+    "ei": 0.023,
+    "win_rate": 2
   },
   "スマートファルコン": {
     "rank": 48,
     "progeny_prize": 0.0,
-    "ei": "16",
-    "win_rate": "12"
+    "ei": 0.016,
+    "win_rate": 12
   },
   "Frankel": {
     "rank": 49,
     "progeny_prize": 6.0,
-    "ei": "102",
-    "win_rate": "4"
+    "ei": 0.102,
+    "win_rate": 4
   },
   "ワールドエース": {
     "rank": 50,
     "progeny_prize": 12.0,
-    "ei": "226",
-    "win_rate": "16"
+    "ei": 0.226,
+    "win_rate": 16
   },
   "マンハッタンカフェ": {
     "rank": 51,
     "progeny_prize": 7.0,
-    "ei": "88",
-    "win_rate": "4"
+    "ei": 0.088,
+    "win_rate": 4
   },
   "メイショウサムソン": {
     "rank": 52,
     "progeny_prize": 5.0,
-    "ei": "105",
-    "win_rate": "11"
+    "ei": 0.105,
+    "win_rate": 11
   },
   "キングズベスト": {
     "rank": 53,
     "progeny_prize": 5.0,
-    "ei": "67",
-    "win_rate": "0"
+    "ei": 0.067,
+    "win_rate": 0
   },
   "トゥザグローリー": {
     "rank": 54,
     "progeny_prize": 2.0,
-    "ei": "87",
-    "win_rate": "4"
+    "ei": 0.087,
+    "win_rate": 4
   },
   "ジャングルポケット": {
     "rank": 55,
     "progeny_prize": 5.0,
-    "ei": "171",
-    "win_rate": "5"
+    "ei": 0.171,
+    "win_rate": 5
   },
   "ヨハネスブルグ": {
     "rank": 56,
     "progeny_prize": 1.0,
-    "ei": "72",
-    "win_rate": "7"
+    "ei": 0.072,
+    "win_rate": 7
   },
   "ネオユニヴァース": {
     "rank": 57,
     "progeny_prize": 0.0,
-    "ei": "59",
-    "win_rate": "10"
+    "ei": 0.059,
+    "win_rate": 10
   },
   "ドリームジャーニー": {
     "rank": 58,
     "progeny_prize": 5.0,
-    "ei": "102",
-    "win_rate": "6"
+    "ei": 0.102,
+    "win_rate": 6
   },
   "シルバーステート": {
     "rank": 59,
     "progeny_prize": 16.0,
-    "ei": "141",
-    "win_rate": "12"
+    "ei": 0.141,
+    "win_rate": 12
   },
   "ロージズインメイ": {
     "rank": 60,
     "progeny_prize": 1.0,
-    "ei": "61",
-    "win_rate": "9"
+    "ei": 0.061,
+    "win_rate": 9
   },
   "ワークフォース": {
     "rank": 61,
     "progeny_prize": 5.0,
-    "ei": "75",
-    "win_rate": "0"
+    "ei": 0.075,
+    "win_rate": 0
   },
   "タートルボウル": {
     "rank": 62,
     "progeny_prize": 5.0,
-    "ei": "66",
-    "win_rate": "6"
+    "ei": 0.066,
+    "win_rate": 6
   },
   "エンパイアメーカー": {
     "rank": 63,
     "progeny_prize": 1.0,
-    "ei": "18",
-    "win_rate": "3"
+    "ei": 0.018,
+    "win_rate": 3
   },
   "トゥザワールド": {
     "rank": 64,
     "progeny_prize": 6.0,
-    "ei": "77",
-    "win_rate": "8"
+    "ei": 0.077,
+    "win_rate": 8
   },
   "Speightstown": {
     "rank": 65,
     "progeny_prize": 4.0,
-    "ei": "24",
-    "win_rate": "4"
+    "ei": 0.024,
+    "win_rate": 4
   },
   "ダノンレジェンド": {
     "rank": 66,
     "progeny_prize": 3.0,
-    "ei": "80",
-    "win_rate": "16"
+    "ei": 0.08,
+    "win_rate": 16
   },
   "ジョーカプチーノ": {
     "rank": 67,
     "progeny_prize": 9.0,
-    "ei": "164",
-    "win_rate": "11"
+    "ei": 0.164,
+    "win_rate": 11
   },
   "エイシンヒカリ": {
     "rank": 68,
     "progeny_prize": 6.0,
-    "ei": "126",
-    "win_rate": "11"
+    "ei": 0.126,
+    "win_rate": 11
   },
   "フェノーメノ": {
     "rank": 69,
     "progeny_prize": 7.0,
-    "ei": "133",
-    "win_rate": "13"
+    "ei": 0.133,
+    "win_rate": 13
   },
   "ローエングリン": {
     "rank": 70,
     "progeny_prize": 9.0,
-    "ei": "139",
-    "win_rate": "8"
+    "ei": 0.139,
+    "win_rate": 8
   },
   "ダノンシャンティ": {
     "rank": 71,
     "progeny_prize": 4.0,
-    "ei": "111",
-    "win_rate": "8"
+    "ei": 0.111,
+    "win_rate": 8
   },
   "ベーカバド": {
     "rank": 72,
     "progeny_prize": 3.0,
-    "ei": "113",
-    "win_rate": "5"
+    "ei": 0.113,
+    "win_rate": 5
   },
   "スウェプトオーヴァーボード": {
     "rank": 73,
     "progeny_prize": 2.0,
-    "ei": "45",
-    "win_rate": "10"
+    "ei": 0.045,
+    "win_rate": 10
   },
   "Tapit": {
     "rank": 74,
     "progeny_prize": 1.0,
-    "ei": "15",
-    "win_rate": "9"
+    "ei": 0.015,
+    "win_rate": 9
   },
   "ラブリーデイ": {
     "rank": 75,
     "progeny_prize": 7.0,
-    "ei": "144",
-    "win_rate": "12"
+    "ei": 0.144,
+    "win_rate": 12
   },
   "スピルバーグ": {
     "rank": 76,
     "progeny_prize": 4.0,
-    "ei": "124",
-    "win_rate": "10"
+    "ei": 0.124,
+    "win_rate": 10
   },
   "ベルシャザール": {
     "rank": 77,
     "progeny_prize": 1.0,
-    "ei": "48",
-    "win_rate": "9"
+    "ei": 0.048,
+    "win_rate": 9
   },
   "American Pharoah": {
     "rank": 78,
     "progeny_prize": 1.0,
-    "ei": "14",
-    "win_rate": "9"
+    "ei": 0.014,
+    "win_rate": 9
   },
   "イスラボニータ": {
     "rank": 79,
     "progeny_prize": 12.0,
-    "ei": "115",
-    "win_rate": "14"
+    "ei": 0.115,
+    "win_rate": 14
   },
   "ヴァンセンヌ": {
     "rank": 80,
     "progeny_prize": 6.0,
-    "ei": "94",
-    "win_rate": "6"
+    "ei": 0.094,
+    "win_rate": 6
   },
   "リーチザクラウン": {
     "rank": 81,
     "progeny_prize": 4.0,
-    "ei": "139",
-    "win_rate": "11"
+    "ei": 0.139,
+    "win_rate": 11
   },
   "ヴァーミリアン": {
     "rank": 82,
     "progeny_prize": 0.0,
-    "ei": "9",
-    "win_rate": "4"
+    "ei": 0.009,
+    "win_rate": 4
   },
   "トランセンド": {
     "rank": 83,
     "progeny_prize": 2.0,
-    "ei": "24",
-    "win_rate": "9"
+    "ei": 0.024,
+    "win_rate": 9
   },
   "グランプリボス": {
     "rank": 84,
     "progeny_prize": 2.0,
-    "ei": "36",
-    "win_rate": "6"
+    "ei": 0.036,
+    "win_rate": 6
   },
   "キタサンブラック": {
     "rank": 85,
     "progeny_prize": 11.0,
-    "ei": "78",
-    "win_rate": "12"
+    "ei": 0.078,
+    "win_rate": 12
   },
   "ローズキングダム": {
     "rank": 86,
     "progeny_prize": 4.0,
-    "ei": "71",
-    "win_rate": "3"
+    "ei": 0.071,
+    "win_rate": 3
   },
   "プリサイスエンド": {
     "rank": 87,
     "progeny_prize": 0.0,
-    "ei": "34",
-    "win_rate": "11"
+    "ei": 0.034,
+    "win_rate": 11
   },
   "スズカコーズウェイ": {
     "rank": 88,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "12"
+    "ei": 0.001,
+    "win_rate": 12
   },
   "フリオーソ": {
     "rank": 89,
     "progeny_prize": 0.0,
-    "ei": "12",
-    "win_rate": "10"
+    "ei": 0.012,
+    "win_rate": 10
   },
   "モンテロッソ": {
     "rank": 90,
     "progeny_prize": 2.0,
-    "ei": "101",
-    "win_rate": "5"
+    "ei": 0.101,
+    "win_rate": 5
   },
   "シンボリクリスエス": {
     "rank": 91,
     "progeny_prize": 0.0,
-    "ei": "48",
-    "win_rate": "7"
+    "ei": 0.048,
+    "win_rate": 7
   },
   "No Nay Never": {
     "rank": 92,
     "progeny_prize": 2.0,
-    "ei": "12",
-    "win_rate": "1"
+    "ei": 0.012,
+    "win_rate": 1
   },
   "アポロキングダム": {
     "rank": 93,
     "progeny_prize": 1.0,
-    "ei": "13",
-    "win_rate": "7"
+    "ei": 0.013,
+    "win_rate": 7
   },
   "トーセンラー": {
     "rank": 94,
     "progeny_prize": 6.0,
-    "ei": "144",
-    "win_rate": "5"
+    "ei": 0.144,
+    "win_rate": 5
   },
   "トーセンジョーダン": {
     "rank": 95,
     "progeny_prize": 2.0,
-    "ei": "53",
-    "win_rate": "9"
+    "ei": 0.053,
+    "win_rate": 9
   },
   "カジノドライヴ": {
     "rank": 96,
     "progeny_prize": 0.0,
-    "ei": "8",
-    "win_rate": "6"
+    "ei": 0.008,
+    "win_rate": 6
   },
   "エスケンデレヤ": {
     "rank": 97,
     "progeny_prize": 1.0,
-    "ei": "24",
-    "win_rate": "9"
+    "ei": 0.024,
+    "win_rate": 9
   },
   "スズカマンボ": {
     "rank": 98,
     "progeny_prize": 0.0,
-    "ei": "5",
-    "win_rate": "0"
+    "ei": 0.005,
+    "win_rate": 0
   },
   "Point of Entry": {
     "rank": 99,
     "progeny_prize": 8.0,
-    "ei": "14",
-    "win_rate": "4"
+    "ei": 0.014,
+    "win_rate": 4
   },
   "ケープブランコ": {
     "rank": 100,
     "progeny_prize": 2.0,
-    "ei": "51",
-    "win_rate": "3"
+    "ei": 0.051,
+    "win_rate": 3
   },
   "タイキシャトル": {
     "rank": 101,
     "progeny_prize": 2.0,
-    "ei": "55",
-    "win_rate": "3"
+    "ei": 0.055,
+    "win_rate": 3
   },
   "キングヘイロー": {
     "rank": 102,
     "progeny_prize": 4.0,
-    "ei": "27",
-    "win_rate": "7"
+    "ei": 0.027,
+    "win_rate": 7
   },
   "ザファクター": {
     "rank": 103,
     "progeny_prize": 3.0,
-    "ei": "79",
-    "win_rate": "8"
+    "ei": 0.079,
+    "win_rate": 8
   },
   "トーセンホマレボシ": {
     "rank": 104,
     "progeny_prize": 2.0,
-    "ei": "46",
-    "win_rate": "4"
+    "ei": 0.046,
+    "win_rate": 4
   },
   "Into Mischief": {
     "rank": 105,
     "progeny_prize": 1.0,
-    "ei": "9",
-    "win_rate": "7"
+    "ei": 0.009,
+    "win_rate": 7
   },
   "アメリカンペイトリオット": {
     "rank": 106,
     "progeny_prize": 6.0,
-    "ei": "90",
-    "win_rate": "8"
+    "ei": 0.09,
+    "win_rate": 8
   },
   "クリエイターII": {
     "rank": 107,
     "progeny_prize": 0.0,
-    "ei": "24",
-    "win_rate": "8"
+    "ei": 0.024,
+    "win_rate": 8
   },
   "タニノギムレット": {
     "rank": 108,
     "progeny_prize": 2.0,
-    "ei": "63",
-    "win_rate": "3"
+    "ei": 0.063,
+    "win_rate": 3
   },
   "ニホンピロアワーズ": {
     "rank": 109,
     "progeny_prize": 2.0,
-    "ei": "12",
-    "win_rate": "4"
+    "ei": 0.012,
+    "win_rate": 4
   },
   "ビッグアーサー": {
     "rank": 110,
     "progeny_prize": 3.0,
-    "ei": "75",
-    "win_rate": "5"
+    "ei": 0.075,
+    "win_rate": 5
   },
   "パドトロワ": {
     "rank": 111,
     "progeny_prize": 1.0,
-    "ei": "18",
-    "win_rate": "3"
+    "ei": 0.018,
+    "win_rate": 3
   },
   "バトルプラン": {
     "rank": 112,
     "progeny_prize": 2.0,
-    "ei": "58",
-    "win_rate": "6"
+    "ei": 0.058,
+    "win_rate": 6
   },
   "スズカフェニックス": {
     "rank": 113,
     "progeny_prize": 1.0,
-    "ei": "22",
-    "win_rate": "4"
+    "ei": 0.022,
+    "win_rate": 4
   },
   "ダノンバラード": {
     "rank": 114,
     "progeny_prize": 1.0,
-    "ei": "42",
-    "win_rate": "0"
+    "ei": 0.042,
+    "win_rate": 0
   },
   "ゼンノロブロイ": {
     "rank": 115,
     "progeny_prize": 2.0,
-    "ei": "68",
-    "win_rate": "2"
+    "ei": 0.068,
+    "win_rate": 2
   },
   "サトノアラジン": {
     "rank": 116,
     "progeny_prize": 3.0,
-    "ei": "69",
-    "win_rate": "8"
+    "ei": 0.069,
+    "win_rate": 8
   },
   "First Samurai": {
     "rank": 117,
     "progeny_prize": 1.0,
-    "ei": "7",
-    "win_rate": "0"
+    "ei": 0.007,
+    "win_rate": 0
   },
   "トビーズコーナー": {
     "rank": 118,
     "progeny_prize": 0.0,
-    "ei": "3",
-    "win_rate": "1"
+    "ei": 0.003,
+    "win_rate": 1
   },
   "ケイムホーム": {
     "rank": 119,
     "progeny_prize": 2.0,
-    "ei": "26",
-    "win_rate": "1"
+    "ei": 0.026,
+    "win_rate": 1
   },
   "グラスワンダー": {
     "rank": 120,
     "progeny_prize": 6.0,
-    "ei": "60",
-    "win_rate": "5"
+    "ei": 0.06,
+    "win_rate": 5
   },
   "レッドスパーダ": {
     "rank": 121,
     "progeny_prize": 5.0,
-    "ei": "47",
-    "win_rate": "3"
+    "ei": 0.047,
+    "win_rate": 3
   },
   "ナカヤマフェスタ": {
     "rank": 122,
     "progeny_prize": 2.0,
-    "ei": "41",
-    "win_rate": "4"
+    "ei": 0.041,
+    "win_rate": 4
   },
   "スクワートルスクワート": {
     "rank": 123,
     "progeny_prize": 1.0,
-    "ei": "5",
-    "win_rate": "0"
+    "ei": 0.005,
+    "win_rate": 0
   },
   "Medaglia d'Oro": {
     "rank": 124,
     "progeny_prize": 4.0,
-    "ei": "22",
-    "win_rate": "3"
+    "ei": 0.022,
+    "win_rate": 3
   },
   "フサイチセブン": {
     "rank": 125,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "3"
+    "ei": 0.002,
+    "win_rate": 3
   },
   "Stormy Atlantic": {
     "rank": 126,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "2"
+    "ei": 0.001,
+    "win_rate": 2
   },
   "ロゴタイプ": {
     "rank": 127,
     "progeny_prize": 2.0,
-    "ei": "51",
-    "win_rate": "1"
+    "ei": 0.051,
+    "win_rate": 1
   },
   "Dark Angel": {
     "rank": 128,
     "progeny_prize": 6.0,
-    "ei": "18",
-    "win_rate": "4"
+    "ei": 0.018,
+    "win_rate": 4
   },
   "コパノリッキー": {
     "rank": 129,
     "progeny_prize": 0.0,
-    "ei": "13",
-    "win_rate": "5"
+    "ei": 0.013,
+    "win_rate": 5
   },
   "マーベラスサンデー": {
     "rank": 130,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "1"
+    "ei": 0.0,
+    "win_rate": 1
   },
   "Malibu Moon": {
     "rank": 131,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "1"
+    "ei": 0.002,
+    "win_rate": 1
   },
   "Curlin": {
     "rank": 132,
     "progeny_prize": 0.0,
-    "ei": "5",
-    "win_rate": "5"
+    "ei": 0.005,
+    "win_rate": 5
   },
   "Kitten's Joy": {
     "rank": 133,
     "progeny_prize": 1.0,
-    "ei": "20",
-    "win_rate": "1"
+    "ei": 0.02,
+    "win_rate": 1
   },
   "カネヒキリ": {
     "rank": 134,
     "progeny_prize": 0.0,
-    "ei": "8",
-    "win_rate": "0"
+    "ei": 0.008,
+    "win_rate": 0
   },
   "Invincible Spirit": {
     "rank": 135,
     "progeny_prize": 1.0,
-    "ei": "3",
-    "win_rate": "1"
+    "ei": 0.003,
+    "win_rate": 1
   },
   "Distorted Humor": {
     "rank": 136,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "1"
+    "ei": 0.0,
+    "win_rate": 1
   },
   "ダノンシャーク": {
     "rank": 137,
     "progeny_prize": 2.0,
-    "ei": "31",
-    "win_rate": "4"
+    "ei": 0.031,
+    "win_rate": 4
   },
   "ワイルドワンダー": {
     "rank": 138,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "1"
+    "ei": 0.0,
+    "win_rate": 1
   },
   "ローレルゲレイロ": {
     "rank": 139,
     "progeny_prize": 0.0,
-    "ei": "17",
-    "win_rate": "0"
+    "ei": 0.017,
+    "win_rate": 0
   },
   "スタチューオブリバティ": {
     "rank": 140,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "0"
+    "ei": 0.002,
+    "win_rate": 0
   },
   "デクラレーションオブウォー": {
     "rank": 141,
     "progeny_prize": 1.0,
-    "ei": "8",
-    "win_rate": "0"
+    "ei": 0.008,
+    "win_rate": 0
   },
   "Carpe Diem": {
     "rank": 142,
     "progeny_prize": 0.0,
-    "ei": "12",
-    "win_rate": "1"
+    "ei": 0.012,
+    "win_rate": 1
   },
   "Uncle Mo": {
     "rank": 143,
     "progeny_prize": 0.0,
-    "ei": "5",
-    "win_rate": "2"
+    "ei": 0.005,
+    "win_rate": 2
   },
   "ロードアルティマ": {
     "rank": 144,
     "progeny_prize": 0.0,
-    "ei": "32",
-    "win_rate": "3"
+    "ei": 0.032,
+    "win_rate": 3
   },
   "ディーマジェスティ": {
     "rank": 145,
     "progeny_prize": 4.0,
-    "ei": "40",
-    "win_rate": "5"
+    "ei": 0.04,
+    "win_rate": 5
   },
   "ワンダーアキュート": {
     "rank": 146,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "4"
+    "ei": 0.002,
+    "win_rate": 4
   },
   "サムライハート": {
     "rank": 147,
     "progeny_prize": 1.0,
-    "ei": "33",
-    "win_rate": "1"
+    "ei": 0.033,
+    "win_rate": 1
   },
   "Constitution": {
     "rank": 148,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "1"
+    "ei": 0.002,
+    "win_rate": 1
   },
   "アンライバルド": {
     "rank": 149,
     "progeny_prize": 2.0,
-    "ei": "54",
-    "win_rate": "5"
+    "ei": 0.054,
+    "win_rate": 5
   },
   "アーネストリー": {
     "rank": 150,
     "progeny_prize": 1.0,
-    "ei": "19",
-    "win_rate": "4"
+    "ei": 0.019,
+    "win_rate": 4
   },
   "Havana Gold": {
     "rank": 151,
     "progeny_prize": 4.0,
-    "ei": "6",
-    "win_rate": "2"
+    "ei": 0.006,
+    "win_rate": 2
   },
   "タイムパラドックス": {
     "rank": 152,
     "progeny_prize": 0.0,
-    "ei": "4",
-    "win_rate": "1"
+    "ei": 0.004,
+    "win_rate": 1
   },
   "ハットトリック": {
     "rank": 153,
     "progeny_prize": 3.0,
-    "ei": "7",
-    "win_rate": "2"
+    "ei": 0.007,
+    "win_rate": 2
   },
   "ウインバリアシオン": {
     "rank": 154,
     "progeny_prize": 0.0,
-    "ei": "10",
-    "win_rate": "3"
+    "ei": 0.01,
+    "win_rate": 3
   },
   "Teofilo": {
     "rank": 155,
     "progeny_prize": 1.0,
-    "ei": "14",
-    "win_rate": "0"
+    "ei": 0.014,
+    "win_rate": 0
   },
   "ストーミングホーム": {
     "rank": 156,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "2"
+    "ei": 0.002,
+    "win_rate": 2
   },
   "ロジユニヴァース": {
     "rank": 157,
     "progeny_prize": 2.0,
-    "ei": "27",
-    "win_rate": "2"
+    "ei": 0.027,
+    "win_rate": 2
   },
   "Shamardal": {
     "rank": 158,
     "progeny_prize": 1.0,
-    "ei": "9",
-    "win_rate": "1"
+    "ei": 0.009,
+    "win_rate": 1
   },
   "Giant's Causeway": {
     "rank": 159,
     "progeny_prize": 0.0,
-    "ei": "3",
-    "win_rate": "2"
+    "ei": 0.003,
+    "win_rate": 2
   },
   "トーホウジャッカル": {
     "rank": 160,
     "progeny_prize": 2.0,
-    "ei": "36",
-    "win_rate": "3"
+    "ei": 0.036,
+    "win_rate": 3
   },
   "アグネスデジタル": {
     "rank": 161,
     "progeny_prize": 0.0,
-    "ei": "16",
-    "win_rate": "1"
+    "ei": 0.016,
+    "win_rate": 1
   },
   "Emcee": {
     "rank": 162,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "2"
+    "ei": 0.0,
+    "win_rate": 2
   },
   "Siyouni": {
     "rank": 163,
     "progeny_prize": 2.0,
-    "ei": "12",
-    "win_rate": "1"
+    "ei": 0.012,
+    "win_rate": 1
   },
   "シャンハイボビー": {
     "rank": 164,
     "progeny_prize": 1.0,
-    "ei": "14",
-    "win_rate": "0"
+    "ei": 0.014,
+    "win_rate": 0
   },
   "Violence": {
     "rank": 165,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "0"
+    "ei": 0.001,
+    "win_rate": 0
   },
   "More Than Ready": {
     "rank": 166,
     "progeny_prize": 2.0,
-    "ei": "8",
-    "win_rate": "2"
+    "ei": 0.008,
+    "win_rate": 2
   },
   "Central Banker": {
     "rank": 167,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "1"
+    "ei": 0.001,
+    "win_rate": 1
   },
   "Nyquist": {
     "rank": 168,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "2"
+    "ei": 0.0,
+    "win_rate": 2
   },
   "アッミラーレ": {
     "rank": 169,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "1"
+    "ei": 0.001,
+    "win_rate": 1
   },
   "Arrogate": {
     "rank": 170,
     "progeny_prize": 0.0,
-    "ei": "3",
-    "win_rate": "4"
+    "ei": 0.003,
+    "win_rate": 4
   },
   "Pioneerof the Nile": {
     "rank": 171,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "0"
+    "ei": 0.002,
+    "win_rate": 0
   },
   "Street Cry": {
     "rank": 172,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "1"
+    "ei": 0.001,
+    "win_rate": 1
   },
   "ヴァンキッシュラン": {
     "rank": 173,
     "progeny_prize": 2.0,
-    "ei": "9",
-    "win_rate": "1"
+    "ei": 0.009,
+    "win_rate": 1
   },
   "ストリートセンス": {
     "rank": 174,
     "progeny_prize": 0.0,
-    "ei": "7",
-    "win_rate": "2"
+    "ei": 0.007,
+    "win_rate": 2
   },
   "Dubawi": {
     "rank": 175,
     "progeny_prize": 3.0,
-    "ei": "8",
-    "win_rate": "2"
+    "ei": 0.008,
+    "win_rate": 2
   },
   "ラニ": {
     "rank": 176,
     "progeny_prize": 1.0,
-    "ei": "14",
-    "win_rate": "3"
+    "ei": 0.014,
+    "win_rate": 3
   },
   "Midnight Lute": {
     "rank": 177,
     "progeny_prize": 1.0,
-    "ei": "11",
-    "win_rate": "2"
+    "ei": 0.011,
+    "win_rate": 2
   },
   "アスカクリチャン": {
     "rank": 178,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "2"
+    "ei": 0.001,
+    "win_rate": 2
   },
   "コンデュイット": {
     "rank": 179,
     "progeny_prize": 0.0,
-    "ei": "13",
-    "win_rate": "1"
+    "ei": 0.013,
+    "win_rate": 1
   },
   "Olympic Glory": {
     "rank": 180,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "0"
+    "ei": 0.001,
+    "win_rate": 0
   },
   "Practical Joke": {
     "rank": 181,
     "progeny_prize": 2.0,
-    "ei": "4",
-    "win_rate": "3"
+    "ei": 0.004,
+    "win_rate": 3
   },
   "ゴスホークケン": {
     "rank": 182,
     "progeny_prize": 3.0,
-    "ei": "14",
-    "win_rate": "3"
+    "ei": 0.014,
+    "win_rate": 3
   },
   "Golden Horn": {
     "rank": 183,
     "progeny_prize": 0.0,
-    "ei": "7",
-    "win_rate": "2"
+    "ei": 0.007,
+    "win_rate": 2
   },
   "フィガロ": {
     "rank": 184,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "2"
+    "ei": 0.001,
+    "win_rate": 2
   },
   "フレンチデピュティ": {
     "rank": 185,
     "progeny_prize": 0.0,
-    "ei": "12",
-    "win_rate": "0"
+    "ei": 0.012,
+    "win_rate": 0
   },
   "ガルボ": {
     "rank": 186,
     "progeny_prize": 1.0,
-    "ei": "22",
-    "win_rate": "3"
+    "ei": 0.022,
+    "win_rate": 3
   },
   "Honor Code": {
     "rank": 187,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "I Am Invincible": {
     "rank": 188,
     "progeny_prize": 2.0,
-    "ei": "7",
-    "win_rate": "0"
+    "ei": 0.007,
+    "win_rate": 0
   },
   "ホワイトマズル": {
     "rank": 189,
     "progeny_prize": 0.0,
-    "ei": "3",
-    "win_rate": "2"
+    "ei": 0.003,
+    "win_rate": 2
   },
   "Dansili": {
     "rank": 190,
     "progeny_prize": 1.0,
-    "ei": "4",
-    "win_rate": "0"
+    "ei": 0.004,
+    "win_rate": 0
   },
   "Overanalyze": {
     "rank": 191,
     "progeny_prize": 2.0,
-    "ei": "10",
-    "win_rate": "1"
+    "ei": 0.01,
+    "win_rate": 1
   },
   "タイセイレジェンド": {
     "rank": 192,
     "progeny_prize": 0.0,
-    "ei": "7",
-    "win_rate": "3"
+    "ei": 0.007,
+    "win_rate": 3
   },
   "トーセンファントム": {
     "rank": 193,
     "progeny_prize": 1.0,
-    "ei": "4",
-    "win_rate": "2"
+    "ei": 0.004,
+    "win_rate": 2
   },
   "ハクサンムーン": {
     "rank": 194,
     "progeny_prize": 3.0,
-    "ei": "19",
-    "win_rate": "3"
+    "ei": 0.019,
+    "win_rate": 3
   },
   "ゴールドヘイロー": {
     "rank": 195,
     "progeny_prize": 1.0,
-    "ei": "16",
-    "win_rate": "2"
+    "ei": 0.016,
+    "win_rate": 2
   },
   "Frosted": {
     "rank": 196,
     "progeny_prize": 1.0,
-    "ei": "5",
-    "win_rate": "2"
+    "ei": 0.005,
+    "win_rate": 2
   },
   "カルストンライトオ": {
     "rank": 197,
     "progeny_prize": 0.0,
-    "ei": "8",
-    "win_rate": "0"
+    "ei": 0.008,
+    "win_rate": 0
   },
   "ファスリエフ": {
     "rank": 198,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "1"
+    "ei": 0.0,
+    "win_rate": 1
   },
   "ショウナンカンプ": {
     "rank": 199,
     "progeny_prize": 1.0,
-    "ei": "31",
-    "win_rate": "2"
+    "ei": 0.031,
+    "win_rate": 2
   },
   "Super Saver": {
     "rank": 200,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "2"
+    "ei": 0.0,
+    "win_rate": 2
   },
   "オンファイア": {
     "rank": 201,
     "progeny_prize": 0.0,
-    "ei": "7",
-    "win_rate": "1"
+    "ei": 0.007,
+    "win_rate": 1
   },
   "シルポート": {
     "rank": 202,
     "progeny_prize": 0.0,
-    "ei": "3",
-    "win_rate": "2"
+    "ei": 0.003,
+    "win_rate": 2
   },
   "サマーバード": {
     "rank": 203,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "1"
+    "ei": 0.002,
+    "win_rate": 1
   },
   "Will Take Charge": {
     "rank": 204,
     "progeny_prize": 0.0,
-    "ei": "4",
-    "win_rate": "1"
+    "ei": 0.004,
+    "win_rate": 1
   },
   "Le Havre": {
     "rank": 205,
     "progeny_prize": 1.0,
-    "ei": "11",
-    "win_rate": "1"
+    "ei": 0.011,
+    "win_rate": 1
   },
   "Air Force Blue": {
     "rank": 206,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "2"
+    "ei": 0.001,
+    "win_rate": 2
   },
   "オウケンブルースリ": {
     "rank": 207,
     "progeny_prize": 1.0,
-    "ei": "17",
-    "win_rate": "1"
+    "ei": 0.017,
+    "win_rate": 1
   },
   "ディープスカイ": {
     "rank": 208,
     "progeny_prize": 0.0,
-    "ei": "19",
-    "win_rate": "0"
+    "ei": 0.019,
+    "win_rate": 0
   },
   "Bernardini": {
     "rank": 209,
     "progeny_prize": 1.0,
-    "ei": "5",
-    "win_rate": "0"
+    "ei": 0.005,
+    "win_rate": 0
   },
   "Free Eagle": {
     "rank": 210,
     "progeny_prize": 1.0,
-    "ei": "4",
-    "win_rate": "2"
+    "ei": 0.004,
+    "win_rate": 2
   },
   "Union Rags": {
     "rank": 211,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "1"
+    "ei": 0.001,
+    "win_rate": 1
   },
   "コパノリチャード": {
     "rank": 212,
     "progeny_prize": 1.0,
-    "ei": "20",
-    "win_rate": "2"
+    "ei": 0.02,
+    "win_rate": 2
   },
   "スペシャルウィーク": {
     "rank": 213,
     "progeny_prize": 0.0,
-    "ei": "14",
-    "win_rate": "1"
+    "ei": 0.014,
+    "win_rate": 1
   },
   "ペルーサ": {
     "rank": 214,
     "progeny_prize": 0.0,
-    "ei": "4",
-    "win_rate": "0"
+    "ei": 0.004,
+    "win_rate": 0
   },
   "アサクサキングス": {
     "rank": 215,
     "progeny_prize": 0.0,
-    "ei": "10",
-    "win_rate": "0"
+    "ei": 0.01,
+    "win_rate": 0
   },
   "Maclean's Music": {
     "rank": 216,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "1"
+    "ei": 0.001,
+    "win_rate": 1
   },
   "ヒルノダムール": {
     "rank": 217,
     "progeny_prize": 2.0,
-    "ei": "9",
-    "win_rate": "1"
+    "ei": 0.009,
+    "win_rate": 1
   },
   "ダイシンオレンジ": {
     "rank": 218,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "1"
+    "ei": 0.0,
+    "win_rate": 1
   },
   "キャプテントゥーレ": {
     "rank": 219,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "オールステイ": {
     "rank": 220,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "2"
+    "ei": 0.0,
+    "win_rate": 2
   },
   "サクラプレジデント": {
     "rank": 221,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "1"
+    "ei": 0.002,
+    "win_rate": 1
   },
   "アルデバランＩＩ": {
     "rank": 222,
     "progeny_prize": 0.0,
-    "ei": "6",
-    "win_rate": "0"
+    "ei": 0.006,
+    "win_rate": 0
   },
   "Upstart": {
     "rank": 223,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "2"
+    "ei": 0.0,
+    "win_rate": 2
   },
   "トーセンブライト": {
     "rank": 224,
     "progeny_prize": 0.0,
-    "ei": "4",
-    "win_rate": "1"
+    "ei": 0.004,
+    "win_rate": 1
   },
   "Gleneagles": {
     "rank": 225,
     "progeny_prize": 1.0,
-    "ei": "19",
-    "win_rate": "1"
+    "ei": 0.019,
+    "win_rate": 1
   },
   "アメリカンボス": {
     "rank": 226,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "1"
+    "ei": 0.0,
+    "win_rate": 1
   },
   "ノーザンリバー": {
     "rank": 227,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "1"
+    "ei": 0.002,
+    "win_rate": 1
   },
   "Khozan": {
     "rank": 228,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "2"
+    "ei": 0.002,
+    "win_rate": 2
   },
   "War Command": {
     "rank": 229,
     "progeny_prize": 1.0,
-    "ei": "9",
-    "win_rate": "0"
+    "ei": 0.009,
+    "win_rate": 0
   },
   "アロマカフェ": {
     "rank": 230,
     "progeny_prize": 1.0,
-    "ei": "7",
-    "win_rate": "2"
+    "ei": 0.007,
+    "win_rate": 2
   },
   "ハードスパン": {
     "rank": 231,
     "progeny_prize": 0.0,
-    "ei": "9",
-    "win_rate": "0"
+    "ei": 0.009,
+    "win_rate": 0
   },
   "Pivotal": {
     "rank": 232,
     "progeny_prize": 0.0,
-    "ei": "4",
-    "win_rate": "0"
+    "ei": 0.004,
+    "win_rate": 0
   },
   "Bobby's Kitten": {
     "rank": 233,
     "progeny_prize": 0.0,
-    "ei": "3",
-    "win_rate": "1"
+    "ei": 0.003,
+    "win_rate": 1
   },
   "ワンアンドオンリー": {
     "rank": 234,
     "progeny_prize": 0.0,
-    "ei": "13",
-    "win_rate": "1"
+    "ei": 0.013,
+    "win_rate": 1
   },
   "ノボジャック": {
     "rank": 235,
     "progeny_prize": 0.0,
-    "ei": "4",
-    "win_rate": "1"
+    "ei": 0.004,
+    "win_rate": 1
   },
   "シビルウォー": {
     "rank": 236,
     "progeny_prize": 0.0,
-    "ei": "5",
-    "win_rate": "0"
+    "ei": 0.005,
+    "win_rate": 0
   },
   "Temple City": {
     "rank": 237,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "ヘニーハウンド": {
     "rank": 238,
     "progeny_prize": 0.0,
-    "ei": "4",
-    "win_rate": "1"
+    "ei": 0.004,
+    "win_rate": 1
   },
   "ブレイクランアウト": {
     "rank": 239,
     "progeny_prize": 0.0,
-    "ei": "14",
-    "win_rate": "0"
+    "ei": 0.014,
+    "win_rate": 0
   },
   "リヤンドファミユ": {
     "rank": 240,
     "progeny_prize": 0.0,
-    "ei": "9",
-    "win_rate": "0"
+    "ei": 0.009,
+    "win_rate": 0
   },
   "テイエムオペラオー": {
     "rank": 241,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "0"
+    "ei": 0.002,
+    "win_rate": 0
   },
   "Haynesfield": {
     "rank": 242,
     "progeny_prize": 0.0,
-    "ei": "3",
-    "win_rate": "0"
+    "ei": 0.003,
+    "win_rate": 0
   },
   "サウンドボルケーノ": {
     "rank": 243,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "1"
+    "ei": 0.0,
+    "win_rate": 1
   },
   "Lonhro": {
     "rank": 244,
     "progeny_prize": 0.0,
-    "ei": "5",
-    "win_rate": "0"
+    "ei": 0.005,
+    "win_rate": 0
   },
   "スパイキュール": {
     "rank": 245,
     "progeny_prize": 0.0,
-    "ei": "3",
-    "win_rate": "1"
+    "ei": 0.003,
+    "win_rate": 1
   },
   "ザサンデーフサイチ": {
     "rank": 246,
     "progeny_prize": 1.0,
-    "ei": "17",
-    "win_rate": "0"
+    "ei": 0.017,
+    "win_rate": 0
   },
   "アドマイヤコジーン": {
     "rank": 247,
     "progeny_prize": 0.0,
-    "ei": "11",
-    "win_rate": "0"
+    "ei": 0.011,
+    "win_rate": 0
   },
   "キモンノカシワ": {
     "rank": 248,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "サクラオリオン": {
     "rank": 249,
     "progeny_prize": 0.0,
-    "ei": "5",
-    "win_rate": "0"
+    "ei": 0.005,
+    "win_rate": 0
   },
   "Goldencents": {
     "rank": 250,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "Iffraaj": {
     "rank": 251,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "0"
+    "ei": 0.002,
+    "win_rate": 0
   },
   "Magician": {
     "rank": 252,
     "progeny_prize": 0.0,
-    "ei": "13",
-    "win_rate": "0"
+    "ei": 0.013,
+    "win_rate": 0
   },
   "トーセンレーヴ": {
     "rank": 253,
     "progeny_prize": 1.0,
-    "ei": "10",
-    "win_rate": "1"
+    "ei": 0.01,
+    "win_rate": 1
   },
   "アドマイヤマックス": {
     "rank": 254,
     "progeny_prize": 1.0,
-    "ei": "17",
-    "win_rate": "1"
+    "ei": 0.017,
+    "win_rate": 1
   },
   "サクラオールイン": {
     "rank": 255,
     "progeny_prize": 1.0,
-    "ei": "8",
-    "win_rate": "1"
+    "ei": 0.008,
+    "win_rate": 1
   },
   "ミキノバンジョー": {
     "rank": 255,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "1"
+    "ei": 0.0,
+    "win_rate": 1
   },
   "オーシャンブルー": {
     "rank": 257,
     "progeny_prize": 0.0,
-    "ei": "19",
-    "win_rate": "0"
+    "ei": 0.019,
+    "win_rate": 0
   },
   "Mohaymen": {
     "rank": 258,
     "progeny_prize": 0.0,
-    "ei": "3",
-    "win_rate": "1"
+    "ei": 0.003,
+    "win_rate": 1
   },
   "Quality Road": {
     "rank": 259,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "0"
+    "ei": 0.001,
+    "win_rate": 0
   },
   "クリーンエコロジー": {
     "rank": 260,
     "progeny_prize": 0.0,
-    "ei": "8",
-    "win_rate": "1"
+    "ei": 0.008,
+    "win_rate": 1
   },
   "アドマイヤオーラ": {
     "rank": 261,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "0"
+    "ei": 0.001,
+    "win_rate": 0
   },
   "バンブーエール": {
     "rank": 262,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "1"
+    "ei": 0.0,
+    "win_rate": 1
   },
   "Connect": {
     "rank": 263,
     "progeny_prize": 1.0,
-    "ei": "1",
-    "win_rate": "1"
+    "ei": 0.001,
+    "win_rate": 1
   },
   "Graydar": {
     "rank": 263,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "Ghostzapper": {
     "rank": 265,
     "progeny_prize": 0.0,
-    "ei": "7",
-    "win_rate": "1"
+    "ei": 0.007,
+    "win_rate": 1
   },
   "New Approach": {
     "rank": 266,
     "progeny_prize": 0.0,
-    "ei": "10",
-    "win_rate": "0"
+    "ei": 0.01,
+    "win_rate": 0
   },
   "スニッツェル": {
     "rank": 267,
     "progeny_prize": 1.0,
-    "ei": "6",
-    "win_rate": "1"
+    "ei": 0.006,
+    "win_rate": 1
   },
   "ファーガソン": {
     "rank": 268,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "1"
+    "ei": 0.0,
+    "win_rate": 1
   },
   "New Bay": {
     "rank": 269,
     "progeny_prize": 0.0,
-    "ei": "10",
-    "win_rate": "0"
+    "ei": 0.01,
+    "win_rate": 0
   },
   "ナムラタイタン": {
     "rank": 270,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "1"
+    "ei": 0.001,
+    "win_rate": 1
   },
   "エーシンシャラク": {
     "rank": 271,
     "progeny_prize": 0.0,
-    "ei": "6",
-    "win_rate": "0"
+    "ei": 0.006,
+    "win_rate": 0
   },
   "Caravaggio": {
     "rank": 272,
     "progeny_prize": 1.0,
-    "ei": "7",
-    "win_rate": "1"
+    "ei": 0.007,
+    "win_rate": 1
   },
   "グランデッツァ": {
     "rank": 273,
     "progeny_prize": 0.0,
-    "ei": "16",
-    "win_rate": "0"
+    "ei": 0.016,
+    "win_rate": 0
   },
   "Zoffany": {
     "rank": 274,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "1"
+    "ei": 0.001,
+    "win_rate": 1
   },
   "Lope de Vega": {
     "rank": 275,
     "progeny_prize": 1.0,
-    "ei": "5",
-    "win_rate": "1"
+    "ei": 0.005,
+    "win_rate": 1
   },
   "Smart Missile": {
     "rank": 275,
     "progeny_prize": 0.0,
-    "ei": "4",
-    "win_rate": "0"
+    "ei": 0.004,
+    "win_rate": 0
   },
   "Elusive Quality": {
     "rank": 277,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "1"
+    "ei": 0.0,
+    "win_rate": 1
   },
   "Flatter": {
     "rank": 277,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "1"
+    "ei": 0.001,
+    "win_rate": 1
   },
   "チェリークラウン": {
     "rank": 277,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "1"
+    "ei": 0.001,
+    "win_rate": 1
   },
   "Dawn Approach": {
     "rank": 280,
     "progeny_prize": 0.0,
-    "ei": "10",
-    "win_rate": "0"
+    "ei": 0.01,
+    "win_rate": 0
   },
   "English Channel": {
     "rank": 281,
     "progeny_prize": 0.0,
-    "ei": "7",
-    "win_rate": "0"
+    "ei": 0.007,
+    "win_rate": 0
   },
   "Mineshaft": {
     "rank": 282,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "1"
+    "ei": 0.0,
+    "win_rate": 1
   },
   "Palace Malice": {
     "rank": 283,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "1"
+    "ei": 0.0,
+    "win_rate": 1
   },
   "Gun Runner": {
     "rank": 284,
     "progeny_prize": 1.0,
-    "ei": "2",
-    "win_rate": "1"
+    "ei": 0.002,
+    "win_rate": 1
   },
   "Mastery": {
     "rank": 284,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "1"
+    "ei": 0.0,
+    "win_rate": 1
   },
   "Optimizer": {
     "rank": 284,
     "progeny_prize": 1.0,
-    "ei": "1",
-    "win_rate": "1"
+    "ei": 0.001,
+    "win_rate": 1
   },
   "ポアゾンブラック": {
     "rank": 284,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "1"
+    "ei": 0.002,
+    "win_rate": 1
   },
   "Dialed In": {
     "rank": 288,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "1"
+    "ei": 0.0,
+    "win_rate": 1
   },
   "Candy Ride": {
     "rank": 289,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "1"
+    "ei": 0.001,
+    "win_rate": 1
   },
   "Exceed And Excel": {
     "rank": 289,
     "progeny_prize": 0.0,
-    "ei": "13",
-    "win_rate": "0"
+    "ei": 0.013,
+    "win_rate": 0
   },
   "ティンバーカントリー": {
     "rank": 291,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "Shalaa": {
     "rank": 292,
     "progeny_prize": 0.0,
-    "ei": "8",
-    "win_rate": "0"
+    "ei": 0.008,
+    "win_rate": 0
   },
   "クレスコグランド": {
     "rank": 293,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "カリフォルニアクローム": {
     "rank": 294,
     "progeny_prize": 0.0,
-    "ei": "5",
-    "win_rate": "1"
+    "ei": 0.005,
+    "win_rate": 1
   },
   "Animal Kingdom": {
     "rank": 295,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "ミュゼスルタン": {
     "rank": 296,
     "progeny_prize": 0.0,
-    "ei": "12",
-    "win_rate": "0"
+    "ei": 0.012,
+    "win_rate": 0
   },
   "カンパニー": {
     "rank": 297,
     "progeny_prize": 0.0,
-    "ei": "7",
-    "win_rate": "0"
+    "ei": 0.007,
+    "win_rate": 0
   },
   "Itsmyluckyday": {
     "rank": 298,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "0"
+    "ei": 0.001,
+    "win_rate": 0
   },
   "Lemon Drop Kid": {
     "rank": 299,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "0"
+    "ei": 0.001,
+    "win_rate": 0
   },
   "Garswood": {
     "rank": 300,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "1"
+    "ei": 0.002,
+    "win_rate": 1
   },
   "ダブルスター": {
     "rank": 301,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "Gutaifan": {
     "rank": 302,
     "progeny_prize": 1.0,
-    "ei": "4",
-    "win_rate": "1"
+    "ei": 0.004,
+    "win_rate": 1
   },
   "Nathaniel": {
     "rank": 302,
     "progeny_prize": 1.0,
-    "ei": "7",
-    "win_rate": "1"
+    "ei": 0.007,
+    "win_rate": 1
   },
   "エーシンフォワード": {
     "rank": 304,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "0"
+    "ei": 0.002,
+    "win_rate": 0
   },
   "Outstrip": {
     "rank": 305,
     "progeny_prize": 1.0,
-    "ei": "2",
-    "win_rate": "1"
+    "ei": 0.002,
+    "win_rate": 1
   },
   "Raven's Pass": {
     "rank": 305,
     "progeny_prize": 1.0,
-    "ei": "4",
-    "win_rate": "1"
+    "ei": 0.004,
+    "win_rate": 1
   },
   "Lord Nelson": {
     "rank": 307,
     "progeny_prize": 1.0,
-    "ei": "4",
-    "win_rate": "1"
+    "ei": 0.004,
+    "win_rate": 1
   },
   "トウケイヘイロー": {
     "rank": 308,
     "progeny_prize": 0.0,
-    "ei": "9",
-    "win_rate": "0"
+    "ei": 0.009,
+    "win_rate": 0
   },
   "ワイルドラッシュ": {
     "rank": 309,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "ロードバリオス": {
     "rank": 310,
     "progeny_prize": 1.0,
-    "ei": "12",
-    "win_rate": "1"
+    "ei": 0.012,
+    "win_rate": 1
   },
   "Fastnet Rock": {
     "rank": 311,
     "progeny_prize": 0.0,
-    "ei": "14",
-    "win_rate": "0"
+    "ei": 0.014,
+    "win_rate": 0
   },
   "Sebring": {
     "rank": 312,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "City Zip": {
     "rank": 313,
     "progeny_prize": 0.0,
-    "ei": "3",
-    "win_rate": "0"
+    "ei": 0.003,
+    "win_rate": 0
   },
   "Creative Cause": {
     "rank": 314,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "Orb": {
     "rank": 315,
     "progeny_prize": 0.0,
-    "ei": "3",
-    "win_rate": "0"
+    "ei": 0.003,
+    "win_rate": 0
   },
   "Mastercraftsman": {
     "rank": 316,
     "progeny_prize": 0.0,
-    "ei": "6",
-    "win_rate": "0"
+    "ei": 0.006,
+    "win_rate": 0
   },
   "Liam's Map": {
     "rank": 317,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "0"
+    "ei": 0.002,
+    "win_rate": 0
   },
   "ラブイズブーシェ": {
     "rank": 318,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "Fort Larned": {
     "rank": 319,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "Klimt": {
     "rank": 319,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "0"
+    "ei": 0.001,
+    "win_rate": 0
   },
   "Mucho Macho Man": {
     "rank": 319,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "アポロソニック": {
     "rank": 322,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "0"
+    "ei": 0.002,
+    "win_rate": 0
   },
   "オペラハウス": {
     "rank": 322,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "スターリングローズ": {
     "rank": 324,
     "progeny_prize": 0.0,
-    "ei": "6",
-    "win_rate": "0"
+    "ei": 0.006,
+    "win_rate": 0
   },
   "Summer Front": {
     "rank": 325,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "0"
+    "ei": 0.002,
+    "win_rate": 0
   },
   "ダンスインザダーク": {
     "rank": 326,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "0"
+    "ei": 0.002,
+    "win_rate": 0
   },
   "War Front": {
     "rank": 327,
     "progeny_prize": 0.0,
-    "ei": "3",
-    "win_rate": "0"
+    "ei": 0.003,
+    "win_rate": 0
   },
   "Australia": {
     "rank": 328,
     "progeny_prize": 0.0,
-    "ei": "12",
-    "win_rate": "0"
+    "ei": 0.012,
+    "win_rate": 0
   },
   "ハイアーゲーム": {
     "rank": 328,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "バーディバーディ": {
     "rank": 328,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "Munnings": {
     "rank": 331,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "Oasis Dream": {
     "rank": 331,
     "progeny_prize": 0.0,
-    "ei": "5",
-    "win_rate": "0"
+    "ei": 0.005,
+    "win_rate": 0
   },
   "Tapizar": {
     "rank": 331,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "エーシンジーライン": {
     "rank": 331,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "0"
+    "ei": 0.002,
+    "win_rate": 0
   },
   "Sir Percy": {
     "rank": 335,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "0"
+    "ei": 0.002,
+    "win_rate": 0
   },
   "Holy Roman Emperor": {
     "rank": 336,
     "progeny_prize": 0.0,
-    "ei": "3",
-    "win_rate": "0"
+    "ei": 0.003,
+    "win_rate": 0
   },
   "ヴィットリオドーロ": {
     "rank": 336,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "Starspangledbanner": {
     "rank": 338,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "0"
+    "ei": 0.001,
+    "win_rate": 0
   },
   "Majesticperfection": {
     "rank": 339,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "トワイニング": {
     "rank": 339,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "0"
+    "ei": 0.001,
+    "win_rate": 0
   },
   "Ribchester": {
     "rank": 341,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "0"
+    "ei": 0.002,
+    "win_rate": 0
   },
   "Runhappy": {
     "rank": 342,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "0"
+    "ei": 0.001,
+    "win_rate": 0
   },
   "American Freedom": {
     "rank": 343,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "Bated Breath": {
     "rank": 343,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "0"
+    "ei": 0.002,
+    "win_rate": 0
   },
   "サダムパテック": {
     "rank": 345,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "サドンストーム": {
     "rank": 345,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "0"
+    "ei": 0.002,
+    "win_rate": 0
   },
   "サンカルロ": {
     "rank": 345,
     "progeny_prize": 0.0,
-    "ei": "5",
-    "win_rate": "0"
+    "ei": 0.005,
+    "win_rate": 0
   },
   "シルバーチャーム": {
     "rank": 348,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "ブラックタキシード": {
     "rank": 348,
     "progeny_prize": 0.0,
-    "ei": "5",
-    "win_rate": "0"
+    "ei": 0.005,
+    "win_rate": 0
   },
   "ドリームバレンチノ": {
     "rank": 350,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "Belardo": {
     "rank": 351,
     "progeny_prize": 0.0,
-    "ei": "4",
-    "win_rate": "0"
+    "ei": 0.004,
+    "win_rate": 0
   },
   "Postponed": {
     "rank": 351,
     "progeny_prize": 0.0,
-    "ei": "5",
-    "win_rate": "0"
+    "ei": 0.005,
+    "win_rate": 0
   },
   "Almanzor": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "0"
+    "ei": 0.001,
+    "win_rate": 0
   },
   "Archarcharch": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "0"
+    "ei": 0.002,
+    "win_rate": 0
   },
   "Authorized": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "Blame": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "Brazen Beau": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "0"
+    "ei": 0.001,
+    "win_rate": 0
   },
   "Camelot": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "0"
+    "ei": 0.001,
+    "win_rate": 0
   },
   "Dutch Art": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "0"
+    "ei": 0.001,
+    "win_rate": 0
   },
   "Elusive City": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "Fed Biz": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "0"
+    "ei": 0.001,
+    "win_rate": 0
   },
   "Fusaichi Pegasus": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "Galileo": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "8",
-    "win_rate": "0"
+    "ei": 0.008,
+    "win_rate": 0
   },
   "Hunter's Light": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "Kendargent": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "3",
-    "win_rate": "0"
+    "ei": 0.003,
+    "win_rate": 0
   },
   "Leroidesanimaux": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "Mizzen Mast": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "3",
-    "win_rate": "0"
+    "ei": 0.003,
+    "win_rate": 0
   },
   "Mshawish": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "0"
+    "ei": 0.002,
+    "win_rate": 0
   },
   "Myboycharlie": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "4",
-    "win_rate": "0"
+    "ei": 0.004,
+    "win_rate": 0
   },
   "Panis": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "0"
+    "ei": 0.001,
+    "win_rate": 0
   },
   "Preferment": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "4",
-    "win_rate": "0"
+    "ei": 0.004,
+    "win_rate": 0
   },
   "Pride Of Dubai": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "Reliable Man": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "0"
+    "ei": 0.002,
+    "win_rate": 0
   },
   "Rio de La Plata": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "0"
+    "ei": 0.002,
+    "win_rate": 0
   },
   "Roman Ruler": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "Run Away and Hide": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "0"
+    "ei": 0.001,
+    "win_rate": 0
   },
   "Savabeel": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "0"
+    "ei": 0.002,
+    "win_rate": 0
   },
   "Scat Daddy": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "Sea The Moon": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "8",
-    "win_rate": "0"
+    "ei": 0.008,
+    "win_rate": 0
   },
   "Shackleford": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "0"
+    "ei": 0.001,
+    "win_rate": 0
   },
   "Shakin It Up": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "Square Eddie": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "Street Boss": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "Take Charge Indy": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "Territories": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "0"
+    "ei": 0.002,
+    "win_rate": 0
   },
   "Tonalist": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "0"
+    "ei": 0.001,
+    "win_rate": 0
   },
   "Uncaptured": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "Verrazano": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "アイファーソング": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "0"
+    "ei": 0.002,
+    "win_rate": 0
   },
   "アジュディケーティング": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "ウエスタンゼウス": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "エイシンアポロン": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "0"
+    "ei": 0.001,
+    "win_rate": 0
   },
   "エイシンデピュティ": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "0"
+    "ei": 0.002,
+    "win_rate": 0
   },
   "エキストラエンド": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "7",
-    "win_rate": "0"
+    "ei": 0.007,
+    "win_rate": 0
   },
   "オネストジョン": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "オリオンザサンクス": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "0"
+    "ei": 0.001,
+    "win_rate": 0
   },
   "オレハマッテルゼ": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "5",
-    "win_rate": "0"
+    "ei": 0.005,
+    "win_rate": 0
   },
   "カゼノグッドボーイ": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "0"
+    "ei": 0.002,
+    "win_rate": 0
   },
   "カリズマティック": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "クリストワイニング": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "0"
+    "ei": 0.002,
+    "win_rate": 0
   },
   "グランシュヴァリエ": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "グロリアスノア": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "ケイアイドウソジン": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "0"
+    "ei": 0.001,
+    "win_rate": 0
   },
   "コメート": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "ゴールスキー": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "3",
-    "win_rate": "0"
+    "ei": 0.003,
+    "win_rate": 0
   },
   "サクラバクシンオー": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "0"
+    "ei": 0.001,
+    "win_rate": 0
   },
   "サンライズペガサス": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "ザグレーギャツビー": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "0"
+    "ei": 0.001,
+    "win_rate": 0
   },
   "シングンオペラ": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "5",
-    "win_rate": "0"
+    "ei": 0.005,
+    "win_rate": 0
   },
   "ジュンツバサ": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "0"
+    "ei": 0.001,
+    "win_rate": 0
   },
   "スウィフトカレント": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "5",
-    "win_rate": "0"
+    "ei": 0.005,
+    "win_rate": 0
   },
   "スパロービート": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "セイクリムズン": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "セレスハント": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "ソングオブウインド": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "タガノゲルニカ": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "0"
+    "ei": 0.002,
+    "win_rate": 0
   },
   "タガノロックオン": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "トーセンモナーク": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "トーセンロレンス": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "0"
+    "ei": 0.001,
+    "win_rate": 0
   },
   "ネオヴァンドーム": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "ハタノヴァンクール": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "5",
-    "win_rate": "0"
+    "ei": 0.005,
+    "win_rate": 0
   },
   "バンデ": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "0"
+    "ei": 0.001,
+    "win_rate": 0
   },
   "ヒラボクディープ": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "0"
+    "ei": 0.002,
+    "win_rate": 0
   },
   "フォーティナイナーズサン": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "フサイチリシャール": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "フジキセキ": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "ブリーズフレイバー": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "ボストンハーバー": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "マコトスパルビエロ": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "マスクゾロ": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "マルカシェンク": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "ミスキャスト": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "0"
+    "ei": 0.002,
+    "win_rate": 0
   },
   "ミリオンディスク": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "1",
-    "win_rate": "0"
+    "ei": 0.001,
+    "win_rate": 0
   },
   "ヤマニンセラフィム": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "2",
-    "win_rate": "0"
+    "ei": 0.002,
+    "win_rate": 0
   },
   "リッカバクシンオ": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "リッカロイヤル": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   },
   "ルックスザットキル": {
     "rank": 353,
     "progeny_prize": 0.0,
-    "ei": "0",
-    "win_rate": "0"
+    "ei": 0.0,
+    "win_rate": 0
   }
 }
