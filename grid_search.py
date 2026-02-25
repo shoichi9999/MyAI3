@@ -147,6 +147,31 @@ def parameterized_score(df: pd.DataFrame, params: dict) -> pd.Series:
     if "imported_dam" in df.columns:
         score += df["imported_dam"].fillna(0) * params.get("b_imported_dam", 0)
 
+    # 種牡馬産駒総賞金
+    if "sire_progeny_prize" in df.columns:
+        pp = np.log1p(df["sire_progeny_prize"].fillna(0))
+        cap = pp.quantile(0.99)
+        if cap > 0:
+            score += (pp.clip(upper=cap) / cap) * 100 * params.get("w_sire_progeny_prize", 0)
+
+    # 種牡馬産駒数
+    if "sire_runners" in df.columns:
+        sr = np.log1p(df["sire_runners"].fillna(0))
+        cap = sr.quantile(0.99)
+        if cap > 0:
+            score += (sr.clip(upper=cap) / cap) * 100 * params.get("w_sire_runners", 0)
+
+    # 母父産駒数
+    if "bms_runners" in df.columns:
+        br = np.log1p(df["bms_runners"].fillna(0))
+        cap = br.quantile(0.99)
+        if cap > 0:
+            score += (br.clip(upper=cap) / cap) * 100 * params.get("w_bms_runners", 0)
+
+    # 母馬産駒品質
+    if "dam_progeny_quality" in df.columns:
+        score += df["dam_progeny_quality"].fillna(0) * params.get("b_dam_progeny_quality", 0)
+
     # 種牡馬勝率
     if "sire_win_rate" in df.columns:
         wr = df["sire_win_rate"].fillna(0)
@@ -338,6 +363,10 @@ def grid_search(years, objective="balanced"):
         "w_sire_win_rate": _w.get("w_sire_win_rate", 0.0),
         "w_bms_win_rate": _w.get("w_bms_win_rate", 0.0),
         "w_sire_rank": _w.get("w_sire_rank", 0.0),
+        "w_sire_progeny_prize": _w.get("w_sire_progeny_prize", 0.0),
+        "w_sire_runners": _w.get("w_sire_runners", 0.0),
+        "w_bms_runners": _w.get("w_bms_runners", 0.0),
+        "b_dam_progeny_quality": _w.get("b_dam_progeny_quality", 0.0),
     }
 
     current_cv = cv_score(all_data, current_params)
@@ -523,6 +552,29 @@ def _precompute_arrays(all_data):
         d["sire_classic_count"] = df["sire_classic_count"].fillna(0).values if "sire_classic_count" in df.columns else np.zeros(n)
         # 輸入繁殖牝馬フラグ
         d["imported_dam"] = df["imported_dam"].fillna(0).values if "imported_dam" in df.columns else np.zeros(n)
+        # 種牡馬産駒総賞金（対数正規化）
+        if "sire_progeny_prize" in df.columns:
+            pp = np.log1p(df["sire_progeny_prize"].fillna(0).values)
+            cap = np.percentile(pp, 99)
+            d["sire_progeny_prize_norm"] = (np.clip(pp, 0, cap) / cap * 100) if cap > 0 else np.zeros(n)
+        else:
+            d["sire_progeny_prize_norm"] = np.zeros(n)
+        # 種牡馬産駒数（対数正規化）
+        if "sire_runners" in df.columns:
+            sr = np.log1p(df["sire_runners"].fillna(0).values)
+            cap = np.percentile(sr, 99)
+            d["sire_runners_norm"] = (np.clip(sr, 0, cap) / cap * 100) if cap > 0 else np.zeros(n)
+        else:
+            d["sire_runners_norm"] = np.zeros(n)
+        # 母父産駒数（対数正規化）
+        if "bms_runners" in df.columns:
+            br = np.log1p(df["bms_runners"].fillna(0).values)
+            cap = np.percentile(br, 99)
+            d["bms_runners_norm"] = (np.clip(br, 0, cap) / cap * 100) if cap > 0 else np.zeros(n)
+        else:
+            d["bms_runners_norm"] = np.zeros(n)
+        # 母馬産駒品質
+        d["dam_progeny_quality"] = df["dam_progeny_quality"].fillna(0).values if "dam_progeny_quality" in df.columns else np.zeros(n)
         # 種牡馬勝率（0-1値を*100して正規化）
         d["sire_win_rate_100"] = (df["sire_win_rate"].fillna(0) * 100).values if "sire_win_rate" in df.columns else np.zeros(n)
         # 母父勝率
@@ -591,6 +643,10 @@ def _compute_score_vec(d, params):
     score += d["sire_win_rate_100"] * params[24]      # w_sire_win_rate
     score += d["bms_win_rate_100"] * params[25]        # w_bms_win_rate
     score += d["sire_rank_norm"] * params[26]          # w_sire_rank
+    score += d["sire_progeny_prize_norm"] * params[27] # w_sire_progeny_prize
+    score += d["sire_runners_norm"] * params[28]       # w_sire_runners
+    score += d["bms_runners_norm"] * params[29]        # w_bms_runners
+    score += d["dam_progeny_quality"] * params[30]     # b_dam_progeny_quality
     return score
 
 
@@ -640,26 +696,48 @@ def _fast_cv_score(precomputed, params):
             f_top20 = set(np.argpartition(-female_scores, fk20)[:fk20])
             f_o20 = len(f_top20 & d["oaks_in_females"])
 
-        # ランク平滑化: クラシック馬の相対ランク（スコア範囲で正規化し、絶対値膨張を防止）
+        # TOP50/100ヒット
+        top50_k = min(50, n_horses)
+        pred_top50 = set(np.argpartition(-score, top50_k)[:top50_k])
+        top50_match = len(pred_top50 & d["classic_idx"])
+
+        top100_k = min(100, n_horses)
+        pred_top100 = set(np.argpartition(-score, top100_k)[:top100_k])
+        top100_match = len(pred_top100 & d["classic_idx"])
+
+        # 牡馬TOP30 / 牝馬TOP30
+        m_d30 = 0
+        if len(male_idx) > 0 and d["derby_idx"]:
+            mk30 = min(30, len(male_scores))
+            m_top30 = set(np.argpartition(-male_scores, mk30)[:mk30])
+            m_d30 = len(m_top30 & d["derby_in_males"])
+        f_o30 = 0
+        if len(female_idx) > 0 and d["oaks_idx"]:
+            fk30 = min(30, len(female_scores))
+            f_top30 = set(np.argpartition(-female_scores, fk30)[:fk30])
+            f_o30 = len(f_top30 & d["oaks_in_females"])
+
+        # ランク平滑化: クラシック馬のパーセンタイル順位（上位ほど高得点）
         smooth_bonus = 0.0
         if d["classic_idx"]:
-            score_range = score.max() - score.min()
-            if score_range > 0:
-                classic_ranks = sum(
-                    (score[idx] - score.min()) / score_range
-                    for idx in d["classic_idx"]
-                )
-                smooth_bonus = classic_ranks * 0.5  # 10馬×0-1値×0.5 → max 5pt/year
+            ranks = np.argsort(np.argsort(-score)) + 1  # 1-indexed
+            for idx in d["classic_idx"]:
+                pctl = 1.0 - ranks[idx] / n_horses  # 1位=~1.0, 最下位=~0.0
+                smooth_bonus += pctl * 3.0  # 10馬 × 0-1 × 3.0 → max 30pt/year
 
         total_score += (
             top10_match * 100.0    # 全体TOP10ヒットが最重要
-            + top20_match * 10.0   # 全体TOP20
-            + top30_match * 3.0    # 全体TOP30
+            + top20_match * 15.0   # 全体TOP20
+            + top30_match * 5.0    # 全体TOP30
+            + top50_match * 2.0    # 全体TOP50
+            + top100_match * 1.0   # 全体TOP100
             + m_d10 * 80.0         # 牡馬TOP10内ダービーヒット
-            + m_d20 * 8.0          # 牡馬TOP20内ダービーヒット
+            + m_d20 * 10.0         # 牡馬TOP20内ダービーヒット
+            + m_d30 * 3.0          # 牡馬TOP30内ダービーヒット
             + f_o10 * 80.0         # 牝馬TOP10内オークスヒット
-            + f_o20 * 8.0          # 牝馬TOP20内オークスヒット
-            + smooth_bonus         # ランク平滑化
+            + f_o20 * 10.0         # 牝馬TOP20内オークスヒット
+            + f_o30 * 3.0          # 牝馬TOP30内オークスヒット
+            + smooth_bonus         # ランク平滑化（強化版）
         )
 
     return total_score / n_years
@@ -676,6 +754,8 @@ _PARAM_KEYS = [
     "b_sibling_classic", "w_sire_classic",
     "b_imported_dam",
     "w_sire_win_rate", "w_bms_win_rate", "w_sire_rank",
+    "w_sire_progeny_prize", "w_sire_runners", "w_bms_runners",
+    "b_dam_progeny_quality",
 ]
 
 def _dict_to_arr(params):
@@ -721,9 +801,13 @@ def _random_search_top10(all_data, current_params, best_score):
         (0, 40),       # b_sibling_classic (旧30→40)
         (0, 8),        # w_sire_classic (旧5→8)
         (0, 50),       # b_imported_dam (旧20→50)
-        (0.0, 0.60),   # w_sire_win_rate [NEW]
-        (0.0, 0.40),   # w_bms_win_rate [NEW]
-        (0.0, 0.60),   # w_sire_rank [NEW]
+        (0.0, 0.60),   # w_sire_win_rate
+        (0.0, 0.40),   # w_bms_win_rate
+        (0.0, 0.60),   # w_sire_rank
+        (0.0, 0.50),   # w_sire_progeny_prize [NEW]
+        (0.0, 0.50),   # w_sire_runners [NEW]
+        (0.0, 0.50),   # w_bms_runners [NEW]
+        (0, 100),      # b_dam_progeny_quality [NEW]
     ]
     lo = np.array([b[0] for b in bounds])
     hi = np.array([b[1] for b in bounds])

@@ -159,6 +159,31 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
     if "imported_dam" in df.columns:
         score += df["imported_dam"].fillna(0) * W.get("b_imported_dam", 0.0)
 
+    # 種牡馬産駒総賞金（対数 + 99パーセンタイル正規化）
+    if "sire_progeny_prize" in df.columns:
+        pp = np.log1p(df["sire_progeny_prize"].fillna(0))
+        cap = pp.quantile(0.99)
+        if cap > 0:
+            score += (pp.clip(upper=cap) / cap) * 100 * W.get("w_sire_progeny_prize", 0.0)
+
+    # 種牡馬産駒数スコア（多いほど実績の信頼度が高い、対数正規化）
+    if "sire_runners" in df.columns:
+        sr = np.log1p(df["sire_runners"].fillna(0))
+        cap = sr.quantile(0.99)
+        if cap > 0:
+            score += (sr.clip(upper=cap) / cap) * 100 * W.get("w_sire_runners", 0.0)
+
+    # 母父産駒数スコア
+    if "bms_runners" in df.columns:
+        br = np.log1p(df["bms_runners"].fillna(0))
+        cap = br.quantile(0.99)
+        if cap > 0:
+            score += (br.clip(upper=cap) / cap) * 100 * W.get("w_bms_runners", 0.0)
+
+    # 母馬産駒品質（兄姉クラシック率）
+    if "dam_progeny_quality" in df.columns:
+        score += df["dam_progeny_quality"].fillna(0) * W.get("b_dam_progeny_quality", 0.0)
+
     # 種牡馬勝率（EIとは異なる角度の品質指標）
     if "sire_win_rate" in df.columns:
         wr = df["sire_win_rate"].fillna(0)

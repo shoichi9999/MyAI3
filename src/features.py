@@ -190,6 +190,48 @@ def get_sire_2yo_ei(sire_name: str, leading_year: int = None) -> float:
         return 0.0
 
 
+def get_sire_runners(sire_name: str, leading_year: int = None) -> int:
+    """種牡馬の産駒出走頭数を返す。"""
+    if not sire_name:
+        return 0
+    if leading_year is not None:
+        data = _load_leading("sire_leading", leading_year).get(sire_name, {})
+    else:
+        data = SIRE_LEADING.get(sire_name, {})
+    try:
+        return int(data.get("runners", 0) or 0)
+    except (ValueError, TypeError):
+        return 0
+
+
+def get_sire_progeny_prize(sire_name: str, leading_year: int = None) -> float:
+    """種牡馬の産駒総賞金を返す。"""
+    if not sire_name:
+        return 0.0
+    if leading_year is not None:
+        data = _load_leading("sire_leading", leading_year).get(sire_name, {})
+    else:
+        data = SIRE_LEADING.get(sire_name, {})
+    try:
+        return float(data.get("progeny_prize", 0) or 0)
+    except (ValueError, TypeError):
+        return 0.0
+
+
+def get_bms_runners(bms_name: str, leading_year: int = None) -> int:
+    """母父馬の産駒出走頭数を返す。"""
+    if not bms_name:
+        return 0
+    if leading_year is not None:
+        data = _load_leading("bms_leading", leading_year).get(bms_name, {})
+    else:
+        data = BMS_LEADING.get(bms_name, {})
+    try:
+        return int(data.get("runners", 0) or 0)
+    except (ValueError, TypeError):
+        return 0
+
+
 def get_sire_win_rate(sire_name: str, leading_year: int = None) -> float:
     """種牡馬の勝率（産駒の勝ち上がり率）を返す。"""
     if not sire_name:
@@ -423,6 +465,12 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
         # 種牡馬勝率・母父勝率・種牡馬ランク
         row["sire_win_rate"] = get_sire_win_rate(horse.get("sire", ""), leading_year)
         row["bms_win_rate"] = get_bms_win_rate(horse.get("sire_of_dam", ""), leading_year)
+
+        # 種牡馬産駒数・産駒総賞金（実績の信頼度指標）
+        row["sire_runners"] = get_sire_runners(horse.get("sire", ""), leading_year)
+        row["sire_progeny_prize"] = get_sire_progeny_prize(horse.get("sire", ""), leading_year)
+        row["bms_runners"] = get_bms_runners(horse.get("sire_of_dam", ""), leading_year)
+
         sire_rank = get_sire_rank(horse.get("sire", ""), leading_year)
         # ランクを逆転スコアに変換（1位=100, 50位≈2, 50位超=0）
         row["sire_rank_score"] = max(0, (51 - sire_rank) * 2) if sire_rank > 0 else 0.0
@@ -517,6 +565,13 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
         # --- 輸入繁殖牝馬フラグ（dam_id が "000a" で始まる = 海外産馬） ---
         dam_id_str = str(horse.get("dam_id", "")) if pd.notna(horse.get("dam_id")) else ""
         row["imported_dam"] = 1 if dam_id_str.startswith("000a") else 0
+
+        # --- 母馬の産駒品質スコア（兄姉がクラシック馬か、リーク防止済み） ---
+        if older_siblings:
+            classic_siblings = sum(1 for s in older_siblings if str(s) in classic_ids)
+            row["dam_progeny_quality"] = classic_siblings / len(older_siblings)
+        else:
+            row["dam_progeny_quality"] = 0.0
 
         # --- 特徴量交互作用（非線形シグナル） ---
         # 父EI × 母賞金: 良血父 × 良血母のシナジー
