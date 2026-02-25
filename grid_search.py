@@ -147,6 +147,23 @@ def parameterized_score(df: pd.DataFrame, params: dict) -> pd.Series:
     if "imported_dam" in df.columns:
         score += df["imported_dam"].fillna(0) * params.get("b_imported_dam", 0)
 
+    # 種牡馬勝率
+    if "sire_win_rate" in df.columns:
+        wr = df["sire_win_rate"].fillna(0)
+        score += wr * 100 * params.get("w_sire_win_rate", 0)
+
+    # 母父勝率
+    if "bms_win_rate" in df.columns:
+        wr = df["bms_win_rate"].fillna(0)
+        score += wr * 100 * params.get("w_bms_win_rate", 0)
+
+    # 種牡馬ランクスコア
+    if "sire_rank_score" in df.columns:
+        rs = df["sire_rank_score"].fillna(0)
+        cap = rs.max()
+        if cap > 0:
+            score += (rs / cap) * 100 * params.get("w_sire_rank", 0)
+
     return score
 
 
@@ -318,6 +335,9 @@ def grid_search(years, objective="balanced"):
         "b_sibling_classic": _w.get("b_sibling_classic", 0.0),
         "w_sire_classic": _w.get("w_sire_classic", 0.0),
         "b_imported_dam": _w.get("b_imported_dam", 0.0),
+        "w_sire_win_rate": _w.get("w_sire_win_rate", 0.0),
+        "w_bms_win_rate": _w.get("w_bms_win_rate", 0.0),
+        "w_sire_rank": _w.get("w_sire_rank", 0.0),
     }
 
     current_cv = cv_score(all_data, current_params)
@@ -503,6 +523,17 @@ def _precompute_arrays(all_data):
         d["sire_classic_count"] = df["sire_classic_count"].fillna(0).values if "sire_classic_count" in df.columns else np.zeros(n)
         # 輸入繁殖牝馬フラグ
         d["imported_dam"] = df["imported_dam"].fillna(0).values if "imported_dam" in df.columns else np.zeros(n)
+        # 種牡馬勝率（0-1値を*100して正規化）
+        d["sire_win_rate_100"] = (df["sire_win_rate"].fillna(0) * 100).values if "sire_win_rate" in df.columns else np.zeros(n)
+        # 母父勝率
+        d["bms_win_rate_100"] = (df["bms_win_rate"].fillna(0) * 100).values if "bms_win_rate" in df.columns else np.zeros(n)
+        # 種牡馬ランクスコア（正規化済み）
+        if "sire_rank_score" in df.columns:
+            rs = df["sire_rank_score"].fillna(0).values
+            cap = rs.max()
+            d["sire_rank_norm"] = (rs / cap * 100) if cap > 0 else np.zeros(n)
+        else:
+            d["sire_rank_norm"] = np.zeros(n)
         # クラシック結果データ
         horse_ids = df["horse_id"].astype(str).values
         sex_vals = df["sex"].values if "sex" in df.columns else np.full(n, 0.5)
@@ -557,6 +588,9 @@ def _compute_score_vec(d, params):
     score += d["sibling_classic"] * params[21]         # b_sibling_classic
     score += d["sire_classic_count"] * params[22]      # w_sire_classic
     score += d["imported_dam"] * params[23]            # b_imported_dam
+    score += d["sire_win_rate_100"] * params[24]      # w_sire_win_rate
+    score += d["bms_win_rate_100"] * params[25]        # w_bms_win_rate
+    score += d["sire_rank_norm"] * params[26]          # w_sire_rank
     return score
 
 
@@ -606,11 +640,16 @@ def _fast_cv_score(precomputed, params):
             f_top20 = set(np.argpartition(-female_scores, fk20)[:fk20])
             f_o20 = len(f_top20 & d["oaks_in_females"])
 
-        # ランク平滑化: クラシック馬のスコア合計（滑らかな勾配を提供）
+        # ランク平滑化: クラシック馬の相対ランク（スコア範囲で正規化し、絶対値膨張を防止）
         smooth_bonus = 0.0
         if d["classic_idx"]:
-            classic_score_sum = sum(score[idx] for idx in d["classic_idx"])
-            smooth_bonus = classic_score_sum * 0.01
+            score_range = score.max() - score.min()
+            if score_range > 0:
+                classic_ranks = sum(
+                    (score[idx] - score.min()) / score_range
+                    for idx in d["classic_idx"]
+                )
+                smooth_bonus = classic_ranks * 0.5  # 10馬×0-1値×0.5 → max 5pt/year
 
         total_score += (
             top10_match * 100.0    # 全体TOP10ヒットが最重要
@@ -636,6 +675,7 @@ _PARAM_KEYS = [
     "b_dam_foals_sweet", "w_sire_dam_inter", "w_trainer_breeder",
     "b_sibling_classic", "w_sire_classic",
     "b_imported_dam",
+    "w_sire_win_rate", "w_bms_win_rate", "w_sire_rank",
 ]
 
 def _dict_to_arr(params):
@@ -655,32 +695,35 @@ def _random_search_top10(all_data, current_params, best_score):
     precomputed = _precompute_arrays(all_data)
     print("  完了")
 
-    # パラメータの探索範囲（やや広め）
+    # パラメータの探索範囲（拡張版 — 上限張り付きパラメータを広げた）
     bounds = [
-        (0, 25),       # b_sex
-        (0.0, 0.60),   # w_sire_ei
-        (0.0, 0.40),   # w_dam_prize
-        (0.0, 0.45),   # w_bms_ei
-        (0.0, 30.0),   # w_first_crop
-        (0.0, 0.60),   # w_trainer
-        (0.0, 0.60),   # w_owner
-        (0.0, 0.60),   # w_breeder
-        (0, 20),       # b_early
-        (0, 20),       # b_parents_young
-        (0, 20),       # b_dam_bms_gap
-        (0, 20),       # b_sale_price
+        (0, 30),       # b_sex
+        (0.0, 1.0),    # w_sire_ei (旧0.60→1.0)
+        (0.0, 0.50),   # w_dam_prize (旧0.40→0.50)
+        (0.0, 0.50),   # w_bms_ei (旧0.45→0.50)
+        (0.0, 80.0),   # w_first_crop (旧30→80)
+        (0.0, 1.2),    # w_trainer (旧0.60→1.2)
+        (0.0, 1.2),    # w_owner (旧0.60→1.2)
+        (0.0, 1.2),    # w_breeder (旧0.60→1.2)
+        (0, 40),       # b_early (旧20→40)
+        (0, 25),       # b_parents_young (旧20→25)
+        (0, 25),       # b_dam_bms_gap (旧20→25)
+        (0, 30),       # b_sale_price (旧20→30)
         (0, 20),       # b_foal_penalty
-        (0, 15),       # b_foal_bonus
+        (0, 20),       # b_foal_bonus (旧15→20)
         (1, 15),       # dam_breed_base
-        (0, 10),       # dam_breed_cap
-        (0, 10),       # dam_breed_penalty
-        (0, 8),        # b_sire_old
-        (0, 15),       # b_dam_foals_sweet
-        (0, 20),       # w_sire_dam_inter
-        (0, 0.05),     # w_trainer_breeder
-        (0, 30),       # b_sibling_classic
-        (0, 5),        # w_sire_classic
-        (0, 20),       # b_imported_dam
+        (0, 20),       # dam_breed_cap (旧10→20)
+        (0, 20),       # dam_breed_penalty (旧10→20)
+        (0, 10),       # b_sire_old (旧8→10)
+        (0, 20),       # b_dam_foals_sweet (旧15→20)
+        (0, 25),       # w_sire_dam_inter (旧20→25)
+        (0, 0.20),     # w_trainer_breeder (旧0.05→0.20)
+        (0, 40),       # b_sibling_classic (旧30→40)
+        (0, 8),        # w_sire_classic (旧5→8)
+        (0, 50),       # b_imported_dam (旧20→50)
+        (0.0, 0.60),   # w_sire_win_rate [NEW]
+        (0.0, 0.40),   # w_bms_win_rate [NEW]
+        (0.0, 0.60),   # w_sire_rank [NEW]
     ]
     lo = np.array([b[0] for b in bounds])
     hi = np.array([b[1] for b in bounds])

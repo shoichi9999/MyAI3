@@ -159,4 +159,21 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
     if "imported_dam" in df.columns:
         score += df["imported_dam"].fillna(0) * W.get("b_imported_dam", 0.0)
 
+    # 種牡馬勝率（EIとは異なる角度の品質指標）
+    if "sire_win_rate" in df.columns:
+        wr = df["sire_win_rate"].fillna(0)
+        score += wr * 100 * W.get("w_sire_win_rate", 0.0)
+
+    # 母父勝率
+    if "bms_win_rate" in df.columns:
+        wr = df["bms_win_rate"].fillna(0)
+        score += wr * 100 * W.get("w_bms_win_rate", 0.0)
+
+    # 種牡馬ランクスコア（リーディング上位ほど高い）
+    if "sire_rank_score" in df.columns:
+        rs = df["sire_rank_score"].fillna(0)
+        cap = rs.max()
+        if cap > 0:
+            score += (rs / cap) * 100 * W.get("w_sire_rank", 0.0)
+
     return score

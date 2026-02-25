@@ -190,6 +190,48 @@ def get_sire_2yo_ei(sire_name: str, leading_year: int = None) -> float:
         return 0.0
 
 
+def get_sire_win_rate(sire_name: str, leading_year: int = None) -> float:
+    """種牡馬の勝率（産駒の勝ち上がり率）を返す。"""
+    if not sire_name:
+        return 0.0
+    if leading_year is not None:
+        data = _load_leading("sire_leading", leading_year).get(sire_name, {})
+    else:
+        data = SIRE_LEADING.get(sire_name, {})
+    try:
+        return float(data.get("win_rate", 0) or 0)
+    except (ValueError, TypeError):
+        return 0.0
+
+
+def get_bms_win_rate(bms_name: str, leading_year: int = None) -> float:
+    """母父馬の勝率（産駒の勝ち上がり率）を返す。"""
+    if not bms_name:
+        return 0.0
+    if leading_year is not None:
+        data = _load_leading("bms_leading", leading_year).get(bms_name, {})
+    else:
+        data = BMS_LEADING.get(bms_name, {})
+    try:
+        return float(data.get("win_rate", 0) or 0)
+    except (ValueError, TypeError):
+        return 0.0
+
+
+def get_sire_rank(sire_name: str, leading_year: int = None) -> int:
+    """種牡馬のリーディング順位を返す（ランク外は0）。"""
+    if not sire_name:
+        return 0
+    if leading_year is not None:
+        data = _load_leading("sire_leading", leading_year).get(sire_name, {})
+    else:
+        data = SIRE_LEADING.get(sire_name, {})
+    try:
+        return int(data.get("rank", 0) or 0)
+    except (ValueError, TypeError):
+        return 0
+
+
 def get_sire_ei(sire_name: str, leading_year: int = None) -> float:
     """種牡馬のEI（アーニングインデックス）を返す。
 
@@ -377,6 +419,13 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
         row["sire_ei"] = get_sire_ei(horse.get("sire", ""), leading_year)
         row["bms_ei"] = get_bms_ei(horse.get("sire_of_dam", ""), leading_year)
         row["sire_2yo_ei"] = get_sire_2yo_ei(horse.get("sire", ""), leading_year)
+
+        # 種牡馬勝率・母父勝率・種牡馬ランク
+        row["sire_win_rate"] = get_sire_win_rate(horse.get("sire", ""), leading_year)
+        row["bms_win_rate"] = get_bms_win_rate(horse.get("sire_of_dam", ""), leading_year)
+        sire_rank = get_sire_rank(horse.get("sire", ""), leading_year)
+        # ランクを逆転スコアに変換（1位=100, 50位≈2, 50位超=0）
+        row["sire_rank_score"] = max(0, (51 - sire_rank) * 2) if sire_rank > 0 else 0.0
 
         # 母馬の獲得賞金（不明なら0 — 不明は不利な情報として扱う）
         row["dam_prize"] = get_dam_prize(horse.get("dam", ""))
