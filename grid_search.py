@@ -243,19 +243,6 @@ def _get_classic_ids(birth_year: int) -> tuple[set, set]:
     return derby, oaks
 
 
-def _get_classic_weights(birth_year: int) -> dict:
-    """horse_id → 着順重み（1着=5, 2着=2, 3-5着=1）を返す。"""
-    place_weights = {0: 5.0, 1: 2.0, 2: 1.0, 3: 1.0, 4: 1.0}
-    result = {}
-    for race in ["derby", "oaks"]:
-        ids = _CLASSIC.get(race, {}).get(str(birth_year), [])
-        for i, hid in enumerate(ids):
-            w = place_weights.get(i, 1.0)
-            # 同一馬が両方に出る可能性は低いが、大きい方を採用
-            result[hid] = max(result.get(hid, 0), w)
-    return result
-
-
 # ------------------------------------------------------------------
 # 評価
 # ------------------------------------------------------------------
@@ -674,9 +661,6 @@ def _precompute_arrays(all_data):
         d["derby_idx"] = set(i for i, hid in enumerate(horse_ids) if hid in derby_top5)
         d["oaks_idx"] = set(i for i, hid in enumerate(horse_ids) if hid in oaks_top5)
         d["classic_idx"] = set(i for i, hid in enumerate(horse_ids) if hid in classic_top10)
-        # 着順重み（1着=5, 2着=2, 3-5着=1）
-        cw = _get_classic_weights(year)
-        d["classic_weights"] = {i: cw[hid] for i, hid in enumerate(horse_ids) if hid in cw}
         d["male_mask"] = (sex_vals == 1)
         d["female_mask"] = (sex_vals == 0)
         # male/female index mapping
@@ -740,7 +724,7 @@ def _fast_cv_score(precomputed, params):
     total_score = 0.0
     n_years = len(precomputed)
 
-    for year, d in precomputed.items():
+    for d in precomputed.values():
         score = _compute_score_vec(d, params)
         n_horses = len(score)
 
@@ -802,69 +786,27 @@ def _fast_cv_score(precomputed, params):
             f_top30 = set(np.argpartition(-female_scores, fk30)[:fk30])
             f_o30 = len(f_top30 & d["oaks_in_females"])
 
-        # 着順重み付きランク平滑化（1着=5, 2着=2, 3-5着=1）
+        # ランク平滑化: クラシック馬のパーセンタイル順位（上位ほど高得点）
         smooth_bonus = 0.0
-        if d["classic_weights"]:
+        if d["classic_idx"]:
             ranks = np.argsort(np.argsort(-score)) + 1  # 1-indexed
-            for idx, place_w in d["classic_weights"].items():
+            for idx in d["classic_idx"]:
                 pctl = 1.0 - ranks[idx] / n_horses  # 1位=~1.0, 最下位=~0.0
-                smooth_bonus += pctl * 3.0 * place_w  # 1着: ×15, 2着: ×6, 3-5着: ×3
-
-        # 着順重み付きTOP N ヒット集計
-        def _weighted_hits(pred_set, weights_dict):
-            return sum(weights_dict[i] for i in pred_set if i in weights_dict)
-
-        top10_whit = _weighted_hits(pred_top10, d["classic_weights"])
-        top20_whit = _weighted_hits(pred_top20, d["classic_weights"])
-        top30_whit = _weighted_hits(pred_top30, d["classic_weights"])
-        top50_whit = _weighted_hits(pred_top50, d["classic_weights"])
-        top100_whit = _weighted_hits(pred_top100, d["classic_weights"])
-
-        # 牡馬内の着順重み
-        derby_ids_list = _CLASSIC.get("derby", {}).get(str(year), [])
-        derby_place_w = {0: 5.0, 1: 2.0, 2: 1.0, 3: 1.0, 4: 1.0}
-        oaks_ids_list = _CLASSIC.get("oaks", {}).get(str(year), [])
-
-        # 牡馬TOP10内ダービー重み付きヒット
-        m_d10_w = m_d20_w = m_d30_w = 0.0
-        if len(male_idx) > 0 and d["derby_idx"]:
-            male_hids = d["horse_ids"][male_idx]
-            derby_w_map = {}
-            for pi, hid in enumerate(derby_ids_list):
-                for mi, mhid in enumerate(male_hids):
-                    if mhid == hid:
-                        derby_w_map[mi] = derby_place_w.get(pi, 1.0)
-            m_d10_w = sum(derby_w_map[i] for i in m_top10 if i in derby_w_map)
-            m_d20_w = sum(derby_w_map[i] for i in m_top20 if i in derby_w_map)
-            m_d30_w = sum(derby_w_map[i] for i in m_top30 if i in derby_w_map)
-
-        # 牝馬TOP10内オークス重み付きヒット
-        f_o10_w = f_o20_w = f_o30_w = 0.0
-        if len(female_idx) > 0 and d["oaks_idx"]:
-            female_hids = d["horse_ids"][female_idx]
-            oaks_w_map = {}
-            oaks_place_w = {0: 5.0, 1: 2.0, 2: 1.0, 3: 1.0, 4: 1.0}
-            for pi, hid in enumerate(oaks_ids_list):
-                for fi, fhid in enumerate(female_hids):
-                    if fhid == hid:
-                        oaks_w_map[fi] = oaks_place_w.get(pi, 1.0)
-            f_o10_w = sum(oaks_w_map[i] for i in f_top10 if i in oaks_w_map)
-            f_o20_w = sum(oaks_w_map[i] for i in f_top20 if i in oaks_w_map)
-            f_o30_w = sum(oaks_w_map[i] for i in f_top30 if i in oaks_w_map)
+                smooth_bonus += pctl * 3.0  # 10馬 × 0-1 × 3.0 → max 30pt/year
 
         total_score += (
-            top10_whit * 100.0     # 全体TOP10（着順重み付き）
-            + top20_whit * 15.0    # 全体TOP20
-            + top30_whit * 5.0     # 全体TOP30
-            + top50_whit * 2.0     # 全体TOP50
-            + top100_whit * 1.0    # 全体TOP100
-            + m_d10_w * 80.0       # 牡馬TOP10内ダービー（着順重み付き）
-            + m_d20_w * 10.0       # 牡馬TOP20
-            + m_d30_w * 3.0        # 牡馬TOP30
-            + f_o10_w * 80.0       # 牝馬TOP10内オークス（着順重み付き）
-            + f_o20_w * 10.0       # 牝馬TOP20
-            + f_o30_w * 3.0        # 牝馬TOP30
-            + smooth_bonus         # ランク平滑化（着順重み付き）
+            top10_match * 100.0    # 全体TOP10ヒットが最重要
+            + top20_match * 15.0   # 全体TOP20
+            + top30_match * 5.0    # 全体TOP30
+            + top50_match * 2.0    # 全体TOP50
+            + top100_match * 1.0   # 全体TOP100
+            + m_d10 * 80.0         # 牡馬TOP10内ダービーヒット
+            + m_d20 * 10.0         # 牡馬TOP20内ダービーヒット
+            + m_d30 * 3.0          # 牡馬TOP30内ダービーヒット
+            + f_o10 * 80.0         # 牝馬TOP10内オークスヒット
+            + f_o20 * 10.0         # 牝馬TOP20内オークスヒット
+            + f_o30 * 3.0          # 牝馬TOP30内オークスヒット
+            + smooth_bonus         # ランク平滑化（強化版）
         )
 
     return total_score / n_years
@@ -959,7 +901,6 @@ def _random_search_top10(all_data, current_params, best_score):
         total_hits = 0
         derby_hits = 0
         oaks_hits = 0
-        winner_hits = 0
         for y in sorted(all_data.keys()):
             m = evaluate_single(all_data[y], params, birth_year=y)
             t10 = m.get("top10_total", 0)
@@ -969,27 +910,7 @@ def _random_search_top10(all_data, current_params, best_score):
             total_hits += t10
             derby_hits += md10
             oaks_hits += fo10
-            # 1着が牡/牝TOP20に入っているか
-            scores = parameterized_score(all_data[y], params).values
-            hids = all_data[y]["horse_id"].astype(str).values
-            sex_vals = all_data[y]["sex"].values
-            d1 = _CLASSIC.get("derby", {}).get(str(y), [None])[0]
-            o1 = _CLASSIC.get("oaks", {}).get(str(y), [None])[0]
-            male_mask = sex_vals == 1
-            female_mask = sex_vals == 0
-            if d1 and male_mask.any():
-                ms = scores[male_mask]
-                mh = hids[male_mask]
-                top20_ids = set(mh[np.argsort(-ms)[:20]])
-                if d1 in top20_ids:
-                    winner_hits += 1
-            if o1 and female_mask.any():
-                fs = scores[female_mask]
-                fh = hids[female_mask]
-                top20_ids = set(fh[np.argsort(-fs)[:20]])
-                if o1 in top20_ids:
-                    winner_hits += 1
-        print(f"  {label} TOP10={total_hits}/80 牡D={derby_hits}/40 牝O={oaks_hits}/40 1着TOP20={winner_hits}/16 [{', '.join(items)}]")
+        print(f"  {label} TOP10={total_hits}/80 牡D={derby_hits}/40 牝O={oaks_hits}/40 [{', '.join(items)}]")
 
     t_start = time.time()
 
