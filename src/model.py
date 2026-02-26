@@ -201,6 +201,13 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
         if cap > 0:
             score += (rs / cap) * 100 * W.get("w_sire_rank", 0.0)
 
+    # 種牡馬ランクTOP5/TOP10ボーナス（非線形: 上位種牡馬は格別に強い）
+    if "sire_rank_top5" in df.columns:
+        score += df["sire_rank_top5"].fillna(0) * W.get("b_sire_rank_top5", 0.0)
+
+    if "sire_rank_top10" in df.columns:
+        score += df["sire_rank_top10"].fillna(0) * W.get("b_sire_rank_top10", 0.0)
+
     # 母父ランクスコア
     if "bms_rank_score" in df.columns:
         rs = df["bms_rank_score"].fillna(0)

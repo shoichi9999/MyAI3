@@ -390,15 +390,15 @@ def calc_breeder_score(breeder_name: str) -> float:
     return 50.0
 
 
-def get_birth_month(horse_id: str, birth_year: int) -> int:
-    """馬の生まれ月を返す（1-12）。取得できない場合は3（中央値）。"""
+def get_birth_month(horse_id: str, birth_year: int) -> int | None:
+    """馬の生まれ月を返す（1-12）。取得できない場合はNone。"""
     bd_cache = _load_birth_dates(birth_year)
     bd = bd_cache.get(str(horse_id), "")
     if bd:
         m = re.search(r"(\d+)月", bd)
         if m:
             return int(m.group(1))
-    return 3  # デフォルト: 3月
+    return None
 
 
 def _birth_year_from_id(horse_id: str) -> int | None:
@@ -502,6 +502,9 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
         sire_rank = get_sire_rank(horse.get("sire", ""), leading_year)
         # ランクを逆転スコアに変換（1位=100, 50位≈2, 50位超=0）
         row["sire_rank_score"] = max(0, (51 - sire_rank) * 2) if sire_rank > 0 else 0.0
+        # 種牡馬ランク非線形バケット（TOP5/TOP10は特別に強いシグナル）
+        row["sire_rank_top5"] = 1 if 0 < sire_rank <= 5 else 0
+        row["sire_rank_top10"] = 1 if 0 < sire_rank <= 10 else 0
 
         # 母父ランクスコア（種牡馬ランクと同様の逆転スコア）
         bms_rank = get_bms_rank(horse.get("sire_of_dam", ""), leading_year)
@@ -521,8 +524,10 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
         row["owner_score"] = calc_owner_score(horse.get("owner", ""))
         row["breeder_score"] = calc_breeder_score(horse.get("breeder", ""))
 
-        # 生まれ月（1-12、小さいほど有利）
-        row["birth_month"] = get_birth_month(hid, birth_year)
+        # 生まれ月（1-12、小さいほど有利）— 不明時はNone
+        bm = get_birth_month(hid, birth_year)
+        row["birth_month"] = bm if bm is not None else 3  # 後方互換（表示用）
+        row["birth_month_known"] = 1 if bm is not None else 0
 
         # 親年齢（父・母・母父の産駒時年齢）— 欠損はNaN（デフォルト値補完しない）
         sire_age = get_parent_age(horse, birth_year, "sire")
@@ -534,7 +539,8 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
 
         # --- ドメイン知識ベースのバイナリ特徴量 ---
         # 年齢がNaNの場合はバイナリもNaN（デフォルト値で偽装しない）
-        row["early_born"] = 1 if row["birth_month"] <= 4 else 0
+        # early_born: 生まれ月が判明かつ4月以前のみ（不明時はボーナスなし）
+        row["early_born"] = 1 if (bm is not None and bm <= 4) else 0
         row["sire_young"] = (1 if sire_age <= 13 else 0) if sire_age is not None else np.nan
         row["dam_young"] = (1 if dam_age <= 13 else 0) if dam_age is not None else np.nan
         row["both_parents_young"] = (
