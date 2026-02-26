@@ -684,6 +684,25 @@ def _precompute_arrays(all_data):
         d["female_indices"] = np.where(d["female_mask"])[0]
         d["derby_in_males"] = set(i for i, gi in enumerate(d["male_indices"]) if horse_ids[gi] in derby_top5)
         d["oaks_in_females"] = set(i for i, gi in enumerate(d["female_indices"]) if horse_ids[gi] in oaks_top5)
+        # 牡馬内ダービー着順重みマップ（male_local_idx → weight）
+        derby_ids_list = _CLASSIC.get("derby", {}).get(str(year), [])
+        place_w = {0: 5.0, 1: 2.0, 2: 1.0, 3: 1.0, 4: 1.0}
+        male_hids = horse_ids[d["male_indices"]] if len(d["male_indices"]) > 0 else np.array([])
+        derby_w_map = {}
+        for pi, hid in enumerate(derby_ids_list):
+            for mi, mhid in enumerate(male_hids):
+                if mhid == hid:
+                    derby_w_map[mi] = place_w.get(pi, 1.0)
+        d["derby_w_in_males"] = derby_w_map
+        # 牝馬内オークス着順重みマップ（female_local_idx → weight）
+        oaks_ids_list = _CLASSIC.get("oaks", {}).get(str(year), [])
+        female_hids = horse_ids[d["female_indices"]] if len(d["female_indices"]) > 0 else np.array([])
+        oaks_w_map = {}
+        for pi, hid in enumerate(oaks_ids_list):
+            for fi, fhid in enumerate(female_hids):
+                if fhid == hid:
+                    oaks_w_map[fi] = place_w.get(pi, 1.0)
+        d["oaks_w_in_females"] = oaks_w_map
 
         precomputed[year] = d
     return precomputed
@@ -811,43 +830,25 @@ def _fast_cv_score(precomputed, params):
                 smooth_bonus += pctl * 3.0 * place_w  # 1着: ×15, 2着: ×6, 3-5着: ×3
 
         # 着順重み付きTOP N ヒット集計
-        def _weighted_hits(pred_set, weights_dict):
-            return sum(weights_dict[i] for i in pred_set if i in weights_dict)
+        cw = d["classic_weights"]
+        top10_whit = sum(cw[i] for i in pred_top10 if i in cw)
+        top20_whit = sum(cw[i] for i in pred_top20 if i in cw)
+        top30_whit = sum(cw[i] for i in pred_top30 if i in cw)
+        top50_whit = sum(cw[i] for i in pred_top50 if i in cw)
+        top100_whit = sum(cw[i] for i in pred_top100 if i in cw)
 
-        top10_whit = _weighted_hits(pred_top10, d["classic_weights"])
-        top20_whit = _weighted_hits(pred_top20, d["classic_weights"])
-        top30_whit = _weighted_hits(pred_top30, d["classic_weights"])
-        top50_whit = _weighted_hits(pred_top50, d["classic_weights"])
-        top100_whit = _weighted_hits(pred_top100, d["classic_weights"])
-
-        # 牡馬内の着順重み
-        derby_ids_list = _CLASSIC.get("derby", {}).get(str(year), [])
-        derby_place_w = {0: 5.0, 1: 2.0, 2: 1.0, 3: 1.0, 4: 1.0}
-        oaks_ids_list = _CLASSIC.get("oaks", {}).get(str(year), [])
-
-        # 牡馬TOP10内ダービー重み付きヒット
+        # 牡馬内ダービー着順重み付きヒット（事前計算済みマップ使用）
         m_d10_w = m_d20_w = m_d30_w = 0.0
-        if len(male_idx) > 0 and d["derby_idx"]:
-            male_hids = d["horse_ids"][male_idx]
-            derby_w_map = {}
-            for pi, hid in enumerate(derby_ids_list):
-                for mi, mhid in enumerate(male_hids):
-                    if mhid == hid:
-                        derby_w_map[mi] = derby_place_w.get(pi, 1.0)
+        derby_w_map = d["derby_w_in_males"]
+        if len(male_idx) > 0 and derby_w_map:
             m_d10_w = sum(derby_w_map[i] for i in m_top10 if i in derby_w_map)
             m_d20_w = sum(derby_w_map[i] for i in m_top20 if i in derby_w_map)
             m_d30_w = sum(derby_w_map[i] for i in m_top30 if i in derby_w_map)
 
-        # 牝馬TOP10内オークス重み付きヒット
+        # 牝馬内オークス着順重み付きヒット（事前計算済みマップ使用）
         f_o10_w = f_o20_w = f_o30_w = 0.0
-        if len(female_idx) > 0 and d["oaks_idx"]:
-            female_hids = d["horse_ids"][female_idx]
-            oaks_w_map = {}
-            oaks_place_w = {0: 5.0, 1: 2.0, 2: 1.0, 3: 1.0, 4: 1.0}
-            for pi, hid in enumerate(oaks_ids_list):
-                for fi, fhid in enumerate(female_hids):
-                    if fhid == hid:
-                        oaks_w_map[fi] = oaks_place_w.get(pi, 1.0)
+        oaks_w_map = d["oaks_w_in_females"]
+        if len(female_idx) > 0 and oaks_w_map:
             f_o10_w = sum(oaks_w_map[i] for i in f_top10 if i in oaks_w_map)
             f_o20_w = sum(oaks_w_map[i] for i in f_top20 if i in oaks_w_map)
             f_o30_w = sum(oaks_w_map[i] for i in f_top30 if i in oaks_w_map)
