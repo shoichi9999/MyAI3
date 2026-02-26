@@ -219,12 +219,6 @@ def parameterized_score(df: pd.DataFrame, params: dict) -> pd.Series:
         if cap > 0:
             score += (inter.clip(upper=cap) / cap) * params.get("w_bms_dam_inter", 0)
 
-    # 種牡馬ランクTOP5/TOP10ボーナス
-    if "sire_rank_top5" in df.columns:
-        score += df["sire_rank_top5"].fillna(0) * params.get("b_sire_rank_top5", 0)
-    if "sire_rank_top10" in df.columns:
-        score += df["sire_rank_top10"].fillna(0) * params.get("b_sire_rank_top10", 0)
-
     return score
 
 
@@ -408,8 +402,6 @@ def grid_search(years, objective="balanced"):
         "w_sire_classic_rate": _w.get("w_sire_classic_rate", 0.0),
         "w_owner_trainer": _w.get("w_owner_trainer", 0.0),
         "w_bms_dam_inter": _w.get("w_bms_dam_inter", 0.0),
-        "b_sire_rank_top5": _w.get("b_sire_rank_top5", 0.0),
-        "b_sire_rank_top10": _w.get("b_sire_rank_top10", 0.0),
     }
 
     current_cv = cv_score(all_data, current_params)
@@ -658,9 +650,6 @@ def _precompute_arrays(all_data):
             d["bms_dam_inter_norm"] = (np.clip(inter, 0, cap) / cap) if cap > 0 else np.zeros(n)
         else:
             d["bms_dam_inter_norm"] = np.zeros(n)
-        # 種牡馬ランクTOP5/TOP10バイナリ
-        d["sire_rank_top5"] = df["sire_rank_top5"].fillna(0).values if "sire_rank_top5" in df.columns else np.zeros(n)
-        d["sire_rank_top10"] = df["sire_rank_top10"].fillna(0).values if "sire_rank_top10" in df.columns else np.zeros(n)
         # クラシック結果データ
         horse_ids = df["horse_id"].astype(str).values
         sex_vals = df["sex"].values if "sex" in df.columns else np.full(n, 0.5)
@@ -727,8 +716,6 @@ def _compute_score_vec(d, params):
     score += d["sire_classic_rate"] * params[33]       # w_sire_classic_rate
     score += d["owner_trainer_excess"] * params[34]    # w_owner_trainer
     score += d["bms_dam_inter_norm"] * params[35]      # w_bms_dam_inter
-    score += d["sire_rank_top5"] * params[36]          # b_sire_rank_top5
-    score += d["sire_rank_top10"] * params[37]         # b_sire_rank_top10
     return score
 
 
@@ -799,13 +786,13 @@ def _fast_cv_score(precomputed, params):
             f_top30 = set(np.argpartition(-female_scores, fk30)[:fk30])
             f_o30 = len(f_top30 & d["oaks_in_females"])
 
-        # ランク平滑化: クラシック馬の順位を対数スケールで評価
-        # rank 1 → 30pt, rank 10 → 9pt, rank 100 → 4.5pt, rank 1000 → 3pt
+        # ランク平滑化: クラシック馬のパーセンタイル順位（上位ほど高得点）
         smooth_bonus = 0.0
         if d["classic_idx"]:
             ranks = np.argsort(np.argsort(-score)) + 1  # 1-indexed
             for idx in d["classic_idx"]:
-                smooth_bonus += 30.0 / np.log2(ranks[idx] + 1)
+                pctl = 1.0 - ranks[idx] / n_horses  # 1位=~1.0, 最下位=~0.0
+                smooth_bonus += pctl * 3.0  # 10馬 × 0-1 × 3.0 → max 30pt/year
 
         total_score += (
             top10_match * 100.0    # 全体TOP10ヒットが最重要
@@ -840,7 +827,6 @@ _PARAM_KEYS = [
     "b_dam_progeny_quality",
     "w_bms_rank", "w_bms_progeny_prize", "w_sire_classic_rate",
     "w_owner_trainer", "w_bms_dam_inter",
-    "b_sire_rank_top5", "b_sire_rank_top10",
 ]
 
 def _dict_to_arr(params):
@@ -898,8 +884,6 @@ def _random_search_top10(all_data, current_params, best_score):
         (0.0, 20.0),   # w_sire_classic_rate
         (0.0, 0.20),   # w_owner_trainer
         (0.0, 25.0),   # w_bms_dam_inter
-        (0, 80),       # b_sire_rank_top5
-        (0, 50),       # b_sire_rank_top10
     ]
     lo = np.array([b[0] for b in bounds])
     hi = np.array([b[1] for b in bounds])
