@@ -201,4 +201,34 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
         if cap > 0:
             score += (rs / cap) * 100 * W.get("w_sire_rank", 0.0)
 
+    # 母父ランクスコア
+    if "bms_rank_score" in df.columns:
+        rs = df["bms_rank_score"].fillna(0)
+        cap = rs.max()
+        if cap > 0:
+            score += (rs / cap) * 100 * W.get("w_bms_rank", 0.0)
+
+    # 母父産駒総賞金（対数 + 99パーセンタイル正規化）
+    if "bms_progeny_prize" in df.columns:
+        pp = np.log1p(df["bms_progeny_prize"].fillna(0))
+        cap = pp.quantile(0.99)
+        if cap > 0:
+            score += (pp.clip(upper=cap) / cap) * 100 * W.get("w_bms_progeny_prize", 0.0)
+
+    # 種牡馬クラシック率（産駒数正規化）
+    if "sire_classic_rate" in df.columns:
+        score += df["sire_classic_rate"].fillna(0) * W.get("w_sire_classic_rate", 0.0)
+
+    # 馬主 × 調教師コンボ
+    if "owner_trainer_combo" in df.columns:
+        combo = df["owner_trainer_combo"].fillna(2500)
+        score += np.maximum(0, combo - 2500) * W.get("w_owner_trainer", 0.0)
+
+    # 母父EI × 母賞金交互作用（99パーセンタイル正規化）
+    if "bms_dam_interaction" in df.columns:
+        inter = df["bms_dam_interaction"].fillna(0)
+        cap = inter.quantile(0.99)
+        if cap > 0:
+            score += (inter.clip(upper=cap) / cap) * W.get("w_bms_dam_inter", 0.0)
+
     return score

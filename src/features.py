@@ -62,14 +62,14 @@ def get_leading_year(birth_year: int) -> int:
 
     生年Yの馬 → デビューはY+2年 → POGドラフトはY+2年春
     → 最新の通年データは Y+1 年。
-    ただし該当ファイルがなければ最も近い年に降格。
+    ただし該当ファイルがなければ過去の年に降格（未来データは使わない）。
     """
     target = birth_year + 1
-    # 対象年のファイルが存在するかチェック
-    for y in [target, target - 1, target + 1, _DEFAULT_LEADING_YEAR]:
+    # リーク防止: target以前のデータのみ使用（target+1 や DEFAULT は未来データの恐れ）
+    for y in [target, target - 1, target - 2]:
         if os.path.exists(f"data/sire_leading_{y}.json"):
             return y
-    return _DEFAULT_LEADING_YEAR
+    return target  # ファイルがなくてもtargetを返す（データなし扱い）
 # クラシック結果（兄姉実績・種牡馬クラシック輩出数の計算用）
 _CLASSIC_RESULTS = _load_json("data/classic_results.json")
 
@@ -256,6 +256,34 @@ def get_bms_win_rate(bms_name: str, leading_year: int = None) -> float:
         data = BMS_LEADING.get(bms_name, {})
     try:
         return float(data.get("win_rate", 0) or 0)
+    except (ValueError, TypeError):
+        return 0.0
+
+
+def get_bms_rank(bms_name: str, leading_year: int = None) -> int:
+    """母父馬のリーディング順位を返す（ランク外は0）。"""
+    if not bms_name:
+        return 0
+    if leading_year is not None:
+        data = _load_leading("bms_leading", leading_year).get(bms_name, {})
+    else:
+        data = BMS_LEADING.get(bms_name, {})
+    try:
+        return int(data.get("rank", 0) or 0)
+    except (ValueError, TypeError):
+        return 0
+
+
+def get_bms_progeny_prize(bms_name: str, leading_year: int = None) -> float:
+    """母父馬の産駒総賞金を返す。"""
+    if not bms_name:
+        return 0.0
+    if leading_year is not None:
+        data = _load_leading("bms_leading", leading_year).get(bms_name, {})
+    else:
+        data = BMS_LEADING.get(bms_name, {})
+    try:
+        return float(data.get("progeny_prize", 0) or 0)
     except (ValueError, TypeError):
         return 0.0
 
@@ -475,6 +503,13 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
         # ランクを逆転スコアに変換（1位=100, 50位≈2, 50位超=0）
         row["sire_rank_score"] = max(0, (51 - sire_rank) * 2) if sire_rank > 0 else 0.0
 
+        # 母父ランクスコア（種牡馬ランクと同様の逆転スコア）
+        bms_rank = get_bms_rank(horse.get("sire_of_dam", ""), leading_year)
+        row["bms_rank_score"] = max(0, (51 - bms_rank) * 2) if bms_rank > 0 else 0.0
+
+        # 母父産駒総賞金
+        row["bms_progeny_prize"] = get_bms_progeny_prize(horse.get("sire_of_dam", ""), leading_year)
+
         # 母馬の獲得賞金（不明なら0 — 不明は不利な情報として扱う）
         row["dam_prize"] = get_dam_prize(horse.get("dam", ""))
 
@@ -562,6 +597,11 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
         sire_name = horse.get("sire", "")
         row["sire_classic_count"] = sire_classic_map.get(sire_name, 0)
 
+        # 種牡馬クラシック率（輩出数 / 産駒数 → 産駒数で正規化した品質指標）
+        sire_runners_val = row["sire_runners"]
+        sire_cc = row["sire_classic_count"]
+        row["sire_classic_rate"] = (sire_cc / sire_runners_val * 100) if sire_runners_val > 0 else 0.0
+
         # --- 輸入繁殖牝馬フラグ（dam_id が "000a" で始まる = 海外産馬） ---
         dam_id_str = str(horse.get("dam_id", "")) if pd.notna(horse.get("dam_id")) else ""
         row["imported_dam"] = 1 if dam_id_str.startswith("000a") else 0
@@ -581,6 +621,13 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
 
         # 調教師 × 生産者: エリート牧場→エリート調教師パイプライン
         row["trainer_breeder_combo"] = row["trainer_score"] * row["breeder_score"]
+
+        # 馬主 × 調教師: エリート馬主→エリート調教師ライン
+        row["owner_trainer_combo"] = row["owner_score"] * row["trainer_score"]
+
+        # 母父EI × 母賞金: BMS品質と母実績のシナジー
+        bms_ei_val = row["bms_ei"]
+        row["bms_dam_interaction"] = bms_ei_val * np.log1p(dam_prize_val)
 
         feature_rows.append(row)
 

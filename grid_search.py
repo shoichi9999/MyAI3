@@ -189,6 +189,36 @@ def parameterized_score(df: pd.DataFrame, params: dict) -> pd.Series:
         if cap > 0:
             score += (rs / cap) * 100 * params.get("w_sire_rank", 0)
 
+    # 母父ランクスコア
+    if "bms_rank_score" in df.columns:
+        rs = df["bms_rank_score"].fillna(0)
+        cap = rs.max()
+        if cap > 0:
+            score += (rs / cap) * 100 * params.get("w_bms_rank", 0)
+
+    # 母父産駒総賞金（対数 + 99パーセンタイル正規化）
+    if "bms_progeny_prize" in df.columns:
+        pp = np.log1p(df["bms_progeny_prize"].fillna(0))
+        cap = pp.quantile(0.99)
+        if cap > 0:
+            score += (pp.clip(upper=cap) / cap) * 100 * params.get("w_bms_progeny_prize", 0)
+
+    # 種牡馬クラシック率
+    if "sire_classic_rate" in df.columns:
+        score += df["sire_classic_rate"].fillna(0) * params.get("w_sire_classic_rate", 0)
+
+    # 馬主 × 調教師コンボ
+    if "owner_trainer_combo" in df.columns:
+        combo = df["owner_trainer_combo"].fillna(2500)
+        score += np.maximum(0, combo - 2500) * params.get("w_owner_trainer", 0)
+
+    # 母父EI × 母賞金交互作用
+    if "bms_dam_interaction" in df.columns:
+        inter = df["bms_dam_interaction"].fillna(0)
+        cap = inter.quantile(0.99)
+        if cap > 0:
+            score += (inter.clip(upper=cap) / cap) * params.get("w_bms_dam_inter", 0)
+
     return score
 
 
@@ -367,6 +397,11 @@ def grid_search(years, objective="balanced"):
         "w_sire_runners": _w.get("w_sire_runners", 0.0),
         "w_bms_runners": _w.get("w_bms_runners", 0.0),
         "b_dam_progeny_quality": _w.get("b_dam_progeny_quality", 0.0),
+        "w_bms_rank": _w.get("w_bms_rank", 0.0),
+        "w_bms_progeny_prize": _w.get("w_bms_progeny_prize", 0.0),
+        "w_sire_classic_rate": _w.get("w_sire_classic_rate", 0.0),
+        "w_owner_trainer": _w.get("w_owner_trainer", 0.0),
+        "w_bms_dam_inter": _w.get("w_bms_dam_inter", 0.0),
     }
 
     current_cv = cv_score(all_data, current_params)
@@ -586,6 +621,35 @@ def _precompute_arrays(all_data):
             d["sire_rank_norm"] = (rs / cap * 100) if cap > 0 else np.zeros(n)
         else:
             d["sire_rank_norm"] = np.zeros(n)
+        # 母父ランクスコア（正規化済み）
+        if "bms_rank_score" in df.columns:
+            rs = df["bms_rank_score"].fillna(0).values
+            cap = rs.max()
+            d["bms_rank_norm"] = (rs / cap * 100) if cap > 0 else np.zeros(n)
+        else:
+            d["bms_rank_norm"] = np.zeros(n)
+        # 母父産駒総賞金（対数正規化）
+        if "bms_progeny_prize" in df.columns:
+            pp = np.log1p(df["bms_progeny_prize"].fillna(0).values)
+            cap = np.percentile(pp, 99)
+            d["bms_progeny_prize_norm"] = (np.clip(pp, 0, cap) / cap * 100) if cap > 0 else np.zeros(n)
+        else:
+            d["bms_progeny_prize_norm"] = np.zeros(n)
+        # 種牡馬クラシック率
+        d["sire_classic_rate"] = df["sire_classic_rate"].fillna(0).values if "sire_classic_rate" in df.columns else np.zeros(n)
+        # 馬主 × 調教師コンボ（基準値2500超過分）
+        if "owner_trainer_combo" in df.columns:
+            combo = df["owner_trainer_combo"].fillna(2500).values
+            d["owner_trainer_excess"] = np.maximum(0, combo - 2500)
+        else:
+            d["owner_trainer_excess"] = np.zeros(n)
+        # 母父EI × 母賞金交互作用（99パーセンタイル正規化）
+        if "bms_dam_interaction" in df.columns:
+            inter = df["bms_dam_interaction"].fillna(0).values
+            cap = np.percentile(inter, 99)
+            d["bms_dam_inter_norm"] = (np.clip(inter, 0, cap) / cap) if cap > 0 else np.zeros(n)
+        else:
+            d["bms_dam_inter_norm"] = np.zeros(n)
         # クラシック結果データ
         horse_ids = df["horse_id"].astype(str).values
         sex_vals = df["sex"].values if "sex" in df.columns else np.full(n, 0.5)
@@ -647,6 +711,11 @@ def _compute_score_vec(d, params):
     score += d["sire_runners_norm"] * params[28]       # w_sire_runners
     score += d["bms_runners_norm"] * params[29]        # w_bms_runners
     score += d["dam_progeny_quality"] * params[30]     # b_dam_progeny_quality
+    score += d["bms_rank_norm"] * params[31]           # w_bms_rank
+    score += d["bms_progeny_prize_norm"] * params[32]  # w_bms_progeny_prize
+    score += d["sire_classic_rate"] * params[33]       # w_sire_classic_rate
+    score += d["owner_trainer_excess"] * params[34]    # w_owner_trainer
+    score += d["bms_dam_inter_norm"] * params[35]      # w_bms_dam_inter
     return score
 
 
@@ -756,6 +825,8 @@ _PARAM_KEYS = [
     "w_sire_win_rate", "w_bms_win_rate", "w_sire_rank",
     "w_sire_progeny_prize", "w_sire_runners", "w_bms_runners",
     "b_dam_progeny_quality",
+    "w_bms_rank", "w_bms_progeny_prize", "w_sire_classic_rate",
+    "w_owner_trainer", "w_bms_dam_inter",
 ]
 
 def _dict_to_arr(params):
@@ -807,7 +878,12 @@ def _random_search_top10(all_data, current_params, best_score):
         (0.0, 0.50),   # w_sire_progeny_prize [NEW]
         (0.0, 0.50),   # w_sire_runners [NEW]
         (0.0, 0.50),   # w_bms_runners [NEW]
-        (0, 100),      # b_dam_progeny_quality [NEW]
+        (0, 100),      # b_dam_progeny_quality
+        (0.0, 0.60),   # w_bms_rank
+        (0.0, 0.50),   # w_bms_progeny_prize
+        (0.0, 20.0),   # w_sire_classic_rate
+        (0.0, 0.20),   # w_owner_trainer
+        (0.0, 25.0),   # w_bms_dam_inter
     ]
     lo = np.array([b[0] for b in bounds])
     hi = np.array([b[1] for b in bounds])
