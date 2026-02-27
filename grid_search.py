@@ -243,6 +243,14 @@ def _get_classic_ids(birth_year: int) -> tuple[set, set]:
     return derby, oaks
 
 
+def _get_winner_ids(birth_year: int) -> tuple[str | None, str | None]:
+    """(derby_winner_id, oaks_winner_id) を返す。リストの先頭が1着。"""
+    derby_list = _CLASSIC.get("derby", {}).get(str(birth_year), [])
+    oaks_list = _CLASSIC.get("oaks", {}).get(str(birth_year), [])
+    return (derby_list[0] if derby_list else None,
+            oaks_list[0] if oaks_list else None)
+
+
 # ------------------------------------------------------------------
 # 評価
 # ------------------------------------------------------------------
@@ -669,6 +677,29 @@ def _precompute_arrays(all_data):
         d["derby_in_males"] = set(i for i, gi in enumerate(d["male_indices"]) if horse_ids[gi] in derby_top5)
         d["oaks_in_females"] = set(i for i, gi in enumerate(d["female_indices"]) if horse_ids[gi] in oaks_top5)
 
+        # 1着馬のインデックス（連続順位ボーナス用）
+        derby_winner_id, oaks_winner_id = _get_winner_ids(year)
+        d["derby_winner_idx"] = None
+        d["oaks_winner_idx"] = None
+        d["derby_winner_male_idx"] = None  # 牡馬内インデックス
+        d["oaks_winner_female_idx"] = None  # 牝馬内インデックス
+        if derby_winner_id:
+            idxs = np.where(horse_ids == derby_winner_id)[0]
+            if len(idxs) > 0:
+                d["derby_winner_idx"] = idxs[0]
+                # 牡馬内でのインデックス
+                male_pos = np.where(d["male_indices"] == idxs[0])[0]
+                if len(male_pos) > 0:
+                    d["derby_winner_male_idx"] = male_pos[0]
+        if oaks_winner_id:
+            idxs = np.where(horse_ids == oaks_winner_id)[0]
+            if len(idxs) > 0:
+                d["oaks_winner_idx"] = idxs[0]
+                # 牝馬内でのインデックス
+                female_pos = np.where(d["female_indices"] == idxs[0])[0]
+                if len(female_pos) > 0:
+                    d["oaks_winner_female_idx"] = female_pos[0]
+
         precomputed[year] = d
     return precomputed
 
@@ -786,13 +817,33 @@ def _fast_cv_score(precomputed, params):
             f_top30 = set(np.argpartition(-female_scores, fk30)[:fk30])
             f_o30 = len(f_top30 & d["oaks_in_females"])
 
-        # ランク平滑化: クラシック馬のパーセンタイル順位（上位ほど高得点）
+        # ランク計算（1回のargsortで全ランクを取得）
+        ranks = np.argsort(np.argsort(-score)) + 1  # 1-indexed
+
+        # ランク平滑化: クラシック馬のパーセンタイル
         smooth_bonus = 0.0
         if d["classic_idx"]:
-            ranks = np.argsort(np.argsort(-score)) + 1  # 1-indexed
             for idx in d["classic_idx"]:
-                pctl = 1.0 - ranks[idx] / n_horses  # 1位=~1.0, 最下位=~0.0
-                smooth_bonus += pctl * 3.0  # 10馬 × 0-1 × 3.0 → max 30pt/year
+                pctl = 1.0 - ranks[idx] / n_horses
+                smooth_bonus += pctl * 3.0
+
+        # 1着馬の順位ベース連続ボーナス（ダービー馬を当てる目的）
+        winner_bonus = 0.0
+        for winner_key in ("derby_winner_idx", "oaks_winner_idx"):
+            widx = d[winner_key]
+            if widx is not None:
+                rank_val = int(ranks[widx])
+                pctl = 1.0 - rank_val / n_horses
+                winner_bonus += pctl * 20.0
+
+                if rank_val <= 10:
+                    winner_bonus += 80.0
+                elif rank_val <= 20:
+                    winner_bonus += 40.0
+                elif rank_val <= 50:
+                    winner_bonus += 15.0
+                elif rank_val <= 100:
+                    winner_bonus += 5.0
 
         total_score += (
             top10_match * 100.0    # 全体TOP10ヒットが最重要
@@ -807,6 +858,7 @@ def _fast_cv_score(precomputed, params):
             + f_o20 * 10.0         # 牝馬TOP20内オークスヒット
             + f_o30 * 3.0          # 牝馬TOP30内オークスヒット
             + smooth_bonus         # ランク平滑化（強化版）
+            + winner_bonus         # 1着馬順位ボーナス
         )
 
     return total_score / n_years
