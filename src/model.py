@@ -1,9 +1,11 @@
 """
-POGスコアリング — ヒューリスティック方式。
+POGスコアリング — ヒューリスティック方式（血統・生物学特化版）。
 
-デビュー前に入手可能な特徴量から、ドメイン知識ベースの
+デビュー前に入手可能な血統・生物学的特徴量から、ドメイン知識ベースの
 重み付けスコアを算出して馬をランク付けする。
 重みパラメータは data/config/weights.json から読み込む。
+
+※ 調教師・馬主・牧場スコア・セリ価格は除外（人的要因排除版）
 """
 
 import json
@@ -74,16 +76,6 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
         if cap > 0:
             score += (dp.clip(upper=cap) / cap) * 100 * W.get("w_dam_prize", 0.036)
 
-    # 調教師スコアボーナス
-    if "trainer_score" in df.columns:
-        ts = df["trainer_score"].fillna(50)
-        score += (ts - 50) * W.get("w_trainer", 0.270)
-
-    # 馬主スコアボーナス
-    if "owner_score" in df.columns:
-        os_val = df["owner_score"].fillna(50)
-        score += (os_val - 50) * W.get("w_owner", 0.143)
-
     # 早生まれボーナス
     if "early_born" in df.columns:
         score += df["early_born"].fillna(0) * W.get("b_early", 0.0)
@@ -105,13 +97,6 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
         sa = df["sire_age"].fillna(12)
         score -= np.maximum(0, sa - 16) * W.get("b_sire_old", 0.0)
 
-    # セリ価格ボーナス
-    if "sale_price_log" in df.columns:
-        sp = df["sale_price_log"].fillna(0)
-        max_sp = sp.max()
-        if max_sp > 0:
-            score += (sp / max_sp) * W.get("b_sale_price", 0.0)
-
     # 母馬の繁殖入り年齢（若いほど良い = 良血馬ほど早く繁殖入り）
     if "dam_breeding_age" in df.columns:
         dba = df["dam_breeding_age"]
@@ -119,11 +104,6 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
         cap_val = W.get("dam_breed_cap", 2.0)
         penalty = W.get("dam_breed_penalty", 3.0)
         score += np.where(dba.isna(), 0, (base - dba).clip(-penalty, cap_val))
-
-    # 生産牧場スコア
-    if "breeder_score" in df.columns:
-        bs = df["breeder_score"].fillna(50)
-        score += (bs - 50) * W.get("w_breeder", 0.0)
 
     # 母-母父年齢差
     if "dam_bms_gap_small" in df.columns:
@@ -140,12 +120,6 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
         cap = inter.quantile(0.99)
         if cap > 0:
             score += (inter.clip(upper=cap) / cap) * W.get("w_sire_dam_inter", 0.0)
-
-    # 調教師 × 生産者コンボ（エリート連携ボーナス）
-    if "trainer_breeder_combo" in df.columns:
-        combo = df["trainer_breeder_combo"].fillna(2500)
-        # 基準値: 50*50=2500（非エリート同士）
-        score += np.maximum(0, combo - 2500) * W.get("w_trainer_breeder", 0.0)
 
     # 兄姉のクラシック実績ボーナス（時点制約済み: birth_year-2以前の結果のみ）
     if "sibling_classic" in df.columns:
@@ -218,11 +192,6 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
     # 種牡馬クラシック率（産駒数正規化）
     if "sire_classic_rate" in df.columns:
         score += df["sire_classic_rate"].fillna(0) * W.get("w_sire_classic_rate", 0.0)
-
-    # 馬主 × 調教師コンボ
-    if "owner_trainer_combo" in df.columns:
-        combo = df["owner_trainer_combo"].fillna(2500)
-        score += np.maximum(0, combo - 2500) * W.get("w_owner_trainer", 0.0)
 
     # 母父EI × 母賞金交互作用（99パーセンタイル正規化）
     if "bms_dam_interaction" in df.columns:

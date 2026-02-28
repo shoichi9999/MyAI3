@@ -64,16 +64,6 @@ def parameterized_score(df: pd.DataFrame, params: dict) -> pd.Series:
         if cap > 0:
             score += (dp.clip(upper=cap) / cap) * 100 * w_dam
 
-    # 調教師
-    if "trainer_score" in df.columns:
-        ts = df["trainer_score"].fillna(50)
-        score += (ts - 50) * params["w_trainer"]
-
-    # 馬主
-    if "owner_score" in df.columns:
-        os_val = df["owner_score"].fillna(50)
-        score += (os_val - 50) * params["w_owner"]
-
     # 早生まれ
     if "early_born" in df.columns:
         score += df["early_born"].fillna(0) * params["b_early"]
@@ -93,23 +83,11 @@ def parameterized_score(df: pd.DataFrame, params: dict) -> pd.Series:
         sa = df["sire_age"].fillna(12)
         score -= np.maximum(0, sa - 16) * params.get("b_sire_old", 0)
 
-    # セリ価格
-    if "sale_price_log" in df.columns:
-        sp = df["sale_price_log"].fillna(0)
-        max_sp = sp.max()
-        if max_sp > 0:
-            score += (sp / max_sp) * params["b_sale_price"]
-
     # 産駒番号
     if "foal_number" in df.columns:
         fn = df["foal_number"].fillna(3)
         score += np.where(fn == 1, -params["b_foal_penalty"],
                           np.where(fn <= 4, params["b_foal_bonus"], 0))
-
-    # 生産牧場
-    if "breeder_score" in df.columns:
-        bs = df["breeder_score"].fillna(50)
-        score += (bs - 50) * params["w_breeder"]
 
     # 母馬の繁殖入り年齢
     if "dam_breeding_age" in df.columns:
@@ -129,11 +107,6 @@ def parameterized_score(df: pd.DataFrame, params: dict) -> pd.Series:
         cap = inter.quantile(0.99)
         if cap > 0:
             score += (inter.clip(upper=cap) / cap) * params.get("w_sire_dam_inter", 0)
-
-    # 調教師 × 生産者コンボ
-    if "trainer_breeder_combo" in df.columns:
-        combo = df["trainer_breeder_combo"].fillna(2500)
-        score += np.maximum(0, combo - 2500) * params.get("w_trainer_breeder", 0)
 
     # 兄姉のクラシック実績ボーナス（時点制約済み）
     if "sibling_classic" in df.columns:
@@ -206,11 +179,6 @@ def parameterized_score(df: pd.DataFrame, params: dict) -> pd.Series:
     # 種牡馬クラシック率
     if "sire_classic_rate" in df.columns:
         score += df["sire_classic_rate"].fillna(0) * params.get("w_sire_classic_rate", 0)
-
-    # 馬主 × 調教師コンボ
-    if "owner_trainer_combo" in df.columns:
-        combo = df["owner_trainer_combo"].fillna(2500)
-        score += np.maximum(0, combo - 2500) * params.get("w_owner_trainer", 0)
 
     # 母父EI × 母賞金交互作用
     if "bms_dam_interaction" in df.columns:
@@ -382,19 +350,14 @@ def grid_search(years, objective="balanced"):
         "b_early": _w.get("b_early", 0.0),
         "b_parents_young": _w.get("b_parents_young", 0.0),
         "b_dam_bms_gap": _w.get("b_dam_bms_gap", 0.0),
-        "b_sale_price": _w.get("b_sale_price", 0.0),
         "b_foal_penalty": _w.get("b_foal_penalty", 14.97),
         "b_foal_bonus": _w.get("b_foal_bonus", 6.24),
-        "w_trainer": _w.get("w_trainer", 0.270),
-        "w_owner": _w.get("w_owner", 0.143),
-        "w_breeder": _w.get("w_breeder", 0.0),
         "dam_breed_base": _w.get("dam_breed_base", 5.0),
         "dam_breed_cap": _w.get("dam_breed_cap", 2.0),
         "dam_breed_penalty": _w.get("dam_breed_penalty", 3.0),
         "b_sire_old": _w.get("b_sire_old", 0.0),
         "b_dam_foals_sweet": _w.get("b_dam_foals_sweet", 0.0),
         "w_sire_dam_inter": _w.get("w_sire_dam_inter", 0.0),
-        "w_trainer_breeder": _w.get("w_trainer_breeder", 0.0),
         "b_sibling_classic": _w.get("b_sibling_classic", 0.0),
         "w_sire_classic": _w.get("w_sire_classic", 0.0),
         "b_imported_dam": _w.get("b_imported_dam", 0.0),
@@ -408,7 +371,6 @@ def grid_search(years, objective="balanced"):
         "w_bms_rank": _w.get("w_bms_rank", 0.0),
         "w_bms_progeny_prize": _w.get("w_bms_progeny_prize", 0.0),
         "w_sire_classic_rate": _w.get("w_sire_classic_rate", 0.0),
-        "w_owner_trainer": _w.get("w_owner_trainer", 0.0),
         "w_bms_dam_inter": _w.get("w_bms_dam_inter", 0.0),
     }
 
@@ -526,10 +488,6 @@ def _precompute_arrays(all_data):
             d["dam_prize_norm"] = (np.clip(dp, 0, cap) / cap * 100) if cap > 0 else np.zeros(n)
         else:
             d["dam_prize_norm"] = np.zeros(n)
-        # 調教師・馬主・牧場（中心化済み）
-        d["trainer_centered"] = (df["trainer_score"].fillna(50) - 50).values if "trainer_score" in df.columns else np.zeros(n)
-        d["owner_centered"] = (df["owner_score"].fillna(50) - 50).values if "owner_score" in df.columns else np.zeros(n)
-        d["breeder_centered"] = (df["breeder_score"].fillna(50) - 50).values if "breeder_score" in df.columns else np.zeros(n)
         # 早生まれ
         d["early_born"] = df["early_born"].fillna(0).values if "early_born" in df.columns else np.zeros(n)
         # 両親若齢
@@ -547,13 +505,6 @@ def _precompute_arrays(all_data):
             d["sire_old_excess"] = np.maximum(0, sa - 16)
         else:
             d["sire_old_excess"] = np.zeros(n)
-        # セリ価格（正規化）
-        if "sale_price_log" in df.columns:
-            sp = df["sale_price_log"].fillna(0).values
-            max_sp = sp.max()
-            d["sale_price_norm"] = (sp / max_sp) if max_sp > 0 else np.zeros(n)
-        else:
-            d["sale_price_norm"] = np.zeros(n)
         # 産駒番号（事前マスク）
         if "foal_number" in df.columns:
             fn = df["foal_number"].fillna(3).values
@@ -583,12 +534,6 @@ def _precompute_arrays(all_data):
             d["sire_dam_inter_norm"] = (np.clip(inter, 0, cap) / cap) if cap > 0 else np.zeros(n)
         else:
             d["sire_dam_inter_norm"] = np.zeros(n)
-        # 調教師 × 生産者コンボ（基準値2500超過分）
-        if "trainer_breeder_combo" in df.columns:
-            combo = df["trainer_breeder_combo"].fillna(2500).values
-            d["trainer_breeder_excess"] = np.maximum(0, combo - 2500)
-        else:
-            d["trainer_breeder_excess"] = np.zeros(n)
         # 兄姉クラシック実績（時点制約済み）
         d["sibling_classic"] = df["sibling_classic"].fillna(0).values if "sibling_classic" in df.columns else np.zeros(n)
         # 種牡馬クラシック輩出数（時点制約済み）
@@ -645,12 +590,6 @@ def _precompute_arrays(all_data):
             d["bms_progeny_prize_norm"] = np.zeros(n)
         # 種牡馬クラシック率
         d["sire_classic_rate"] = df["sire_classic_rate"].fillna(0).values if "sire_classic_rate" in df.columns else np.zeros(n)
-        # 馬主 × 調教師コンボ（基準値2500超過分）
-        if "owner_trainer_combo" in df.columns:
-            combo = df["owner_trainer_combo"].fillna(2500).values
-            d["owner_trainer_excess"] = np.maximum(0, combo - 2500)
-        else:
-            d["owner_trainer_excess"] = np.zeros(n)
         # 母父EI × 母賞金交互作用（99パーセンタイル正規化）
         if "bms_dam_interaction" in df.columns:
             inter = df["bms_dam_interaction"].fillna(0).values
@@ -705,48 +644,42 @@ def _precompute_arrays(all_data):
 
 
 def _compute_score_vec(d, params):
-    """事前計算配列からスコアベクトルを計算する。"""
+    """事前計算配列からスコアベクトルを計算する（血統・生物学特化版）。"""
     score = (
         d["sex_centered"] * params[0]          # b_sex
         + d["sire_ei_norm"] * params[1]         # w_sire_ei
         + d["dam_prize_norm"] * params[2]       # w_dam_prize
         + d["bms_ei_norm"] * params[3]          # w_bms_ei
         + d["first_crop_val"] * params[4]       # w_first_crop
-        + d["trainer_centered"] * params[5]     # w_trainer
-        + d["owner_centered"] * params[6]       # w_owner
-        + d["breeder_centered"] * params[7]     # w_breeder
-        + d["early_born"] * params[8]           # b_early
-        + d["dam_bms_gap"] * params[10]         # b_dam_bms_gap
-        + d["sale_price_norm"] * params[11]     # b_sale_price
-        + d["is_first_foal"] * (-params[12])    # b_foal_penalty
-        + d["is_good_foal"] * params[13]        # b_foal_bonus
-        - d["sire_old_excess"] * params[17]     # b_sire_old
+        + d["early_born"] * params[5]           # b_early
+        + d["dam_bms_gap"] * params[7]          # b_dam_bms_gap
+        + d["is_first_foal"] * (-params[8])     # b_foal_penalty
+        + d["is_good_foal"] * params[9]         # b_foal_bonus
+        - d["sire_old_excess"] * params[13]     # b_sire_old
     )
     if "parents_young" in d:
-        score += d["parents_young"] * params[9]
+        score += d["parents_young"] * params[6]
     else:
-        score += d["parents_young_half"] * (params[9] / 2)
-    breed_val = np.clip(params[14] - d["dam_breed_age"], -params[16], params[15])
+        score += d["parents_young_half"] * (params[6] / 2)
+    breed_val = np.clip(params[10] - d["dam_breed_age"], -params[12], params[11])
     score += d["dam_breed_notna"] * breed_val
-    # 新特徴量
-    score += d["dam_foals_sweet"] * params[18]         # b_dam_foals_sweet
-    score += d["sire_dam_inter_norm"] * params[19]     # w_sire_dam_inter
-    score += d["trainer_breeder_excess"] * params[20]  # w_trainer_breeder
-    score += d["sibling_classic"] * params[21]         # b_sibling_classic
-    score += d["sire_classic_count"] * params[22]      # w_sire_classic
-    score += d["imported_dam"] * params[23]            # b_imported_dam
-    score += d["sire_win_rate_100"] * params[24]      # w_sire_win_rate
-    score += d["bms_win_rate_100"] * params[25]        # w_bms_win_rate
-    score += d["sire_rank_norm"] * params[26]          # w_sire_rank
-    score += d["sire_progeny_prize_norm"] * params[27] # w_sire_progeny_prize
-    score += d["sire_runners_norm"] * params[28]       # w_sire_runners
-    score += d["bms_runners_norm"] * params[29]        # w_bms_runners
-    score += d["dam_progeny_quality"] * params[30]     # b_dam_progeny_quality
-    score += d["bms_rank_norm"] * params[31]           # w_bms_rank
-    score += d["bms_progeny_prize_norm"] * params[32]  # w_bms_progeny_prize
-    score += d["sire_classic_rate"] * params[33]       # w_sire_classic_rate
-    score += d["owner_trainer_excess"] * params[34]    # w_owner_trainer
-    score += d["bms_dam_inter_norm"] * params[35]      # w_bms_dam_inter
+    # 血統特徴量
+    score += d["dam_foals_sweet"] * params[14]         # b_dam_foals_sweet
+    score += d["sire_dam_inter_norm"] * params[15]     # w_sire_dam_inter
+    score += d["sibling_classic"] * params[16]         # b_sibling_classic
+    score += d["sire_classic_count"] * params[17]      # w_sire_classic
+    score += d["imported_dam"] * params[18]            # b_imported_dam
+    score += d["sire_win_rate_100"] * params[19]       # w_sire_win_rate
+    score += d["bms_win_rate_100"] * params[20]        # w_bms_win_rate
+    score += d["sire_rank_norm"] * params[21]          # w_sire_rank
+    score += d["sire_progeny_prize_norm"] * params[22] # w_sire_progeny_prize
+    score += d["sire_runners_norm"] * params[23]       # w_sire_runners
+    score += d["bms_runners_norm"] * params[24]        # w_bms_runners
+    score += d["dam_progeny_quality"] * params[25]     # b_dam_progeny_quality
+    score += d["bms_rank_norm"] * params[26]           # w_bms_rank
+    score += d["bms_progeny_prize_norm"] * params[27]  # w_bms_progeny_prize
+    score += d["sire_classic_rate"] * params[28]       # w_sire_classic_rate
+    score += d["bms_dam_inter_norm"] * params[29]      # w_bms_dam_inter
     return score
 
 
@@ -867,18 +800,18 @@ def _fast_cv_score(precomputed, params):
 # パラメータ名 → 配列インデックスの対応
 _PARAM_KEYS = [
     "b_sex", "w_sire_ei", "w_dam_prize", "w_bms_ei", "w_first_crop",
-    "w_trainer", "w_owner", "w_breeder", "b_early", "b_parents_young",
-    "b_dam_bms_gap", "b_sale_price", "b_foal_penalty", "b_foal_bonus",
+    "b_early", "b_parents_young",
+    "b_dam_bms_gap", "b_foal_penalty", "b_foal_bonus",
     "dam_breed_base", "dam_breed_cap", "dam_breed_penalty",
     "b_sire_old",
-    "b_dam_foals_sweet", "w_sire_dam_inter", "w_trainer_breeder",
+    "b_dam_foals_sweet", "w_sire_dam_inter",
     "b_sibling_classic", "w_sire_classic",
     "b_imported_dam",
     "w_sire_win_rate", "w_bms_win_rate", "w_sire_rank",
     "w_sire_progeny_prize", "w_sire_runners", "w_bms_runners",
     "b_dam_progeny_quality",
     "w_bms_rank", "w_bms_progeny_prize", "w_sire_classic_rate",
-    "w_owner_trainer", "w_bms_dam_inter",
+    "w_bms_dam_inter",
 ]
 
 def _dict_to_arr(params):
@@ -901,40 +834,34 @@ def _random_search_top10(all_data, current_params, best_score):
     # パラメータの探索範囲（拡張版 — 上限張り付きパラメータを広げた）
     bounds = [
         (0, 30),       # b_sex
-        (0.0, 1.0),    # w_sire_ei (旧0.60→1.0)
-        (0.0, 0.50),   # w_dam_prize (旧0.40→0.50)
-        (0.0, 0.50),   # w_bms_ei (旧0.45→0.50)
-        (0.0, 80.0),   # w_first_crop (旧30→80)
-        (0.0, 1.2),    # w_trainer (旧0.60→1.2)
-        (0.0, 1.2),    # w_owner (旧0.60→1.2)
-        (0.0, 1.2),    # w_breeder (旧0.60→1.2)
-        (0, 40),       # b_early (旧20→40)
-        (0, 25),       # b_parents_young (旧20→25)
-        (0, 25),       # b_dam_bms_gap (旧20→25)
-        (0, 30),       # b_sale_price (旧20→30)
+        (0.0, 1.0),    # w_sire_ei
+        (0.0, 0.50),   # w_dam_prize
+        (0.0, 0.50),   # w_bms_ei
+        (0.0, 80.0),   # w_first_crop
+        (0, 40),       # b_early
+        (0, 25),       # b_parents_young
+        (0, 25),       # b_dam_bms_gap
         (0, 20),       # b_foal_penalty
-        (0, 20),       # b_foal_bonus (旧15→20)
+        (0, 20),       # b_foal_bonus
         (1, 15),       # dam_breed_base
-        (0, 20),       # dam_breed_cap (旧10→20)
-        (0, 20),       # dam_breed_penalty (旧10→20)
-        (0, 10),       # b_sire_old (旧8→10)
-        (0, 20),       # b_dam_foals_sweet (旧15→20)
-        (0, 25),       # w_sire_dam_inter (旧20→25)
-        (0, 0.20),     # w_trainer_breeder (旧0.05→0.20)
-        (0, 40),       # b_sibling_classic (旧30→40)
-        (0, 8),        # w_sire_classic (旧5→8)
-        (0, 50),       # b_imported_dam (旧20→50)
+        (0, 20),       # dam_breed_cap
+        (0, 20),       # dam_breed_penalty
+        (0, 10),       # b_sire_old
+        (0, 20),       # b_dam_foals_sweet
+        (0, 25),       # w_sire_dam_inter
+        (0, 40),       # b_sibling_classic
+        (0, 8),        # w_sire_classic
+        (0, 50),       # b_imported_dam
         (0.0, 0.60),   # w_sire_win_rate
         (0.0, 0.40),   # w_bms_win_rate
         (0.0, 0.60),   # w_sire_rank
-        (0.0, 0.50),   # w_sire_progeny_prize [NEW]
-        (0.0, 0.50),   # w_sire_runners [NEW]
-        (0.0, 0.50),   # w_bms_runners [NEW]
+        (0.0, 0.50),   # w_sire_progeny_prize
+        (0.0, 0.50),   # w_sire_runners
+        (0.0, 0.50),   # w_bms_runners
         (0, 100),      # b_dam_progeny_quality
         (0.0, 0.60),   # w_bms_rank
         (0.0, 0.50),   # w_bms_progeny_prize
         (0.0, 20.0),   # w_sire_classic_rate
-        (0.0, 0.20),   # w_owner_trainer
         (0.0, 25.0),   # w_bms_dam_inter
     ]
     lo = np.array([b[0] for b in bounds])
@@ -1112,56 +1039,46 @@ def _staged_grid_search(all_data, best_params, best_score):
         [0, 3, 5, 8, 10, 12],     # b_early
         [0, 3, 5, 8, 10, 12],     # b_parents_young
         [0, 2, 5, 8],             # b_dam_bms_gap
-        [0, 3, 5, 8, 10],         # b_sale_price
     ))
     print(f"  組み合わせ数: {len(bonus_combos)}")
 
-    for be, bp, bg, bs in bonus_combos:
+    for be, bp, bg in bonus_combos:
         p = dict(best_params)
         p["b_early"] = be
         p["b_parents_young"] = bp
         p["b_dam_bms_gap"] = bg
-        p["b_sale_price"] = bs
         s = cv_score(all_data, p)
         if s > best_score:
             best_score = s
             best_params.update({"b_early": be, "b_parents_young": bp,
-                                "b_dam_bms_gap": bg, "b_sale_price": bs})
+                                "b_dam_bms_gap": bg})
 
     print(f"  最良: early={best_params['b_early']}, parents_young={best_params['b_parents_young']}, "
-          f"dam_bms_gap={best_params['b_dam_bms_gap']}, sale_price={best_params['b_sale_price']}")
+          f"dam_bms_gap={best_params['b_dam_bms_gap']}")
     print(f"  CVスコア: {best_score:.2f}")
 
     # ===============================================================
-    # Stage 3: コネクション重み + 産駒番号
+    # Stage 3: 産駒番号
     # ===============================================================
     print(f"\n{'='*60}")
-    print(f"  Stage 3: コネクション + 産駒番号")
+    print(f"  Stage 3: 産駒番号")
     print(f"{'='*60}")
-    conn_combos = list(itertools.product(
+    foal_combos = list(itertools.product(
         [0, 2, 3, 5, 7],              # b_foal_penalty
         [0, 1, 2, 3, 5],              # b_foal_bonus
-        [0.03, 0.05, 0.08, 0.12],     # w_trainer
-        [0.03, 0.05, 0.08, 0.12],     # w_owner
-        [0.05, 0.10, 0.15, 0.20],     # w_breeder
     ))
-    print(f"  組み合わせ数: {len(conn_combos)}")
+    print(f"  組み合わせ数: {len(foal_combos)}")
 
-    for fp, fb, wt, wo, wb in conn_combos:
+    for fp, fb in foal_combos:
         p = dict(best_params)
         p["b_foal_penalty"] = fp
         p["b_foal_bonus"] = fb
-        p["w_trainer"] = wt
-        p["w_owner"] = wo
-        p["w_breeder"] = wb
         s = cv_score(all_data, p)
         if s > best_score:
             best_score = s
-            best_params.update({"b_foal_penalty": fp, "b_foal_bonus": fb,
-                                "w_trainer": wt, "w_owner": wo, "w_breeder": wb})
+            best_params.update({"b_foal_penalty": fp, "b_foal_bonus": fb})
 
-    print(f"  最良: foal_penalty={best_params['b_foal_penalty']}, foal_bonus={best_params['b_foal_bonus']}, "
-          f"trainer={best_params['w_trainer']}, owner={best_params['w_owner']}, breeder={best_params['w_breeder']}")
+    print(f"  最良: foal_penalty={best_params['b_foal_penalty']}, foal_bonus={best_params['b_foal_bonus']}")
     print(f"  CVスコア: {best_score:.2f}")
 
     # ===============================================================

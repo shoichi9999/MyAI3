@@ -1,12 +1,13 @@
 """
-特徴量エンジニアリングモジュール。
+特徴量エンジニアリングモジュール（血統・生物学特化版）。
 
 POG予測に重要な特徴量を生成する（デビュー前に入手可能な情報のみ）:
 - 血統スコア（父馬の産駒EI、母父馬の産駒EI、母馬の獲得賞金）
 - 生まれ月（早生まれほど有利）
 - 親年齢（父・母の産駒時年齢）
-- 調教師・馬主・牧場スコア（実績ベース）
-- セリ価格・産駒番号
+- 産駒番号
+
+※ 調教師・馬主・牧場スコア・セリ価格は除外（人的要因排除版）
 """
 
 import json
@@ -107,14 +108,6 @@ def _load_extra_features(birth_year: int) -> dict:
         EXTRA_FEATURES_CACHE[birth_year] = _load_json(f"data/extra_features_{birth_year}.json")
     return EXTRA_FEATURES_CACHE[birth_year]
 
-
-# エリートデータ・重み設定を外部JSONから読み込み（data/config/）
-ELITE_TRAINERS = _load_json("data/config/elite_trainers.json")
-ELITE_TRAINERS.pop("_comment", None)
-ELITE_OWNERS = _load_json("data/config/elite_owners.json")
-ELITE_OWNERS.pop("_comment", None)
-ELITE_BREEDERS = _load_json("data/config/elite_breeders.json")
-ELITE_BREEDERS.pop("_comment", None)
 
 _WEIGHTS = _load_json("data/config/weights.json")
 WEIGHT_SIRE_EI = _WEIGHTS.get("w_sire_ei", 0.065)
@@ -360,35 +353,6 @@ def get_sire_prize(sire_name: str) -> float:
     return SIRE_PRIZES.get(sire_name, 0.0)
 
 
-def calc_trainer_score(trainer_name: str) -> float:
-    """調教師スコアを返す。"""
-    if not trainer_name:
-        return 50.0
-    for key, score in ELITE_TRAINERS.items():
-        if key in str(trainer_name):
-            return score
-    return 50.0
-
-
-def calc_owner_score(owner_name: str) -> float:
-    """馬主スコアを返す。"""
-    if not owner_name:
-        return 50.0
-    for key, score in ELITE_OWNERS.items():
-        if key in str(owner_name):
-            return score
-    return 50.0
-
-
-def calc_breeder_score(breeder_name: str) -> float:
-    """生産牧場スコアを返す。"""
-    if not breeder_name:
-        return 50.0
-    for key, score in ELITE_BREEDERS.items():
-        if key in str(breeder_name):
-            return score
-    return 50.0
-
 
 def get_birth_month(horse_id: str, birth_year: int) -> int:
     """馬の生まれ月を返す（1-12）。取得できない場合は3（中央値）。"""
@@ -516,11 +480,6 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
         # 種牡馬自身の現役獲得賞金（初年度種牡馬ボーナス用）
         row["sire_prize"] = get_sire_prize(horse.get("sire", ""))
 
-        # 調教師・馬主・生産者スコア
-        row["trainer_score"] = calc_trainer_score(horse.get("trainer", ""))
-        row["owner_score"] = calc_owner_score(horse.get("owner", ""))
-        row["breeder_score"] = calc_breeder_score(horse.get("breeder", ""))
-
         # 生まれ月（1-12、小さいほど有利）
         row["birth_month"] = get_birth_month(hid, birth_year)
 
@@ -547,10 +506,8 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
             if dam_sire_age is not None and dam_age is not None else np.nan
         )
 
-        # --- 追加特徴量（セリ価格・産駒番号） ---
+        # --- 追加特徴量（産駒番号） ---
         extra = _load_extra_features(birth_year).get(str(hid), {})
-        sale_price = extra.get("sale_price")
-        row["sale_price_log"] = np.log1p(sale_price) if sale_price else 0.0
         foal_number = extra.get("foal_number")
         # extra_featuresにない場合、dam_foalsから直接計算
         if not foal_number:
@@ -618,12 +575,6 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
         sire_ei_val = row["sire_ei"]
         dam_prize_val = row["dam_prize"]
         row["sire_dam_interaction"] = sire_ei_val * np.log1p(dam_prize_val)
-
-        # 調教師 × 生産者: エリート牧場→エリート調教師パイプライン
-        row["trainer_breeder_combo"] = row["trainer_score"] * row["breeder_score"]
-
-        # 馬主 × 調教師: エリート馬主→エリート調教師ライン
-        row["owner_trainer_combo"] = row["owner_score"] * row["trainer_score"]
 
         # 母父EI × 母賞金: BMS品質と母実績のシナジー
         bms_ei_val = row["bms_ei"]

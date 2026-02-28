@@ -152,7 +152,6 @@ def _fetch_dam_prizes(target_year: int, prescore_top: int = 0):
     if prescore_top and prescore_top < total_horses:
         from src.features import (
             get_sire_ei, get_bms_ei,
-            calc_trainer_score, calc_owner_score, calc_breeder_score,
             get_leading_year,
         )
         ly = get_leading_year(target_year)
@@ -160,14 +159,11 @@ def _fetch_dam_prizes(target_year: int, prescore_top: int = 0):
         sei = horses["sire"].apply(lambda x: get_sire_ei(x, ly) if pd.notna(x) else 0.0)
         mx = sei.max()
         if mx > 0:
-            lite += (sei / mx) * 100 * 0.40
+            lite += (sei / mx) * 100 * 0.50
         bei = horses["sire_of_dam"].apply(lambda x: get_bms_ei(x, ly) if pd.notna(x) else 0.0)
         mx2 = bei.max()
         if mx2 > 0:
-            lite += (bei / mx2) * 100 * 0.20
-        lite += horses["trainer"].apply(lambda x: calc_trainer_score(x) - 50).fillna(0) * 0.05
-        lite += horses["owner"].apply(lambda x: calc_owner_score(x) - 50).fillna(0) * 0.05
-        lite += horses["breeder"].apply(lambda x: calc_breeder_score(x) - 50).fillna(0) * 0.08
+            lite += (bei / mx2) * 100 * 0.30
 
         n_candidates = min(prescore_top * 3, total_horses)
         horses = horses.loc[lite.nlargest(n_candidates).index]
