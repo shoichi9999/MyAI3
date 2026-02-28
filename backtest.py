@@ -1,8 +1,8 @@
 """
-バックテスト — ダービー・オークスTOP5予測の精度検証。
+バックテスト — 牡馬ダービーTOP5予測の精度検証。
 
-指定年の産駒データで特徴量を構築し、ヒューリスティックスコアによる
-予測ランキングがダービー/オークスTOP5をどれだけ捉えられたかを評価する。
+指定年の牡馬データで特徴量を構築し、ヒューリスティックスコアによる
+予測ランキングがダービーTOP5をどれだけ捉えられたかを評価する。
 
 使い方:
   python backtest.py 2021
@@ -63,57 +63,29 @@ def load_backtest_data(year: int) -> pd.DataFrame:
 
 def evaluate_classic(df: pd.DataFrame, scores: np.ndarray,
                      birth_year: int) -> dict:
-    """ダービー・オークスTOP5に対する予測精度を評価する。
-
-    牡馬→ダービー、牝馬→オークスで分けて評価し、合算する。
-    """
+    """ダービーTOP5に対する予測精度を評価する（牡馬のみ）。"""
     horse_ids = df["horse_id"].astype(str).values
-    sex = df["sex"].values  # 1=牡, 0=牝
 
     derby_top5 = set(get_classic_top5(birth_year, "derby"))
-    oaks_top5 = set(get_classic_top5(birth_year, "oaks"))
-    classic_top10 = derby_top5 | oaks_top5  # 合計10頭
 
     results = {"birth_year": birth_year}
 
-    # 全体評価: 予測TOP N に何頭のクラシック馬が含まれるか
-    for n in [10, 20, 30, 50, 100]:
+    # 予測TOP N にダービーTOP5が何頭入るか
+    for n in [5, 10, 15, 20, 30]:
         pred_top_idx = np.argsort(-scores)[:n]
         pred_top_ids = set(horse_ids[pred_top_idx])
         results[f"top{n}_derby"] = len(pred_top_ids & derby_top5)
-        results[f"top{n}_oaks"] = len(pred_top_ids & oaks_top5)
-        results[f"top{n}_total"] = len(pred_top_ids & classic_top10)
 
-    # 牡馬のみでダービー評価
-    male_mask = sex == 1
-    if male_mask.any() and derby_top5:
-        male_scores = scores[male_mask]
-        male_ids = horse_ids[male_mask]
-        for n in [10, 20, 30]:
-            pred_idx = np.argsort(-male_scores)[:n]
-            pred_ids = set(male_ids[pred_idx])
-            results[f"male_top{n}_derby"] = len(pred_ids & derby_top5)
-
-    # 牝馬のみでオークス評価
-    female_mask = sex == 0
-    if female_mask.any() and oaks_top5:
-        female_scores = scores[female_mask]
-        female_ids = horse_ids[female_mask]
-        for n in [10, 20, 30]:
-            pred_idx = np.argsort(-female_scores)[:n]
-            pred_ids = set(female_ids[pred_idx])
-            results[f"female_top{n}_oaks"] = len(pred_ids & oaks_top5)
-
-    # クラシック馬の平均予測順位
+    # ダービー馬の平均予測順位
     all_ranks = np.argsort(np.argsort(-scores)) + 1  # 1-indexed
-    classic_ranks = []
-    for hid in classic_top10:
+    derby_ranks = []
+    for hid in derby_top5:
         idx = np.where(horse_ids == hid)[0]
         if len(idx) > 0:
-            classic_ranks.append(int(all_ranks[idx[0]]))
-    results["classic_avg_rank"] = np.mean(classic_ranks) if classic_ranks else float("nan")
-    results["classic_median_rank"] = np.median(classic_ranks) if classic_ranks else float("nan")
-    results["classic_ranks"] = sorted(classic_ranks)
+            derby_ranks.append(int(all_ranks[idx[0]]))
+    results["derby_avg_rank"] = np.mean(derby_ranks) if derby_ranks else float("nan")
+    results["derby_median_rank"] = np.median(derby_ranks) if derby_ranks else float("nan")
+    results["derby_ranks"] = sorted(derby_ranks)
 
     return results
 
@@ -121,73 +93,47 @@ def evaluate_classic(df: pd.DataFrame, scores: np.ndarray,
 def print_metrics(m: dict):
     year = m["birth_year"]
     race_year = year + 3
-    print(f"\n  --- {year}年産 (ダービー/オークス {race_year}年) ---")
+    print(f"\n  --- {year}年産 (ダービー {race_year}年) ---")
 
-    # 全体
-    print(f"  【全体】予測TOP N にクラシックTOP10（ダービー5 + オークス5）が何頭入るか:")
-    for n in [10, 20, 30, 50, 100]:
+    print(f"  【牡馬】予測TOP N にダービーTOP5が何頭入るか:")
+    for n in [5, 10, 15, 20, 30]:
         d = m.get(f"top{n}_derby", 0)
-        o = m.get(f"top{n}_oaks", 0)
-        t = m.get(f"top{n}_total", 0)
-        print(f"    TOP{n:>3d}: ダービー {d}/5  オークス {o}/5  合計 {t}/10")
+        print(f"    TOP{n:>3d}: {d}/5")
 
-    # 性別別
-    print(f"  【牡馬内】予測TOP N にダービーTOP5が何頭:")
-    for n in [10, 20, 30]:
-        val = m.get(f"male_top{n}_derby", "?")
-        print(f"    TOP{n}: {val}/5")
-
-    print(f"  【牝馬内】予測TOP N にオークスTOP5が何頭:")
-    for n in [10, 20, 30]:
-        val = m.get(f"female_top{n}_oaks", "?")
-        print(f"    TOP{n}: {val}/5")
-
-    avg = m.get("classic_avg_rank", float("nan"))
-    med = m.get("classic_median_rank", float("nan"))
-    print(f"  クラシック馬の予測順位: 平均={avg:.0f}位  中央値={med:.0f}位")
-    ranks = m.get("classic_ranks", [])
+    avg = m.get("derby_avg_rank", float("nan"))
+    med = m.get("derby_median_rank", float("nan"))
+    print(f"  ダービー馬の予測順位: 平均={avg:.0f}位  中央値={med:.0f}位")
+    ranks = m.get("derby_ranks", [])
     if ranks:
         print(f"    個別: {ranks}")
 
 
 def print_top_horses(df: pd.DataFrame, birth_year: int, n: int = 30):
-    """予測TOP N を表示し、クラシック馬をハイライトする。"""
+    """予測TOP N を表示し、ダービー馬をハイライトする。"""
     derby_top5 = set(get_classic_top5(birth_year, "derby"))
-    oaks_top5 = set(get_classic_top5(birth_year, "oaks"))
 
     df = df.copy()
     df["pred_rank"] = df["score"].rank(ascending=False).astype(int)
 
-    print(f"\n--- 予測 TOP{n} ---")
+    print(f"\n--- 予測 TOP{n}（牡馬） ---")
     top_pred = df.nlargest(n, "score")
     rows = []
     for i, (_, r) in enumerate(top_pred.iterrows(), 1):
         hid = str(r["horse_id"])
-        sex_str = "牡" if r["sex"] == 1 else "牝"
         mark = ""
         if hid in derby_top5:
             pos = list(get_classic_top5(birth_year, "derby")).index(hid) + 1
             mark = f"★ダービー{pos}着"
-        elif hid in oaks_top5:
-            pos = list(get_classic_top5(birth_year, "oaks")).index(hid) + 1
-            mark = f"★オークス{pos}着"
         rows.append([
-            i, r["horse_name"], sex_str, f'{r["score"]:.1f}', mark
+            i, r["horse_name"], f'{r["score"]:.1f}', mark
         ])
-    print(tabulate(rows, headers=["#", "馬名", "性", "スコア", "クラシック成績"],
+    print(tabulate(rows, headers=["#", "馬名", "スコア", "ダービー成績"],
                    tablefmt="simple"))
 
-    # クラシック馬の予測順位一覧
+    # ダービー馬の予測順位一覧
     race_year = birth_year + 3
     print(f"\n--- {race_year}年ダービーTOP5の予測順位 ---")
     for i, hid in enumerate(get_classic_top5(birth_year, "derby"), 1):
-        row = df[df["horse_id"].astype(str) == hid]
-        if not row.empty:
-            r = row.iloc[0]
-            print(f"  {i}着 {r['horse_name']:　<15s} → 予測{r['pred_rank']:>5d}位 (スコア {r['score']:.1f})")
-
-    print(f"\n--- {race_year}年オークスTOP5の予測順位 ---")
-    for i, hid in enumerate(get_classic_top5(birth_year, "oaks"), 1):
         row = df[df["horse_id"].astype(str) == hid]
         if not row.empty:
             r = row.iloc[0]
@@ -200,7 +146,7 @@ def print_top_horses(df: pd.DataFrame, birth_year: int, n: int = 30):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="バックテスト（ダービー/オークスTOP5予測）")
+        description="バックテスト（牡馬ダービーTOP5予測）")
     parser.add_argument("year", nargs="?", type=int,
                         help="評価対象の生年（例: 2021）")
     parser.add_argument("--all", action="store_true",
@@ -215,7 +161,7 @@ def main():
         parser.error("年度を指定するか --all を使用してください")
 
     print("=" * 60)
-    print("  バックテスト: ダービー/オークスTOP5予測")
+    print("  バックテスト: 牡馬ダービーTOP5予測")
     print("=" * 60)
 
     all_metrics = []
@@ -237,34 +183,29 @@ def main():
     # 全年度サマリ
     if len(all_metrics) > 1:
         print("\n" + "=" * 60)
-        print("  全年度サマリ")
+        print("  全年度サマリ（牡馬ダービーTOP5）")
         print("=" * 60)
 
-        headers = ["生年", "TOP10", "TOP20", "TOP30", "TOP50", "TOP100",
-                   "牡TOP10", "牝TOP10", "平均順位"]
+        headers = ["生年", "TOP5", "TOP10", "TOP15", "TOP20", "TOP30", "平均順位"]
         rows = []
         for m in all_metrics:
             rows.append([
                 m["birth_year"],
-                f'{m.get("top10_total", 0)}/10',
-                f'{m.get("top20_total", 0)}/10',
-                f'{m.get("top30_total", 0)}/10',
-                f'{m.get("top50_total", 0)}/10',
-                f'{m.get("top100_total", 0)}/10',
-                f'{m.get("male_top10_derby", 0)}/5',
-                f'{m.get("female_top10_oaks", 0)}/5',
-                f'{m.get("classic_avg_rank", 0):.0f}',
+                f'{m.get("top5_derby", 0)}/5',
+                f'{m.get("top10_derby", 0)}/5',
+                f'{m.get("top15_derby", 0)}/5',
+                f'{m.get("top20_derby", 0)}/5',
+                f'{m.get("top30_derby", 0)}/5',
+                f'{m.get("derby_avg_rank", 0):.0f}',
             ])
 
         # 平均行
         avg_row = ["平均"]
-        for key in ["top10_total", "top20_total", "top30_total",
-                    "top50_total", "top100_total"]:
+        for key in ["top5_derby", "top10_derby", "top15_derby",
+                    "top20_derby", "top30_derby"]:
             avg = np.mean([m.get(key, 0) for m in all_metrics])
-            avg_row.append(f"{avg:.1f}/10")
-        avg_row.append(f'{np.mean([m.get("male_top10_derby", 0) for m in all_metrics]):.1f}/5')
-        avg_row.append(f'{np.mean([m.get("female_top10_oaks", 0) for m in all_metrics]):.1f}/5')
-        avg_row.append(f'{np.mean([m.get("classic_avg_rank", 0) for m in all_metrics]):.0f}')
+            avg_row.append(f"{avg:.1f}/5")
+        avg_row.append(f'{np.mean([m.get("derby_avg_rank", 0) for m in all_metrics]):.0f}')
         rows.append(avg_row)
 
         print(tabulate(rows, headers=headers, tablefmt="simple"))

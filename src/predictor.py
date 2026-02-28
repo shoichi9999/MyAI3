@@ -1,5 +1,7 @@
 """
-POG TOP10予測 - メイン実行モジュール。
+POG 牡馬ダービー予測 - メイン実行モジュール。
+
+牡馬のみを対象にダービーTOP5入り候補を予測する。
 
 使い方:
   python run.py --year 2024            # 全自動（収集→特徴量→予測）
@@ -60,7 +62,7 @@ def predict_top(
         予測結果（上位N頭）
     """
     print(f"\n{'='*60}")
-    print(f"  POG予測: {target_year}年生まれ TOP{top_n}")
+    print(f"  POG牡馬ダービー予測: {target_year}年生まれ TOP{top_n}")
     print(f"{'='*60}")
 
     horses_path = f"data/horses_{target_year}.csv"
@@ -266,8 +268,8 @@ def run_full_pipeline(
         プレスコア上位N頭のみプロフィール取得（0で全頭取得）
     """
     print("=" * 60)
-    print("  POG予測システム - 全自動パイプライン")
-    print(f"  対象世代: {target_year}年生まれ")
+    print("  POG牡馬ダービー予測 - 全自動パイプライン")
+    print(f"  対象世代: {target_year}年生まれ（牡馬のみ）")
     print(f"  予測馬数: TOP{top_n}")
     if prescore_top:
         print(f"  プレスコア絞り込み: 上位{prescore_top}頭")
@@ -296,7 +298,7 @@ def run_full_pipeline(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="POG予測システム")
+    parser = argparse.ArgumentParser(description="POG牡馬ダービー予測システム")
     parser.add_argument(
         "--mode",
         choices=["collect", "predict", "full"],

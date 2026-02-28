@@ -13,7 +13,6 @@ import lightgbm as lgb
 
 # 学習に使う特徴量カラム
 FEATURE_COLS = [
-    "sex",
     "sire_ei",
     "bms_ei",
     "sire_2yo_ei",

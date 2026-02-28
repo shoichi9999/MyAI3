@@ -135,10 +135,9 @@ def _get_classic_ids_up_to(max_birth_year: int) -> set:
     呼び出し側で適切な max_birth_year を渡すこと。
     """
     ids = set()
-    for race in ("derby", "oaks"):
-        for by_str, horse_ids in _CLASSIC_RESULTS.get(race, {}).items():
-            if int(by_str) <= max_birth_year:
-                ids.update(horse_ids)
+    for by_str, horse_ids in _CLASSIC_RESULTS.get("derby", {}).items():
+        if int(by_str) <= max_birth_year:
+            ids.update(horse_ids)
     return ids
 
 
@@ -152,22 +151,21 @@ def _get_sire_classic_map(max_birth_year: int) -> dict[str, int]:
         return _SIRE_CLASSIC_CACHE[max_birth_year]
 
     sire_counts: dict[str, int] = {}
-    for race in ("derby", "oaks"):
-        for by_str, horse_ids in _CLASSIC_RESULTS.get(race, {}).items():
-            by = int(by_str)
-            if by > max_birth_year:
-                continue
-            csv_path = f"data/horses_{by}.csv"
-            if not os.path.exists(csv_path):
-                continue
-            df = pd.read_csv(csv_path)
-            id_to_sire = dict(zip(
-                df["horse_id"].astype(str), df["sire"].fillna("")
-            ))
-            for hid in horse_ids:
-                sire = id_to_sire.get(str(hid), "")
-                if sire:
-                    sire_counts[sire] = sire_counts.get(sire, 0) + 1
+    for by_str, horse_ids in _CLASSIC_RESULTS.get("derby", {}).items():
+        by = int(by_str)
+        if by > max_birth_year:
+            continue
+        csv_path = f"data/horses_{by}.csv"
+        if not os.path.exists(csv_path):
+            continue
+        df = pd.read_csv(csv_path)
+        id_to_sire = dict(zip(
+            df["horse_id"].astype(str), df["sire"].fillna("")
+        ))
+        for hid in horse_ids:
+            sire = id_to_sire.get(str(hid), "")
+            if sire:
+                sire_counts[sire] = sire_counts.get(sire, 0) + 1
 
     _SIRE_CLASSIC_CACHE[max_birth_year] = sire_counts
     return sire_counts
@@ -474,6 +472,9 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
         else:
             birth_year = 2024
 
+    # 牡馬ダービー特化: 牡馬のみにフィルタリング
+    horses_df = horses_df[horses_df["sex"] == "牡"].copy()
+
     # リーディング年度の決定（データリーク防止）
     leading_year = get_leading_year(birth_year)
 
@@ -483,7 +484,6 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
 
         # 基本情報
         row["horse_name"] = horse.get("horse_name", "")
-        row["sex"] = 1 if horse.get("sex") == "牡" else (0 if horse.get("sex") == "牝" else 0.5)
 
         # 産駒成績ベースの血統スコア（年度別リーディングを参照）
         row["sire_ei"] = get_sire_ei(horse.get("sire", ""), leading_year)

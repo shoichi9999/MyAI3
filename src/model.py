@@ -40,11 +40,6 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
 
     score = pd.Series(0.0, index=df.index)
 
-    # 性別ボーナス
-    if "sex" in df.columns:
-        sex = df["sex"].fillna(0.5)
-        score += (sex - 0.5) * W.get("b_sex", 16.47)
-
     # 父EI（99パーセンタイル正規化）
     if "sire_ei" in df.columns:
         ei = df["sire_ei"].fillna(0)
