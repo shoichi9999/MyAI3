@@ -1,10 +1,12 @@
 """
 グリッドサーチ — ヒューリスティックスコアの重み最適化。
 
-牡馬ダービーTOP5予測を最大化するようにパラメータを探索する。
+ダービー（牡馬）またはオークス（牝馬）TOP5予測を最大化するようにパラメータを探索する。
 
 使い方:
   python grid_search.py --years 2019
+  python grid_search.py --race oaks          # オークス用最適化
+  python grid_search.py --race derby         # ダービー用最適化（デフォルト）
 """
 
 import argparse
@@ -231,44 +233,53 @@ def _load_classic_results() -> dict:
 _CLASSIC = _load_classic_results()
 
 
-def _get_derby_ids(birth_year: int) -> set:
-    """ダービーTOP5のhorse_idセットを返す。"""
-    return set(_CLASSIC.get("derby", {}).get(str(birth_year), []))
+def _get_classic_ids(birth_year: int, race_type: str = "derby") -> set:
+    """指定レースTOP5のhorse_idセットを返す。"""
+    return set(_CLASSIC.get(race_type, {}).get(str(birth_year), []))
 
+
+def _get_classic_winner_id(birth_year: int, race_type: str = "derby") -> str | None:
+    """指定レース1着馬のhorse_idを返す。"""
+    classic_list = _CLASSIC.get(race_type, {}).get(str(birth_year), [])
+    return classic_list[0] if classic_list else None
+
+
+# 後方互換エイリアス
+def _get_derby_ids(birth_year: int) -> set:
+    return _get_classic_ids(birth_year, "derby")
 
 def _get_derby_winner_id(birth_year: int) -> str | None:
-    """ダービー1着馬のhorse_idを返す。"""
-    derby_list = _CLASSIC.get("derby", {}).get(str(birth_year), [])
-    return derby_list[0] if derby_list else None
+    return _get_classic_winner_id(birth_year, "derby")
 
 
 # ------------------------------------------------------------------
 # 評価
 # ------------------------------------------------------------------
 
-def evaluate_single(df: pd.DataFrame, params: dict, birth_year: int = None) -> dict:
-    """1年度のデータでダービー予測を評価する（牡馬のみ）。"""
+def evaluate_single(df: pd.DataFrame, params: dict, birth_year: int = None,
+                    race_type: str = "derby") -> dict:
+    """1年度のデータで指定レースの予測を評価する。"""
     scores = parameterized_score(df, params).values
     horse_ids = df["horse_id"].astype(str).values
 
     if birth_year is None:
         birth_year = df.get("_birth_year", 2020)
 
-    derby_top5 = _get_derby_ids(birth_year)
-    derby_winner_id = _get_derby_winner_id(birth_year)
+    classic_top5 = _get_classic_ids(birth_year, race_type)
+    classic_winner_id = _get_classic_winner_id(birth_year, race_type)
 
     results = {}
 
-    # 予測TOP N にダービーTOP5が何頭入るか
+    # 予測TOP N にTOP5が何頭入るか
     for n in [5, 10, 15, 20, 30]:
         pred_idx = np.argsort(-scores)[:n]
         pred_ids = set(horse_ids[pred_idx])
-        results[f"top{n}_derby"] = len(pred_ids & derby_top5)
+        results[f"top{n}_{race_type}"] = len(pred_ids & classic_top5)
 
-    # ダービー1着馬の予測順位
-    if derby_winner_id:
+    # 1着馬の予測順位
+    if classic_winner_id:
         all_ranks = np.argsort(np.argsort(-scores)) + 1
-        idx = np.where(horse_ids == derby_winner_id)[0]
+        idx = np.where(horse_ids == classic_winner_id)[0]
         if len(idx) > 0:
             results["winner_rank"] = int(all_ranks[idx[0]])
         else:
@@ -279,9 +290,10 @@ def evaluate_single(df: pd.DataFrame, params: dict, birth_year: int = None) -> d
     return results
 
 
-def composite_score(metrics: dict, objective: str = "classic") -> float:
-    """複合スコア（ダービー1着馬TOP10入り最優先）。"""
-    d10 = metrics.get("top10_derby", 0)
+def composite_score(metrics: dict, objective: str = "classic",
+                    race_type: str = "derby") -> float:
+    """複合スコア（1着馬TOP10入り最優先）。"""
+    d10 = metrics.get(f"top10_{race_type}", 0)
     winner_rank = metrics.get("winner_rank", 9999)
 
     # ダービー1着馬の段階ボーナス（TOP10入りに集中）
@@ -303,12 +315,12 @@ def composite_score(metrics: dict, objective: str = "classic") -> float:
     )
 
 
-def cv_score(all_data: dict, params: dict) -> float:
+def cv_score(all_data: dict, params: dict, race_type: str = "derby") -> float:
     """全年度の composite_score 平均を返す。"""
     scores = []
     for year, df in all_data.items():
-        m = evaluate_single(df, params, birth_year=year)
-        scores.append(composite_score(m))
+        m = evaluate_single(df, params, birth_year=year, race_type=race_type)
+        scores.append(composite_score(m, race_type=race_type))
     return np.mean(scores)
 
 
@@ -316,16 +328,17 @@ def cv_score(all_data: dict, params: dict) -> float:
 # データ読み込み
 # ------------------------------------------------------------------
 
-def load_year(year: int) -> pd.DataFrame | None:
+def load_year(year: int, race_type: str = "derby") -> pd.DataFrame | None:
     csv_path = f"data/horses_{year}.csv"
     if not os.path.exists(csv_path):
         return None
-    # ダービー結果がない年はスキップ
-    derby = _get_derby_ids(year)
-    if not derby:
+    # レース結果がない年はスキップ
+    classic_ids = _get_classic_ids(year, race_type)
+    if not classic_ids:
         return None
     horses = pd.read_csv(csv_path)
-    features = build_feature_matrix(horses, birth_year=year)
+    sex_filter = "牡" if race_type == "derby" else "牝"
+    features = build_feature_matrix(horses, birth_year=year, sex_filter=sex_filter)
     return features
 
 
@@ -333,13 +346,15 @@ def load_year(year: int) -> pd.DataFrame | None:
 # グリッドサーチ
 # ------------------------------------------------------------------
 
-def grid_search(years, objective="balanced"):
-    global _OBJECTIVE
+def grid_search(years, objective="balanced", race_type="derby"):
+    global _OBJECTIVE, _RACE_TYPE
     _OBJECTIVE = objective
-    print(f"=== データ読み込み === (目的関数: {objective})")
+    _RACE_TYPE = race_type
+    race_label = "ダービー（牡馬）" if race_type == "derby" else "オークス（牝馬）"
+    print(f"=== データ読み込み === (目的関数: {objective}, レース: {race_label})")
     all_data = {}
     for y in years:
-        df = load_year(y)
+        df = load_year(y, race_type=race_type)
         if df is not None:
             all_data[y] = df
             print(f"  {y}年: {len(df)}頭")
@@ -352,9 +367,9 @@ def grid_search(years, objective="balanced"):
 
     print(f"\n  利用年度: {sorted(all_data.keys())} ({len(all_data)}年分)")
 
-    # 現行パラメータ（data/config/weights.json から読み込み）
+    # 現行パラメータ（レースタイプに応じた重みファイルから読み込み）
     from src.model import _load_weights
-    _w = _load_weights()
+    _w = _load_weights(race_type)
     current_params = {
         "w_sire_ei": _w.get("w_sire_ei", 0.065),
         "w_dam_prize": _w.get("w_dam_prize", 0.036),
@@ -393,44 +408,45 @@ def grid_search(years, objective="balanced"):
         "w_bms_dam_inter": _w.get("w_bms_dam_inter", 0.0),
     }
 
-    current_cv = cv_score(all_data, current_params)
+    current_cv = cv_score(all_data, current_params, race_type=race_type)
     print(f"\n  現行パラメータのCVスコア: {current_cv:.2f}")
     winner_in_top10 = 0
     for y, df in sorted(all_data.items()):
-        m = evaluate_single(df, current_params, birth_year=y)
-        d5 = m.get("top5_derby", 0)
-        d10 = m.get("top10_derby", 0)
-        d20 = m.get("top20_derby", 0)
+        m = evaluate_single(df, current_params, birth_year=y, race_type=race_type)
+        d10 = m.get(f"top10_{race_type}", 0)
         wr = m.get("winner_rank", "?")
         hit = "✓" if isinstance(wr, int) and wr <= 10 else "✗"
         if isinstance(wr, int) and wr <= 10:
             winner_in_top10 += 1
         print(f"    {y}年: TOP10={d10}/5  1着={wr}位 {hit}")
-    print(f"  ダービー1着TOP10入り: {winner_in_top10}/{len(all_data)}年")
+    print(f"  1着TOP10入り: {winner_in_top10}/{len(all_data)}年")
 
     best_score = current_cv
     best_params = dict(current_params)
 
     if objective == "top10":
         # TOP10最適化: 全パラメータ同時ランダム探索（局所最適回避）
-        best_params, best_score = _random_search_top10(all_data, current_params, best_score)
+        best_params, best_score = _random_search_top10(all_data, current_params, best_score, race_type=race_type)
     else:
         # balanced: 従来の段階的グリッドサーチ
-        best_params, best_score = _staged_grid_search(all_data, dict(current_params), best_score)
+        best_params, best_score = _staged_grid_search(all_data, dict(current_params), best_score, race_type=race_type)
 
     # ------------------------------------------------------------------
     # 最終結果
     # ------------------------------------------------------------------
     print("\n" + "=" * 70)
-    print("  最適パラメータ")
+    print(f"  最適パラメータ ({race_label})")
     print("=" * 70)
     for k, v in sorted(best_params.items()):
         print(f"    {k}: {v}")
     print(f"\n  CVスコア: {best_score:.2f} (現行: {current_cv:.2f}, 差: {best_score - current_cv:+.2f})")
 
-    # weights.json に書き戻し
+    # 重みファイルに書き戻し（レースタイプに応じて保存先を切替）
     import json as _json
-    weights_path = "data/config/weights.json"
+    if race_type == "oaks":
+        weights_path = "data/config/weights_oaks.json"
+    else:
+        weights_path = "data/config/weights.json"
     save_weights = dict(best_params)
     save_weights["_comment"] = "グリッドサーチ自動更新"
     with open(weights_path, "w", encoding="utf-8") as _f:
@@ -448,13 +464,13 @@ def grid_search(years, objective="balanced"):
         print("  （変更なし — 現行パラメータが最適）")
 
     # 年度別詳細
-    print(f"\n--- 年度別パフォーマンス比較（ダービー1着TOP10入り） ---")
+    print(f"\n--- 年度別パフォーマンス比較（1着TOP10入り） ---")
     print(f"{'年':>6} | {'指標':>12} | {'現行':>8} | {'最適化':>8} | {'差':>6}")
     print("-" * 60)
     old_w_hits = new_w_hits = 0
     for y in sorted(all_data.keys()):
-        m_old = evaluate_single(all_data[y], current_params, birth_year=y)
-        m_new = evaluate_single(all_data[y], best_params, birth_year=y)
+        m_old = evaluate_single(all_data[y], current_params, birth_year=y, race_type=race_type)
+        m_new = evaluate_single(all_data[y], best_params, birth_year=y, race_type=race_type)
         # ダービー1着順位
         wr_old = m_old.get("winner_rank", "?")
         wr_new = m_new.get("winner_rank", "?")
@@ -464,8 +480,8 @@ def grid_search(years, objective="balanced"):
         if isinstance(wr_new, int) and wr_new <= 10: new_w_hits += 1
         print(f"  {y} | {'1着順位':>12} | {wr_old:>5}位{hit_old} | {wr_new:>5}位{hit_new} | {(wr_new-wr_old) if isinstance(wr_old, int) and isinstance(wr_new, int) else '':>+5}")
         for n in [10, 20, 30]:
-            old_val = m_old.get(f"top{n}_derby", 0)
-            new_val = m_new.get(f"top{n}_derby", 0)
+            old_val = m_old.get(f"top{n}_{race_type}", 0)
+            new_val = m_new.get(f"top{n}_{race_type}", 0)
             print(f"  {y} | {'TOP'+str(n):>12} | {old_val:>4}/5   | {new_val:>4}/5   | {new_val-old_val:>+5}")
         print("-" * 60)
     print(f"  1着TOP10入り: 現行={old_w_hits}/8  最適化={new_w_hits}/8")
@@ -473,7 +489,7 @@ def grid_search(years, objective="balanced"):
     return best_params
 
 
-def _precompute_arrays(all_data):
+def _precompute_arrays(all_data, race_type="derby"):
     """DataFrameから高速評価用のnumpy配列を事前計算する。"""
     precomputed = {}
     for year, df in all_data.items():
@@ -643,18 +659,18 @@ def _precompute_arrays(all_data):
             d["bms_dam_inter_norm"] = (np.clip(inter, 0, cap) / cap) if cap > 0 else np.zeros(n)
         else:
             d["bms_dam_inter_norm"] = np.zeros(n)
-        # ダービー結果データ（牡馬ダービー特化）
+        # クラシック結果データ（レースタイプに応じて切替）
         horse_ids = df["horse_id"].astype(str).values
-        derby_top5 = _get_derby_ids(year)
+        classic_top5 = _get_classic_ids(year, race_type)
 
         d["horse_ids"] = horse_ids
-        d["derby_idx"] = set(i for i, hid in enumerate(horse_ids) if hid in derby_top5)
+        d["derby_idx"] = set(i for i, hid in enumerate(horse_ids) if hid in classic_top5)
 
-        # ダービー1着馬のインデックス（連続順位ボーナス用）
-        derby_winner_id = _get_derby_winner_id(year)
+        # 1着馬のインデックス（連続順位ボーナス用）
+        classic_winner_id = _get_classic_winner_id(year, race_type)
         d["derby_winner_idx"] = None
-        if derby_winner_id:
-            idxs = np.where(horse_ids == derby_winner_id)[0]
+        if classic_winner_id:
+            idxs = np.where(horse_ids == classic_winner_id)[0]
             if len(idxs) > 0:
                 d["derby_winner_idx"] = idxs[0]
 
@@ -787,14 +803,14 @@ def _arr_to_dict(arr):
     return {k: float(v) for k, v in zip(_PARAM_KEYS, arr)}
 
 
-def _random_search_top10(all_data, current_params, best_score):
+def _random_search_top10(all_data, current_params, best_score, race_type="derby"):
     """scipy Differential Evolution + ランダム局所探索（TOP10最大化）。"""
     import time
     from scipy.optimize import differential_evolution
 
     # 事前計算（1回だけ）
     print("\n  特徴量を事前計算中...")
-    precomputed = _precompute_arrays(all_data)
+    precomputed = _precompute_arrays(all_data, race_type=race_type)
     print("  完了")
 
     # パラメータの探索範囲（牡馬ダービー特化、b_sex削除）
@@ -851,8 +867,8 @@ def _random_search_top10(all_data, current_params, best_score):
         total_d10 = 0
         winner_hits = 0
         for y in sorted(all_data.keys()):
-            m = evaluate_single(all_data[y], params, birth_year=y)
-            d10 = m.get("top10_derby", 0)
+            m = evaluate_single(all_data[y], params, birth_year=y, race_type=race_type)
+            d10 = m.get(f"top10_{race_type}", 0)
             wr = m.get("winner_rank", "?")
             hit = "✓" if isinstance(wr, int) and wr <= 10 else ""
             if isinstance(wr, int) and wr <= 10:
@@ -960,14 +976,14 @@ def _random_search_top10(all_data, current_params, best_score):
 
     # dict形式で返す（元のcv_scoreで検算）
     best_params = _arr_to_dict(best_arr)
-    best_score = cv_score(all_data, best_params)
+    best_score = cv_score(all_data, best_params, race_type=race_type)
     print(f"\n  検算(元スコア関数): {best_score:.2f}")
     print(f"  総所要時間: {time.time()-t_start:.0f}秒")
 
     return best_params, best_score
 
 
-def _staged_grid_search(all_data, best_params, best_score):
+def _staged_grid_search(all_data, best_params, best_score, race_type="derby"):
     """従来の段階的グリッドサーチ（balanced用）。"""
     # ===============================================================
     # Stage 1: 血統重み（父EI + 母父EI + 母馬賞金 + 初年度ボーナス）
@@ -989,7 +1005,7 @@ def _staged_grid_search(all_data, best_params, best_score):
         p["w_dam_prize"] = wd
         p["w_bms_ei"] = wb
         p["w_first_crop"] = wf
-        s = cv_score(all_data, p)
+        s = cv_score(all_data, p, race_type=race_type)
         if s > best_score:
             best_score = s
             best_params.update({"w_sire_ei": ws, "w_dam_prize": wd,
@@ -1019,7 +1035,7 @@ def _staged_grid_search(all_data, best_params, best_score):
         p["b_parents_young"] = bp
         p["b_dam_bms_gap"] = bg
         p["b_sale_price"] = bs
-        s = cv_score(all_data, p)
+        s = cv_score(all_data, p, race_type=race_type)
         if s > best_score:
             best_score = s
             best_params.update({"b_early": be, "b_parents_young": bp,
@@ -1051,7 +1067,7 @@ def _staged_grid_search(all_data, best_params, best_score):
         p["w_trainer"] = wt
         p["w_owner"] = wo
         p["w_breeder"] = wb
-        s = cv_score(all_data, p)
+        s = cv_score(all_data, p, race_type=race_type)
         if s > best_score:
             best_score = s
             best_params.update({"b_foal_penalty": fp, "b_foal_bonus": fb,
@@ -1079,7 +1095,7 @@ def _staged_grid_search(all_data, best_params, best_score):
         p["dam_breed_base"] = base
         p["dam_breed_cap"] = cap
         p["dam_breed_penalty"] = pen
-        s = cv_score(all_data, p)
+        s = cv_score(all_data, p, race_type=race_type)
         if s > best_score:
             best_score = s
             best_params.update({"dam_breed_base": base, "dam_breed_cap": cap,
@@ -1114,7 +1130,7 @@ def _staged_grid_search(all_data, best_params, best_score):
         p["w_dam_prize"] = wd
         p["w_bms_ei"] = wb
         p["w_first_crop"] = wf
-        s = cv_score(all_data, p)
+        s = cv_score(all_data, p, race_type=race_type)
         if s > best_score:
             best_score = s
             best_params.update({"w_sire_ei": ws, "w_dam_prize": wd,
@@ -1131,6 +1147,9 @@ if __name__ == "__main__":
     parser.add_argument("--objective", choices=["classic", "top10"],
                         default="top10",
                         help="最適化目的: classic(バランス) / top10(ヒット数最大化)")
+    parser.add_argument("--race", choices=["derby", "oaks"],
+                        default="derby",
+                        help="対象レース: derby(ダービー・牡馬) / oaks(オークス・牝馬)")
     args = parser.parse_args()
 
-    best = grid_search(args.years, objective=args.objective)
+    best = grid_search(args.years, objective=args.objective, race_type=args.race)

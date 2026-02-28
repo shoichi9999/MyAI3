@@ -452,7 +452,8 @@ def get_parent_age(horse_row, birth_year: int, parent: str = "sire") -> float | 
     return None
 
 
-def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.DataFrame:
+def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None,
+                         sex_filter: str = "牡") -> pd.DataFrame:
     """
     全馬の特徴量マトリクスを構築する。
 
@@ -461,6 +462,11 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
 
     EIデータは birth_year に対応するリーディング年度
     （= birth_year + 1、POGドラフト時点で利用可能な最新データ）を参照する。
+
+    Parameters
+    ----------
+    sex_filter : str
+        "牡" でダービー用（牡馬のみ）、"牝" でオークス用（牝馬のみ）。
     """
     feature_rows = []
 
@@ -472,8 +478,8 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None) -> pd.
         else:
             birth_year = 2024
 
-    # 牡馬ダービー特化: 牡馬のみにフィルタリング
-    horses_df = horses_df[horses_df["sex"] == "牡"].copy()
+    # 性別フィルタリング（ダービー=牡馬、オークス=牝馬）
+    horses_df = horses_df[horses_df["sex"] == sex_filter].copy()
 
     # リーディング年度の決定（データリーク防止）
     leading_year = get_leading_year(birth_year)

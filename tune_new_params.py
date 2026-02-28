@@ -1,8 +1,13 @@
 """新特徴量パラメータの高速チューニング。
 
 既存の最適重みを固定し、新パラメータ5個のみを集中探索。
+
+使い方:
+  python tune_new_params.py                # ダービー用（デフォルト）
+  python tune_new_params.py --race oaks    # オークス用
 """
 
+import argparse
 import json
 import time
 
@@ -15,34 +20,41 @@ from grid_search import (
 )
 from src.model import _load_weights
 
+# ---- 引数パース ----
+parser = argparse.ArgumentParser(description="新パラメータ高速チューニング")
+parser.add_argument("--race", choices=["derby", "oaks"], default="derby",
+                    help="対象レース: derby(ダービー・牡馬) / oaks(オークス・牝馬)")
+args = parser.parse_args()
+race_type = args.race
+race_label = "ダービー" if race_type == "derby" else "オークス"
+
 # ---- データ読み込み ----
-print("=== データ読み込み ===")
+print(f"=== データ読み込み ({race_label}) ===")
 all_data = {}
 for y in range(2015, 2023):
-    df = load_year(y)
+    df = load_year(y, race_type=race_type)
     if df is not None:
         all_data[y] = df
         print(f"  {y}年: {len(df)}頭")
 
 # ---- 現行パラメータ ----
-_w = _load_weights()
+_w = _load_weights(race_type)
 current_params = {k: _w.get(k, 0.0) for k in _PARAM_KEYS}
 # 新パラメータのデフォルト
 for k in ["w_bms_rank", "w_bms_progeny_prize", "w_sire_classic_rate", "w_owner_trainer", "w_bms_dam_inter"]:
     current_params.setdefault(k, 0.0)
 
-current_cv = cv_score(all_data, current_params)
+current_cv = cv_score(all_data, current_params, race_type=race_type)
 print(f"\n現行CVスコア: {current_cv:.2f}")
 for y, df in sorted(all_data.items()):
-    m = evaluate_single(df, current_params, birth_year=y)
-    t10 = m.get("top10_total", 0)
-    md10 = m.get("male_top10_derby", 0)
-    fo10 = m.get("female_top10_oaks", 0)
-    print(f"  {y}: TOP10={t10}/10 D{md10} O{fo10}")
+    m = evaluate_single(df, current_params, birth_year=y, race_type=race_type)
+    t10 = m.get(f"top10_{race_type}", 0)
+    wr = m.get("winner_rank", "?")
+    print(f"  {y}: TOP10={t10}/5 1着={wr}位")
 
 # ---- 事前計算 ----
 print("\n事前計算中...")
-precomputed = _precompute_arrays(all_data)
+precomputed = _precompute_arrays(all_data, race_type=race_type)
 current_arr = _dict_to_arr(current_params)
 current_fast = _fast_cv_score(precomputed, current_arr)
 print(f"現行スコア(高速): {current_fast:.2f}")
@@ -64,7 +76,7 @@ new_bounds = {
 # ---- Phase 1: 全既存パラメータも含めた探索 ----
 # 既存パラメータは±10%の範囲で微調整、新パラメータは全範囲探索
 print(f"\n{'='*60}")
-print("  Phase 1: 新パラメータ + 既存パラメータ微調整 (500k回)")
+print(f"  Phase 1: 新パラメータ + 既存パラメータ微調整 (500k回)")
 print(f"{'='*60}")
 t_start = time.time()
 
@@ -129,25 +141,23 @@ for step_size, n_iter, label in [(0.05, 300000, "±5%"), (0.02, 200000, "±2%")]
 
 # ---- 結果表示 ----
 best_params = _arr_to_dict(best_arr)
-best_cv = cv_score(all_data, best_params)
+best_cv = cv_score(all_data, best_params, race_type=race_type)
 
 print(f"\n{'='*60}")
-print("  最終結果")
+print(f"  最終結果 ({race_label})")
 print(f"{'='*60}")
 print(f"  現行CVスコア: {current_cv:.2f}")
 print(f"  最適CVスコア: {best_cv:.2f} (差: {best_cv - current_cv:+.2f})")
 
 # 年度別
 for y in sorted(all_data.keys()):
-    m_old = evaluate_single(all_data[y], current_params, birth_year=y)
-    m_new = evaluate_single(all_data[y], best_params, birth_year=y)
-    t10_o = m_old.get("top10_total", 0)
-    t10_n = m_new.get("top10_total", 0)
-    md_o = m_old.get("male_top10_derby", 0)
-    md_n = m_new.get("male_top10_derby", 0)
-    fo_o = m_old.get("female_top10_oaks", 0)
-    fo_n = m_new.get("female_top10_oaks", 0)
-    print(f"  {y}: TOP10 {t10_o}→{t10_n}  D {md_o}→{md_n}  O {fo_o}→{fo_n}")
+    m_old = evaluate_single(all_data[y], current_params, birth_year=y, race_type=race_type)
+    m_new = evaluate_single(all_data[y], best_params, birth_year=y, race_type=race_type)
+    t10_o = m_old.get(f"top10_{race_type}", 0)
+    t10_n = m_new.get(f"top10_{race_type}", 0)
+    wr_o = m_old.get("winner_rank", "?")
+    wr_n = m_new.get("winner_rank", "?")
+    print(f"  {y}: TOP10 {t10_o}→{t10_n}  1着 {wr_o}→{wr_n}")
 
 # 変更点
 print("\n--- 変更点 ---")
@@ -159,10 +169,14 @@ for k in _PARAM_KEYS:
 
 # 保存
 if best_cv > current_cv:
+    if race_type == "oaks":
+        weights_path = "data/config/weights_oaks.json"
+    else:
+        weights_path = "data/config/weights.json"
     save_weights = dict(best_params)
     save_weights["_comment"] = "グリッドサーチ自動更新"
-    with open("data/config/weights.json", "w", encoding="utf-8") as f:
+    with open(weights_path, "w", encoding="utf-8") as f:
         json.dump(save_weights, f, ensure_ascii=False, indent=2)
-    print(f"\n  → weights.json に保存しました")
+    print(f"\n  → {weights_path} に保存しました")
 else:
-    print(f"\n  改善なし — weights.json は更新しません")
+    print(f"\n  改善なし — 重みファイルは更新しません")

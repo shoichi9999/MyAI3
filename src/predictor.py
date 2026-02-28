@@ -1,12 +1,13 @@
 """
-POG 牡馬ダービー予測 - メイン実行モジュール。
+POG 予測 - メイン実行モジュール。
 
-牡馬のみを対象にダービーTOP5入り候補を予測する。
+ダービー（牡馬）またはオークス（牝馬）のTOP5入り候補を予測する。
 
 使い方:
-  python run.py --year 2024            # 全自動（収集→特徴量→予測）
+  python run.py --year 2024                  # ダービー予測（デフォルト）
+  python run.py --year 2024 --race oaks      # オークス予測
   python run.py --mode collect --year 2024
-  python run.py --mode predict --year 2024
+  python run.py --mode predict --year 2024 --race oaks
 """
 
 import argparse
@@ -45,6 +46,7 @@ def collect_data(birth_year: int, max_horses: int = None) -> pd.DataFrame:
 def predict_top(
     target_year: int,
     top_n: int = 10,
+    race_type: str = "derby",
 ) -> pd.DataFrame:
     """
     ヒューリスティックスコアでTOP N予測を行う。
@@ -55,14 +57,20 @@ def predict_top(
         対象の生年
     top_n : int
         上位何頭を出力するか
+    race_type : str
+        "derby" でダービー（牡馬）、"oaks" でオークス（牝馬）
 
     Returns
     -------
     pd.DataFrame
         予測結果（上位N頭）
     """
+    race_label = "ダービー" if race_type == "derby" else "オークス"
+    sex_label = "牡馬" if race_type == "derby" else "牝馬"
+    sex_filter = "牡" if race_type == "derby" else "牝"
+
     print(f"\n{'='*60}")
-    print(f"  POG牡馬ダービー予測: {target_year}年生まれ TOP{top_n}")
+    print(f"  POG{sex_label}{race_label}予測: {target_year}年生まれ TOP{top_n}")
     print(f"{'='*60}")
 
     horses_path = f"data/horses_{target_year}.csv"
@@ -72,8 +80,8 @@ def predict_top(
         return pd.DataFrame()
 
     horses_df = pd.read_csv(horses_path)
-    features = build_feature_matrix(horses_df, birth_year=target_year)
-    features["score"] = heuristic_score(features)
+    features = build_feature_matrix(horses_df, birth_year=target_year, sex_filter=sex_filter)
+    features["score"] = heuristic_score(features, race_type=race_type)
 
     # スコアでソートしてTOP N
     features = features.sort_values("score", ascending=False)
@@ -105,7 +113,8 @@ def predict_top(
     print("\n" + tabulate(display_df, headers="keys", tablefmt="grid", floatfmt=".1f"))
 
     # 結果をCSVに保存
-    output_path = f"data/pog_top{top_n}_{target_year}.csv"
+    race_suffix = "_oaks" if race_type == "oaks" else ""
+    output_path = f"data/pog_top{top_n}{race_suffix}_{target_year}.csv"
     top.to_csv(output_path, index=False, encoding="utf-8-sig")
     print(f"\n結果を保存しました: {output_path}")
 
@@ -252,6 +261,7 @@ def run_full_pipeline(
     max_horses: int = None,
     top_n: int = 10,
     prescore_top: int = 500,
+    race_type: str = "derby",
 ):
     """
     全自動パイプライン（データ収集 → 特徴量取得 → 予測）。
@@ -266,10 +276,15 @@ def run_full_pipeline(
         上位何頭を出力するか
     prescore_top : int
         プレスコア上位N頭のみプロフィール取得（0で全頭取得）
+    race_type : str
+        "derby" でダービー（牡馬）、"oaks" でオークス（牝馬）
     """
+    race_label = "ダービー" if race_type == "derby" else "オークス"
+    sex_label = "牡馬" if race_type == "derby" else "牝馬"
+
     print("=" * 60)
-    print("  POG牡馬ダービー予測 - 全自動パイプライン")
-    print(f"  対象世代: {target_year}年生まれ（牡馬のみ）")
+    print(f"  POG{sex_label}{race_label}予測 - 全自動パイプライン")
+    print(f"  対象世代: {target_year}年生まれ（{sex_label}のみ）")
     print(f"  予測馬数: TOP{top_n}")
     if prescore_top:
         print(f"  プレスコア絞り込み: 上位{prescore_top}頭")
@@ -292,13 +307,13 @@ def run_full_pipeline(
     _fetch_extra_features(target_year, max_horses=max_horses, top=prescore_top or None)
 
     # 4. 予測
-    result = predict_top(target_year, top_n=top_n)
+    result = predict_top(target_year, top_n=top_n, race_type=race_type)
 
     return result
 
 
 def main():
-    parser = argparse.ArgumentParser(description="POG牡馬ダービー予測システム")
+    parser = argparse.ArgumentParser(description="POG予測システム（ダービー/オークス）")
     parser.add_argument(
         "--mode",
         choices=["collect", "predict", "full"],
@@ -329,19 +344,26 @@ def main():
         default=500,
         help="プレスコア上位N頭のみプロフィール取得 (default: 500, 0=全頭)",
     )
+    parser.add_argument(
+        "--race",
+        choices=["derby", "oaks"],
+        default="derby",
+        help="対象レース: derby(ダービー・牡馬) / oaks(オークス・牝馬)",
+    )
 
     args = parser.parse_args()
 
     if args.mode == "collect":
         collect_data(args.year, max_horses=args.max_horses)
     elif args.mode == "predict":
-        predict_top(args.year, top_n=args.top_n)
+        predict_top(args.year, top_n=args.top_n, race_type=args.race)
     elif args.mode == "full":
         run_full_pipeline(
             target_year=args.year,
             max_horses=args.max_horses,
             top_n=args.top_n,
             prescore_top=args.prescore_top,
+            race_type=args.race,
         )
 
 

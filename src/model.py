@@ -3,7 +3,8 @@ POGスコアリング — ヒューリスティック方式。
 
 デビュー前に入手可能な特徴量から、ドメイン知識ベースの
 重み付けスコアを算出して馬をランク付けする。
-重みパラメータは data/config/weights.json から読み込む。
+重みパラメータは data/config/weights.json（ダービー）または
+data/config/weights_oaks.json（オークス）から読み込む。
 """
 
 import json
@@ -13,16 +14,25 @@ import numpy as np
 import pandas as pd
 
 
-def _load_weights() -> dict:
-    """data/config/weights.json から重みパラメータを読み込む。"""
-    path = "data/config/weights.json"
+def _load_weights(race_type: str = "derby") -> dict:
+    """重みパラメータを読み込む。
+
+    Parameters
+    ----------
+    race_type : str
+        "derby" で weights.json、"oaks" で weights_oaks.json を読み込む。
+    """
+    if race_type == "oaks":
+        path = "data/config/weights_oaks.json"
+    else:
+        path = "data/config/weights.json"
     if os.path.exists(path):
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
     return {}
 
 
-def heuristic_score(df: pd.DataFrame) -> pd.Series:
+def heuristic_score(df: pd.DataFrame, race_type: str = "derby") -> pd.Series:
     """
     ヒューリスティックスコアを算出する。
 
@@ -30,13 +40,15 @@ def heuristic_score(df: pd.DataFrame) -> pd.Series:
     ----------
     df : pd.DataFrame
         build_feature_matrix() で生成した特徴量マトリクス
+    race_type : str
+        "derby" でダービー用重み、"oaks" でオークス用重みを使用。
 
     Returns
     -------
     pd.Series
         各馬のスコア（高いほど有望）
     """
-    W = _load_weights()
+    W = _load_weights(race_type)
 
     score = pd.Series(0.0, index=df.index)
 
