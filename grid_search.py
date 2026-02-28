@@ -247,7 +247,7 @@ def _get_derby_winner_id(birth_year: int) -> str | None:
 # ------------------------------------------------------------------
 
 def evaluate_single(df: pd.DataFrame, params: dict, birth_year: int = None) -> dict:
-    """1年度のデータでダービーTOP5予測を評価する（牡馬のみ）。"""
+    """1年度のデータでダービー予測を評価する（牡馬のみ）。"""
     scores = parameterized_score(df, params).values
     horse_ids = df["horse_id"].astype(str).values
 
@@ -255,6 +255,7 @@ def evaluate_single(df: pd.DataFrame, params: dict, birth_year: int = None) -> d
         birth_year = df.get("_birth_year", 2020)
 
     derby_top5 = _get_derby_ids(birth_year)
+    derby_winner_id = _get_derby_winner_id(birth_year)
 
     results = {}
 
@@ -264,23 +265,41 @@ def evaluate_single(df: pd.DataFrame, params: dict, birth_year: int = None) -> d
         pred_ids = set(horse_ids[pred_idx])
         results[f"top{n}_derby"] = len(pred_ids & derby_top5)
 
+    # ダービー1着馬の予測順位
+    if derby_winner_id:
+        all_ranks = np.argsort(np.argsort(-scores)) + 1
+        idx = np.where(horse_ids == derby_winner_id)[0]
+        if len(idx) > 0:
+            results["winner_rank"] = int(all_ranks[idx[0]])
+        else:
+            results["winner_rank"] = len(horse_ids)
+    else:
+        results["winner_rank"] = len(horse_ids)
+
     return results
 
 
 def composite_score(metrics: dict, objective: str = "classic") -> float:
-    """複合スコア（牡馬ダービーTOP5ヒット最大化）。"""
-    d5 = metrics.get("top5_derby", 0)
+    """複合スコア（ダービー1着馬TOP10入り最優先）。"""
     d10 = metrics.get("top10_derby", 0)
-    d15 = metrics.get("top15_derby", 0)
-    d20 = metrics.get("top20_derby", 0)
-    d30 = metrics.get("top30_derby", 0)
+    winner_rank = metrics.get("winner_rank", 9999)
+
+    # ダービー1着馬の段階ボーナス（TOP10入りに集中）
+    winner_bonus = 0.0
+    if winner_rank <= 5:
+        winner_bonus = 800.0
+    elif winner_rank <= 10:
+        winner_bonus = 600.0
+    elif winner_rank <= 15:
+        winner_bonus = 100.0
+    elif winner_rank <= 20:
+        winner_bonus = 40.0
+    elif winner_rank <= 30:
+        winner_bonus = 15.0
 
     return (
-        d5 * 200.0    # TOP5ヒットが最重要
-        + d10 * 100.0  # TOP10ヒット
-        + d15 * 20.0   # TOP15ヒット
-        + d20 * 10.0   # TOP20ヒット
-        + d30 * 3.0    # TOP30ヒット
+        winner_bonus       # ダービー1着馬の順位が支配的
+        + d10 * 20.0       # TOP10ヒット（副次）
     )
 
 
@@ -376,12 +395,18 @@ def grid_search(years, objective="balanced"):
 
     current_cv = cv_score(all_data, current_params)
     print(f"\n  現行パラメータのCVスコア: {current_cv:.2f}")
+    winner_in_top10 = 0
     for y, df in sorted(all_data.items()):
         m = evaluate_single(df, current_params, birth_year=y)
         d5 = m.get("top5_derby", 0)
         d10 = m.get("top10_derby", 0)
         d20 = m.get("top20_derby", 0)
-        print(f"    {y}年: TOP5={d5}/5  TOP10={d10}/5  TOP20={d20}/5")
+        wr = m.get("winner_rank", "?")
+        hit = "✓" if isinstance(wr, int) and wr <= 10 else "✗"
+        if isinstance(wr, int) and wr <= 10:
+            winner_in_top10 += 1
+        print(f"    {y}年: TOP10={d10}/5  1着={wr}位 {hit}")
+    print(f"  ダービー1着TOP10入り: {winner_in_top10}/{len(all_data)}年")
 
     best_score = current_cv
     best_params = dict(current_params)
@@ -423,17 +448,27 @@ def grid_search(years, objective="balanced"):
         print("  （変更なし — 現行パラメータが最適）")
 
     # 年度別詳細
-    print(f"\n--- 年度別パフォーマンス比較（牡馬ダービーTOP5） ---")
-    print(f"{'年':>6} | {'指標':>12} | {'現行':>6} | {'最適化':>6} | {'差':>6}")
-    print("-" * 55)
+    print(f"\n--- 年度別パフォーマンス比較（ダービー1着TOP10入り） ---")
+    print(f"{'年':>6} | {'指標':>12} | {'現行':>8} | {'最適化':>8} | {'差':>6}")
+    print("-" * 60)
+    old_w_hits = new_w_hits = 0
     for y in sorted(all_data.keys()):
         m_old = evaluate_single(all_data[y], current_params, birth_year=y)
         m_new = evaluate_single(all_data[y], best_params, birth_year=y)
-        for n in [5, 10, 15, 20, 30]:
+        # ダービー1着順位
+        wr_old = m_old.get("winner_rank", "?")
+        wr_new = m_new.get("winner_rank", "?")
+        hit_old = "✓" if isinstance(wr_old, int) and wr_old <= 10 else "✗"
+        hit_new = "✓" if isinstance(wr_new, int) and wr_new <= 10 else "✗"
+        if isinstance(wr_old, int) and wr_old <= 10: old_w_hits += 1
+        if isinstance(wr_new, int) and wr_new <= 10: new_w_hits += 1
+        print(f"  {y} | {'1着順位':>12} | {wr_old:>5}位{hit_old} | {wr_new:>5}位{hit_new} | {(wr_new-wr_old) if isinstance(wr_old, int) and isinstance(wr_new, int) else '':>+5}")
+        for n in [10, 20, 30]:
             old_val = m_old.get(f"top{n}_derby", 0)
             new_val = m_new.get(f"top{n}_derby", 0)
-            print(f"  {y} | {'TOP'+str(n):>12} | {old_val:>4}/5  | {new_val:>4}/5  | {new_val-old_val:>+5}")
-        print("-" * 55)
+            print(f"  {y} | {'TOP'+str(n):>12} | {old_val:>4}/5   | {new_val:>4}/5   | {new_val-old_val:>+5}")
+        print("-" * 60)
+    print(f"  1着TOP10入り: 現行={old_w_hits}/8  最適化={new_w_hits}/8")
 
     return best_params
 
@@ -673,7 +708,7 @@ def _compute_score_vec(d, params):
 
 
 def _fast_cv_score(precomputed, params):
-    """事前計算配列を使った高速CVスコア（牡馬ダービーTOP5特化）。"""
+    """事前計算配列を使った高速CVスコア（ダービー1着馬TOP10入り最優先）。"""
     total_score = 0.0
     n_years = len(precomputed)
 
@@ -681,54 +716,48 @@ def _fast_cv_score(precomputed, params):
         score = _compute_score_vec(d, params)
         n_horses = len(score)
 
-        # TOP5/10/15/20/30でダービーTOP5ヒット
-        d5 = d10 = d15 = d20 = d30 = 0
+        # TOP10でダービーTOP5ヒット（副次指標）
+        d10 = 0
         if d["derby_idx"]:
-            for n, var_name in [(5, 'd5'), (10, 'd10'), (15, 'd15'), (20, 'd20'), (30, 'd30')]:
-                k = min(n, n_horses)
-                pred_top = set(np.argpartition(-score, k)[:k])
-                match = len(pred_top & d["derby_idx"])
-                if n == 5: d5 = match
-                elif n == 10: d10 = match
-                elif n == 15: d15 = match
-                elif n == 20: d20 = match
-                elif n == 30: d30 = match
+            k = min(10, n_horses)
+            pred_top = set(np.argpartition(-score, k)[:k])
+            d10 = len(pred_top & d["derby_idx"])
 
         # ランク計算（1回のargsortで全ランクを取得）
         ranks = np.argsort(np.argsort(-score)) + 1  # 1-indexed
 
-        # ランク平滑化: ダービー馬のパーセンタイル
-        smooth_bonus = 0.0
-        if d["derby_idx"]:
-            for idx in d["derby_idx"]:
-                pctl = 1.0 - ranks[idx] / n_horses
-                smooth_bonus += pctl * 5.0
-
-        # ダービー1着馬の順位ベース連続ボーナス
+        # ===== ダービー1着馬の順位が最優先 =====
         winner_bonus = 0.0
         widx = d["derby_winner_idx"]
         if widx is not None:
             rank_val = int(ranks[widx])
             pctl = 1.0 - rank_val / n_horses
-            winner_bonus += pctl * 30.0
+            # 連続ボーナス（ランクが高いほど大きい）
+            winner_bonus += pctl * 100.0
 
+            # 段階ボーナス — TOP10入りに集中
             if rank_val <= 5:
-                winner_bonus += 120.0
+                winner_bonus += 800.0
             elif rank_val <= 10:
-                winner_bonus += 60.0
+                winner_bonus += 600.0
+            elif rank_val <= 15:
+                winner_bonus += 100.0
             elif rank_val <= 20:
-                winner_bonus += 25.0
+                winner_bonus += 40.0
             elif rank_val <= 30:
-                winner_bonus += 10.0
+                winner_bonus += 15.0
+
+        # ダービーTOP5全体のランク（副次指標）
+        smooth_bonus = 0.0
+        if d["derby_idx"]:
+            for idx in d["derby_idx"]:
+                pctl = 1.0 - ranks[idx] / n_horses
+                smooth_bonus += pctl * 3.0
 
         total_score += (
-            d5 * 200.0     # TOP5ヒットが最重要
-            + d10 * 100.0  # TOP10ヒット
-            + d15 * 20.0   # TOP15ヒット
-            + d20 * 10.0   # TOP20ヒット
-            + d30 * 3.0    # TOP30ヒット
-            + smooth_bonus # ランク平滑化
-            + winner_bonus # ダービー1着馬順位ボーナス
+            winner_bonus          # ダービー1着馬の順位が支配的
+            + d10 * 20.0          # TOP10ヒット（副次）
+            + smooth_bonus        # ランク平滑化（副次）
         )
 
     return total_score / n_years
@@ -819,16 +848,18 @@ def _random_search_top10(all_data, current_params, best_score):
     def _show_top10(arr, label=""):
         params = _arr_to_dict(arr)
         items = []
-        total_d5 = 0
         total_d10 = 0
+        winner_hits = 0
         for y in sorted(all_data.keys()):
             m = evaluate_single(all_data[y], params, birth_year=y)
-            d5 = m.get("top5_derby", 0)
             d10 = m.get("top10_derby", 0)
-            items.append(f"{y}:T5={d5} T10={d10}")
-            total_d5 += d5
+            wr = m.get("winner_rank", "?")
+            hit = "✓" if isinstance(wr, int) and wr <= 10 else ""
+            if isinstance(wr, int) and wr <= 10:
+                winner_hits += 1
+            items.append(f"{y}:1着={wr}位{hit}")
             total_d10 += d10
-        print(f"  {label} TOP5={total_d5}/40 TOP10={total_d10}/40 [{', '.join(items)}]")
+        print(f"  {label} 1着TOP10={winner_hits}/8 T10={total_d10}/40 [{', '.join(items)}]")
 
     t_start = time.time()
 

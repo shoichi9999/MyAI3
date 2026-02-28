@@ -55,7 +55,9 @@ def load_year(year: int) -> pd.DataFrame | None:
     horses = pd.read_csv(csv_path)
     horses["prize_num"] = horses["total_prize"].apply(_parse_prize)
     features = build_feature_matrix(horses, birth_year=year)
-    features["prize_num"] = horses["prize_num"].values
+    # build_feature_matrix は牡馬のみにフィルタするため、horse_id で結合
+    prize_map = dict(zip(horses["horse_id"].astype(str), horses["prize_num"]))
+    features["prize_num"] = features["horse_id"].astype(str).map(prize_map).fillna(0.0)
     return features
 
 
