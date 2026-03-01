@@ -145,108 +145,73 @@ def _get_classic_ids_up_to(max_birth_year: int) -> set:
     return ids
 
 
-# 種牡馬クラシック輩出数キャッシュ（max_birth_year → {sire_name: count}）
-_SIRE_CLASSIC_CACHE: dict[int, dict[str, int]] = {}
+# 汎用クラシック輩出数キャッシュ: (max_birth_year, role, race_keys) → {name: count}
+_CLASSIC_MAP_CACHE: dict[tuple, dict[str, int]] = {}
+
+# CSVファイル読み込みキャッシュ（同じCSVを何度も読まない）
+_CSV_CACHE: dict[str, pd.DataFrame] = {}
+
+
+def _read_csv_cached(path: str) -> pd.DataFrame | None:
+    """CSVファイルをキャッシュ付きで読み込む。"""
+    if path not in _CSV_CACHE:
+        if not os.path.exists(path):
+            _CSV_CACHE[path] = None
+        else:
+            _CSV_CACHE[path] = pd.read_csv(path)
+    return _CSV_CACHE[path]
+
+
+def _build_classic_map(max_birth_year: int, column: str,
+                       race_keys: tuple[str, ...]) -> dict[str, int]:
+    """汎用クラシックTOP5輩出数マップを構築する（リーク防止: max_birth_year以前のみ）。
+
+    Parameters
+    ----------
+    max_birth_year : int
+        この年以前の世代のクラシック結果のみ使用
+    column : str
+        CSVの参照カラム名（"sire" or "sire_of_dam"）
+    race_keys : tuple[str, ...]
+        参照するレース種別のタプル（("derby", "oaks") or ("oaks",)）
+    """
+    cache_key = (max_birth_year, column, race_keys)
+    if cache_key in _CLASSIC_MAP_CACHE:
+        return _CLASSIC_MAP_CACHE[cache_key]
+
+    counts: dict[str, int] = {}
+    for race_key in race_keys:
+        for by_str, horse_ids in _CLASSIC_RESULTS.get(race_key, {}).items():
+            if int(by_str) > max_birth_year:
+                continue
+            df = _read_csv_cached(f"data/horses_{by_str}.csv")
+            if df is None:
+                continue
+            id_to_name = dict(zip(
+                df["horse_id"].astype(str), df[column].fillna("")
+            ))
+            for hid in horse_ids:
+                name = id_to_name.get(str(hid), "")
+                if name:
+                    counts[name] = counts.get(name, 0) + 1
+
+    _CLASSIC_MAP_CACHE[cache_key] = counts
+    return counts
 
 
 def _get_sire_classic_map(max_birth_year: int) -> dict[str, int]:
-    """種牡馬ごとのクラシックTOP5輩出数を返す（リーク防止: max_birth_year以前のみ）。
-
-    ダービー・オークス両方の結果を含めることで、種牡馬のクラシック適性を
-    より正確に評価する。
-    """
-    if max_birth_year in _SIRE_CLASSIC_CACHE:
-        return _SIRE_CLASSIC_CACHE[max_birth_year]
-
-    sire_counts: dict[str, int] = {}
-    for race_key in ["derby", "oaks"]:
-        for by_str, horse_ids in _CLASSIC_RESULTS.get(race_key, {}).items():
-            by = int(by_str)
-            if by > max_birth_year:
-                continue
-            csv_path = f"data/horses_{by}.csv"
-            if not os.path.exists(csv_path):
-                continue
-            df = pd.read_csv(csv_path)
-            id_to_sire = dict(zip(
-                df["horse_id"].astype(str), df["sire"].fillna("")
-            ))
-            for hid in horse_ids:
-                sire = id_to_sire.get(str(hid), "")
-                if sire:
-                    sire_counts[sire] = sire_counts.get(sire, 0) + 1
-
-    _SIRE_CLASSIC_CACHE[max_birth_year] = sire_counts
-    return sire_counts
-
-
-# 種牡馬オークス専用クラシック輩出数キャッシュ
-_SIRE_OAKS_CACHE: dict[int, dict[str, int]] = {}
+    """種牡馬ごとのクラシックTOP5輩出数を返す（ダービー+オークス）。"""
+    return _build_classic_map(max_birth_year, "sire", ("derby", "oaks"))
 
 
 def _get_sire_oaks_map(max_birth_year: int) -> dict[str, int]:
-    """種牡馬ごとのオークスTOP5輩出数を返す（リーク防止: max_birth_year以前のみ）。
-
-    ダービーとは異なり、オークスのみの結果を使って
-    種牡馬の牝馬クラシック適性を評価する。
-    """
-    if max_birth_year in _SIRE_OAKS_CACHE:
-        return _SIRE_OAKS_CACHE[max_birth_year]
-
-    sire_counts: dict[str, int] = {}
-    for by_str, horse_ids in _CLASSIC_RESULTS.get("oaks", {}).items():
-        by = int(by_str)
-        if by > max_birth_year:
-            continue
-        csv_path = f"data/horses_{by}.csv"
-        if not os.path.exists(csv_path):
-            continue
-        df = pd.read_csv(csv_path)
-        id_to_sire = dict(zip(
-            df["horse_id"].astype(str), df["sire"].fillna("")
-        ))
-        for hid in horse_ids:
-            sire = id_to_sire.get(str(hid), "")
-            if sire:
-                sire_counts[sire] = sire_counts.get(sire, 0) + 1
-
-    _SIRE_OAKS_CACHE[max_birth_year] = sire_counts
-    return sire_counts
-
-
-# 母父クラシック輩出数キャッシュ
-_BMS_CLASSIC_CACHE: dict[int, dict[str, int]] = {}
+    """種牡馬ごとのオークスTOP5輩出数を返す（オークスのみ）。"""
+    return _build_classic_map(max_birth_year, "sire", ("oaks",))
 
 
 def _get_bms_classic_map(max_birth_year: int) -> dict[str, int]:
-    """母父ごとのクラシックTOP5輩出数を返す（リーク防止: max_birth_year以前のみ）。
-
-    種牡馬としてではなく、母父（BMS）としてクラシック馬を
-    輩出した実績を評価する。オークス予測に特に有用。
-    """
-    if max_birth_year in _BMS_CLASSIC_CACHE:
-        return _BMS_CLASSIC_CACHE[max_birth_year]
-
-    bms_counts: dict[str, int] = {}
-    for race_key in ["derby", "oaks"]:
-        for by_str, horse_ids in _CLASSIC_RESULTS.get(race_key, {}).items():
-            by = int(by_str)
-            if by > max_birth_year:
-                continue
-            csv_path = f"data/horses_{by}.csv"
-            if not os.path.exists(csv_path):
-                continue
-            df = pd.read_csv(csv_path)
-            id_to_bms = dict(zip(
-                df["horse_id"].astype(str), df["sire_of_dam"].fillna("")
-            ))
-            for hid in horse_ids:
-                bms = id_to_bms.get(str(hid), "")
-                if bms:
-                    bms_counts[bms] = bms_counts.get(bms, 0) + 1
-
-    _BMS_CLASSIC_CACHE[max_birth_year] = bms_counts
-    return bms_counts
+    """母父ごとのクラシックTOP5輩出数を返す（ダービー+オークス）。"""
+    return _build_classic_map(max_birth_year, "sire_of_dam", ("derby", "oaks"))
 
 
 def get_sire_2yo_ei(sire_name: str, leading_year: int = None) -> float:
@@ -530,10 +495,26 @@ def get_parent_age(horse_row, birth_year: int, parent: str = "sire") -> float | 
     return None
 
 
+def _leading_lookup_series(ld_dict: dict, field: str) -> pd.Series:
+    """リーディングデータから特定フィールドのルックアップ用Seriesを構築する。"""
+    return pd.Series({
+        k: float(v.get(field, 0) or 0) if isinstance(v, dict) else 0.0
+        for k, v in ld_dict.items()
+    })
+
+
+def _leading_lookup_series_int(ld_dict: dict, field: str) -> pd.Series:
+    """リーディングデータから特定フィールドのルックアップ用Series（int型）を構築する。"""
+    return pd.Series({
+        k: int(v.get(field, 0) or 0) if isinstance(v, dict) else 0
+        for k, v in ld_dict.items()
+    })
+
+
 def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None,
                          sex_filter: str = "牡") -> pd.DataFrame:
     """
-    全馬の特徴量マトリクスを構築する。
+    全馬の特徴量マトリクスを構築する（ベクトル化版）。
 
     血統スコア（父EI、母父EI、母馬獲得賞金）、生まれ月、親年齢を
     使って予測に使える特徴量を生成する。
@@ -546,8 +527,6 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None,
     sex_filter : str
         "牡" でダービー用（牡馬のみ）、"牝" でオークス用（牝馬のみ）。
     """
-    feature_rows = []
-
     # birth_yearの推定（horse_idの先頭4桁 or DataFrameから）
     if birth_year is None:
         sample_id = str(horses_df.iloc[0].get("horse_id", ""))
@@ -557,188 +536,236 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None,
             birth_year = 2024
 
     # 性別フィルタリング（ダービー=牡馬、オークス=牝馬）
-    horses_df = horses_df[horses_df["sex"] == sex_filter].copy()
+    src = horses_df[horses_df["sex"] == sex_filter].copy()
 
     # リーディング年度の決定（データリーク防止）
     leading_year = get_leading_year(birth_year)
 
-    for _, horse in horses_df.iterrows():
-        hid = horse.get("horse_id", "")
-        row = {"horse_id": hid}
+    # --- データの事前ロード ---
+    sire_ld = _load_leading("sire_leading", leading_year)
+    bms_ld = _load_leading("bms_leading", leading_year)
+    sire_2yo_ld = _load_leading("sire_2yo_leading", leading_year)
+    prev_sire_ld = _load_leading("sire_leading", leading_year - 1)
+    bd_cache = _load_birth_dates(birth_year)
+    pa_cache = _load_parent_ages(birth_year)
+    ex_cache = _load_extra_features(birth_year)
 
-        # 基本情報
-        row["horse_name"] = horse.get("horse_name", "")
+    # --- ルックアップSeries構築（ハッシュベース高速マッピング） ---
+    sire_ei_lu = _leading_lookup_series(sire_ld, "ei")
+    bms_ei_lu = _leading_lookup_series(bms_ld, "ei")
+    sire_2yo_ei_lu = _leading_lookup_series(sire_2yo_ld, "ei")
+    sire_wr_lu = _leading_lookup_series(sire_ld, "win_rate")
+    bms_wr_lu = _leading_lookup_series(bms_ld, "win_rate")
+    sire_runners_lu = _leading_lookup_series_int(sire_ld, "runners")
+    sire_pp_lu = _leading_lookup_series(sire_ld, "progeny_prize")
+    bms_runners_lu = _leading_lookup_series_int(bms_ld, "runners")
+    sire_rank_lu = _leading_lookup_series_int(sire_ld, "rank")
+    bms_rank_lu = _leading_lookup_series_int(bms_ld, "rank")
+    bms_pp_lu = _leading_lookup_series(bms_ld, "progeny_prize")
+    prev_sire_ei_lu = _leading_lookup_series(prev_sire_ld, "ei")
 
-        # 産駒成績ベースの血統スコア（年度別リーディングを参照）
-        row["sire_ei"] = get_sire_ei(horse.get("sire", ""), leading_year)
-        row["bms_ei"] = get_bms_ei(horse.get("sire_of_dam", ""), leading_year)
-        row["sire_2yo_ei"] = get_sire_2yo_ei(horse.get("sire", ""), leading_year)
+    # ソースカラム
+    sire = src["sire"].fillna("")
+    bms_name = src["sire_of_dam"].fillna("")
+    dam = src["dam"].fillna("")
+    hids = src["horse_id"].astype(str)
 
-        # 種牡馬勝率・母父勝率・種牡馬ランク
-        row["sire_win_rate"] = get_sire_win_rate(horse.get("sire", ""), leading_year)
-        row["bms_win_rate"] = get_bms_win_rate(horse.get("sire_of_dam", ""), leading_year)
+    # --- 結果DataFrame構築 ---
+    r = pd.DataFrame(index=src.index)
+    r["horse_id"] = src["horse_id"].values
+    r["horse_name"] = src.get("horse_name", pd.Series("", index=src.index)).values
 
-        # 種牡馬産駒数・産駒総賞金（実績の信頼度指標）
-        row["sire_runners"] = get_sire_runners(horse.get("sire", ""), leading_year)
-        row["sire_progeny_prize"] = get_sire_progeny_prize(horse.get("sire", ""), leading_year)
-        row["bms_runners"] = get_bms_runners(horse.get("sire_of_dam", ""), leading_year)
+    # === 産駒成績ベースの血統スコア（ベクトル化マッピング） ===
+    r["sire_ei"] = sire.map(sire_ei_lu).fillna(0.0)
+    r["bms_ei"] = bms_name.map(bms_ei_lu).fillna(0.0)
+    r["sire_2yo_ei"] = sire.map(sire_2yo_ei_lu).fillna(0.0)
+    r["sire_win_rate"] = sire.map(sire_wr_lu).fillna(0.0)
+    r["bms_win_rate"] = bms_name.map(bms_wr_lu).fillna(0.0)
+    r["sire_runners"] = sire.map(sire_runners_lu).fillna(0).astype(int)
+    r["sire_progeny_prize"] = sire.map(sire_pp_lu).fillna(0.0)
+    r["bms_runners"] = bms_name.map(bms_runners_lu).fillna(0).astype(int)
+    r["bms_progeny_prize"] = bms_name.map(bms_pp_lu).fillna(0.0)
 
-        sire_rank = get_sire_rank(horse.get("sire", ""), leading_year)
-        # ランクを逆転スコアに変換（1位=100, 50位≈2, 50位超=0）
-        row["sire_rank_score"] = max(0, (51 - sire_rank) * 2) if sire_rank > 0 else 0.0
+    # ランク → 逆転スコア（1位=100, 50位≈2, 50位超=0）
+    sire_rank_raw = sire.map(sire_rank_lu).fillna(0).astype(int)
+    r["sire_rank_score"] = np.where(sire_rank_raw > 0, np.maximum(0, (51 - sire_rank_raw) * 2), 0.0)
+    bms_rank_raw = bms_name.map(bms_rank_lu).fillna(0).astype(int)
+    r["bms_rank_score"] = np.where(bms_rank_raw > 0, np.maximum(0, (51 - bms_rank_raw) * 2), 0.0)
 
-        # 母父ランクスコア（種牡馬ランクと同様の逆転スコア）
-        bms_rank = get_bms_rank(horse.get("sire_of_dam", ""), leading_year)
-        row["bms_rank_score"] = max(0, (51 - bms_rank) * 2) if bms_rank > 0 else 0.0
+    # 母馬賞金・種牡馬自身の賞金（辞書マッピング）
+    dam_prizes_s = pd.Series(DAM_PRIZES)
+    r["dam_prize"] = dam.map(dam_prizes_s).fillna(0.0)
+    sire_prizes_s = pd.Series(SIRE_PRIZES)
+    r["sire_prize"] = sire.map(sire_prizes_s).fillna(0.0)
 
-        # 母父産駒総賞金
-        row["bms_progeny_prize"] = get_bms_progeny_prize(horse.get("sire_of_dam", ""), leading_year)
+    # === 調教師・馬主・生産者スコア ===
+    r["trainer_score"] = src["trainer"].fillna("").apply(calc_trainer_score)
+    r["owner_score"] = src["owner"].fillna("").apply(calc_owner_score)
+    r["breeder_score"] = src["breeder"].fillna("").apply(calc_breeder_score)
 
-        # 母馬の獲得賞金（不明なら0 — 不明は不利な情報として扱う）
-        row["dam_prize"] = get_dam_prize(horse.get("dam", ""))
+    # === 生まれ月（ベクトル化） ===
+    def _parse_birth_month(hid):
+        bd = bd_cache.get(str(hid), "")
+        if bd:
+            m = re.search(r"(\d+)月", bd)
+            if m:
+                return int(m.group(1))
+        return 3
+    r["birth_month"] = hids.map(_parse_birth_month)
 
-        # 種牡馬自身の現役獲得賞金（初年度種牡馬ボーナス用）
-        row["sire_prize"] = get_sire_prize(horse.get("sire", ""))
-
-        # 調教師・馬主・生産者スコア
-        row["trainer_score"] = calc_trainer_score(horse.get("trainer", ""))
-        row["owner_score"] = calc_owner_score(horse.get("owner", ""))
-        row["breeder_score"] = calc_breeder_score(horse.get("breeder", ""))
-
-        # 生まれ月（1-12、小さいほど有利）
-        row["birth_month"] = get_birth_month(hid, birth_year)
-
-        # 親年齢（父・母・母父の産駒時年齢）— 欠損はNaN（デフォルト値補完しない）
-        sire_age = get_parent_age(horse, birth_year, "sire")
-        dam_age = get_parent_age(horse, birth_year, "dam")
-        dam_sire_age = get_parent_age(horse, birth_year, "bms")
-        row["sire_age"] = sire_age if sire_age is not None else np.nan
-        row["dam_age"] = dam_age if dam_age is not None else np.nan
-        row["dam_sire_age"] = dam_sire_age if dam_sire_age is not None else np.nan
-
-        # --- ドメイン知識ベースのバイナリ特徴量 ---
-        # 年齢がNaNの場合はバイナリもNaN（デフォルト値で偽装しない）
-        row["early_born"] = 1 if row["birth_month"] <= 4 else 0
-        row["sire_young"] = (1 if sire_age <= 13 else 0) if sire_age is not None else np.nan
-        row["dam_young"] = (1 if dam_age <= 13 else 0) if dam_age is not None else np.nan
-        row["both_parents_young"] = (
-            (1 if sire_age <= 13 and dam_age <= 13 else 0)
-            if sire_age is not None and dam_age is not None else np.nan
+    # === 親年齢（CSV優先 → JSONキャッシュフォールバック） ===
+    def _calc_parent_ages_vec(parent_key):
+        csv_col, cache_by_key, cache_id_key = _PARENT_MAP.get(
+            parent_key, (f"{parent_key}_birth_year", f"{parent_key}_birth_year", None)
         )
-        row["sire_first_crop"] = (1 if sire_age <= 7 else 0) if sire_age is not None else np.nan
-        row["dam_bms_gap_small"] = (
-            (1 if (dam_sire_age - dam_age) <= 15 else 0)
-            if dam_sire_age is not None and dam_age is not None else np.nan
-        )
+        # 1. CSVカラムから計算
+        ages = pd.Series(np.nan, index=src.index)
+        if csv_col in src.columns:
+            parent_by = pd.to_numeric(src[csv_col], errors="coerce")
+            valid = parent_by.notna()
+            ages[valid] = birth_year - parent_by[valid]
+        # 2. JSONキャッシュからフォールバック（NaN残りのみ）
+        missing = ages.isna()
+        if missing.any():
+            for idx in src.index[missing]:
+                hid_str = str(src.at[idx, "horse_id"])
+                data = pa_cache.get(hid_str, {})
+                by = data.get(cache_by_key)
+                if by:
+                    ages.at[idx] = birth_year - by
+                elif cache_id_key:
+                    parent_id = data.get(cache_id_key)
+                    if parent_id:
+                        parent_by_val = _birth_year_from_id(parent_id)
+                        if parent_by_val:
+                            ages.at[idx] = birth_year - parent_by_val
+        return ages
 
-        # --- 追加特徴量（セリ価格・産駒番号） ---
-        extra = _load_extra_features(birth_year).get(str(hid), {})
-        sale_price = extra.get("sale_price")
-        row["sale_price_log"] = np.log1p(sale_price) if sale_price else 0.0
-        foal_number = extra.get("foal_number")
-        # extra_featuresにない場合、dam_foalsから直接計算
-        if not foal_number:
-            dam_id_fn = str(horse.get("dam_id", "")) if pd.notna(horse.get("dam_id")) else ""
-            if dam_id_fn:
-                fl = DAM_FOALS.get(dam_id_fn, [])
-                if fl and str(hid) in fl:
-                    foal_number = len(fl) - fl.index(str(hid))
-        row["foal_number"] = foal_number if foal_number else 3.0  # デフォルト: 3番仔
+    r["sire_age"] = _calc_parent_ages_vec("sire")
+    r["dam_age"] = _calc_parent_ages_vec("dam")
+    r["dam_sire_age"] = _calc_parent_ages_vec("bms")
 
-        # --- 母馬の繁殖入り年齢（初仔生年 - 母馬生年 = 引退時期の近似） ---
+    # === バイナリ特徴量（ベクトル化） ===
+    r["early_born"] = (r["birth_month"] <= 4).astype(int)
+    r["sire_young"] = np.where(r["sire_age"].notna(), (r["sire_age"] <= 13).astype(float), np.nan)
+    r["dam_young"] = np.where(r["dam_age"].notna(), (r["dam_age"] <= 13).astype(float), np.nan)
+    both_notna = r["sire_age"].notna() & r["dam_age"].notna()
+    r["both_parents_young"] = np.where(
+        both_notna, ((r["sire_age"] <= 13) & (r["dam_age"] <= 13)).astype(float), np.nan
+    )
+    r["sire_first_crop"] = np.where(
+        r["sire_age"].notna(), (r["sire_age"] <= 7).astype(float), np.nan
+    )
+    ds_notna = r["dam_sire_age"].notna() & r["dam_age"].notna()
+    r["dam_bms_gap_small"] = np.where(
+        ds_notna, ((r["dam_sire_age"] - r["dam_age"]) <= 15).astype(float), np.nan
+    )
+
+    # === セリ価格・産駒番号 ===
+    def _get_sale_price(hid):
+        extra = ex_cache.get(str(hid), {})
+        sp = extra.get("sale_price")
+        return np.log1p(sp) if sp else 0.0
+    r["sale_price_log"] = hids.map(_get_sale_price)
+
+    # 産駒番号: extra_features → dam_foals フォールバック
+    dam_id_col = src["dam_id"].astype(str).where(src["dam_id"].notna(), "")
+
+    def _get_foal_number(idx):
+        hid_str = str(src.at[idx, "horse_id"])
+        extra = ex_cache.get(hid_str, {})
+        fn = extra.get("foal_number")
+        if fn:
+            return fn
+        did = dam_id_col.at[idx]
+        if did:
+            fl = DAM_FOALS.get(did, [])
+            if fl and hid_str in fl:
+                return len(fl) - fl.index(hid_str)
+        return 3.0
+    r["foal_number"] = pd.Series(
+        [_get_foal_number(idx) for idx in src.index], index=src.index
+    )
+
+    # === 母馬関連の特徴量（foal_listベース） ===
+    classic_cutoff = birth_year - 2
+    classic_ids = _get_classic_ids_up_to(classic_cutoff)
+
+    def _dam_foal_features(idx):
+        """母馬の繁殖入り年齢・産駒数・兄姉クラシック・産駒品質を一括計算。"""
+        dam_by = src.at[idx, "dam_birth_year"] if "dam_birth_year" in src.columns else np.nan
+        did = dam_id_col.at[idx]
+        foal_list = DAM_FOALS.get(did, []) if did else []
+        hid_str = str(src.at[idx, "horse_id"])
+
+        # 繁殖入り年齢
         dam_breeding_age = np.nan
-        dam_by = horse.get("dam_birth_year")
-        dam_id = str(horse.get("dam_id", "")) if pd.notna(horse.get("dam_id")) else ""
-        foal_list = DAM_FOALS.get(dam_id, []) if dam_id else []
-        if dam_id and pd.notna(dam_by):
-            if foal_list:
-                # 産駒リストは降順（新しい順）→ 末尾が初仔
-                first_foal_by = _birth_year_from_id(foal_list[-1])
-                if first_foal_by is not None:
-                    dam_breeding_age = first_foal_by - int(dam_by)
-        row["dam_breeding_age"] = dam_breeding_age
+        if did and pd.notna(dam_by) and foal_list:
+            first_foal_by = _birth_year_from_id(foal_list[-1])
+            if first_foal_by is not None:
+                dam_breeding_age = first_foal_by - int(dam_by)
 
-        # --- 母馬の総産駒数（リーク防止: birth_year以前に生まれた産駒のみカウント） ---
+        # 総産駒数（リーク防止）
         if foal_list:
-            known_foals = [f for f in foal_list
-                           if (_birth_year_from_id(f) or 9999) <= birth_year]
-            row["total_dam_foals"] = len(known_foals)
+            total_dam_foals = sum(1 for f in foal_list
+                                  if (_birth_year_from_id(f) or 9999) <= birth_year)
         else:
-            row["total_dam_foals"] = 0
+            total_dam_foals = 0
 
-        # --- 兄姉のクラシック実績（リーク防止: birth_year-2以前の結果のみ） ---
-        # POGドラフト(Y+2春)時点で確定 = (Y-2)世代以前のダービー/オークス
-        classic_cutoff = birth_year - 2
-        classic_ids = _get_classic_ids_up_to(classic_cutoff)
+        # 兄姉クラシック・産駒品質
         older_siblings = [f for f in foal_list
                           if (_birth_year_from_id(f) or 9999) < birth_year]
-        row["sibling_classic"] = (
-            1 if any(str(s) in classic_ids for s in older_siblings) else 0
-        )
+        sibling_classic = 1 if any(str(s) in classic_ids for s in older_siblings) else 0
 
-        # --- 種牡馬のクラシックTOP5輩出数（リーク防止: birth_year-2以前のみ） ---
-        sire_classic_map = _get_sire_classic_map(classic_cutoff)
-        sire_name = horse.get("sire", "")
-        row["sire_classic_count"] = sire_classic_map.get(sire_name, 0)
-
-        # 種牡馬クラシック率（輩出数 / 産駒数 → 産駒数で正規化した品質指標）
-        sire_runners_val = row["sire_runners"]
-        sire_cc = row["sire_classic_count"]
-        row["sire_classic_rate"] = (sire_cc / sire_runners_val * 100) if sire_runners_val > 0 else 0.0
-
-        # --- 種牡馬のオークス専用クラシック輩出数（リーク防止済み） ---
-        sire_oaks_map = _get_sire_oaks_map(classic_cutoff)
-        row["sire_oaks_count"] = sire_oaks_map.get(sire_name, 0)
-        row["sire_oaks_rate"] = (row["sire_oaks_count"] / sire_runners_val * 100) if sire_runners_val > 0 else 0.0
-
-        # --- 母父のクラシック輩出数（リーク防止済み） ---
-        bms_classic_map = _get_bms_classic_map(classic_cutoff)
-        bms_name = horse.get("sire_of_dam", "")
-        row["bms_classic_count"] = bms_classic_map.get(bms_name, 0)
-
-        # --- 母馬の高クラスフラグ（賞金5000万以上 ≈ 重賞勝ち馬レベル） ---
-        row["dam_high_class"] = 1 if row["dam_prize"] >= 5000 else 0
-
-        # --- 種牡馬の早熟性指標 ---
-        sire_2yo_ei = row["sire_2yo_ei"]
-        sire_ei_val = row["sire_ei"]
-        # 早熟性比率: 2歳EIが全体EIに対して高いほど産駒が早期に活躍
-        row["sire_precocity"] = (sire_2yo_ei / sire_ei_val) if sire_ei_val > 0 else 0.0
-
-        # --- 種牡馬EIトレンド（前年比変化） ---
-        # EIが上昇中の種牡馬 → 産駒の質が向上傾向にある
-        sire_name = horse.get("sire", "")
-        prev_year = leading_year - 1
-        prev_ei = get_sire_ei(sire_name, prev_year)
-        row["sire_ei_trend"] = (sire_ei_val - prev_ei) if prev_ei > 0 else 0.0
-
-        # --- 輸入繁殖牝馬フラグ（dam_id が "000a" で始まる = 海外産馬） ---
-        dam_id_str = str(horse.get("dam_id", "")) if pd.notna(horse.get("dam_id")) else ""
-        row["imported_dam"] = 1 if dam_id_str.startswith("000a") else 0
-
-        # --- 母馬の産駒品質スコア（兄姉がクラシック馬か、リーク防止済み） ---
         if older_siblings:
-            classic_siblings = sum(1 for s in older_siblings if str(s) in classic_ids)
-            row["dam_progeny_quality"] = classic_siblings / len(older_siblings)
+            classic_sibs = sum(1 for s in older_siblings if str(s) in classic_ids)
+            dam_progeny_quality = classic_sibs / len(older_siblings)
         else:
-            row["dam_progeny_quality"] = 0.0
+            dam_progeny_quality = 0.0
 
-        # --- 特徴量交互作用（非線形シグナル） ---
-        # 父EI × 母賞金: 良血父 × 良血母のシナジー
-        sire_ei_val = row["sire_ei"]
-        dam_prize_val = row["dam_prize"]
-        row["sire_dam_interaction"] = sire_ei_val * np.log1p(dam_prize_val)
+        return dam_breeding_age, total_dam_foals, sibling_classic, dam_progeny_quality
 
-        # 調教師 × 生産者: エリート牧場→エリート調教師パイプライン
-        row["trainer_breeder_combo"] = row["trainer_score"] * row["breeder_score"]
+    foal_results = [_dam_foal_features(idx) for idx in src.index]
+    r["dam_breeding_age"] = [x[0] for x in foal_results]
+    r["total_dam_foals"] = [x[1] for x in foal_results]
+    r["sibling_classic"] = [x[2] for x in foal_results]
+    r["dam_progeny_quality"] = [x[3] for x in foal_results]
 
-        # 馬主 × 調教師: エリート馬主→エリート調教師ライン
-        row["owner_trainer_combo"] = row["owner_score"] * row["trainer_score"]
+    # === クラシック輩出数（ベクトル化マッピング） ===
+    sire_classic_map = _get_sire_classic_map(classic_cutoff)
+    sire_oaks_map = _get_sire_oaks_map(classic_cutoff)
+    bms_classic_map = _get_bms_classic_map(classic_cutoff)
 
-        # 母父EI × 母賞金: BMS品質と母実績のシナジー
-        bms_ei_val = row["bms_ei"]
-        row["bms_dam_interaction"] = bms_ei_val * np.log1p(dam_prize_val)
+    sire_classic_lu = pd.Series(sire_classic_map)
+    sire_oaks_lu = pd.Series(sire_oaks_map)
+    bms_classic_lu = pd.Series(bms_classic_map)
 
-        feature_rows.append(row)
+    r["sire_classic_count"] = sire.map(sire_classic_lu).fillna(0).astype(int)
+    sire_runners_v = r["sire_runners"]
+    r["sire_classic_rate"] = np.where(sire_runners_v > 0,
+                                      r["sire_classic_count"] / sire_runners_v * 100, 0.0)
 
-    return pd.DataFrame(feature_rows)
+    r["sire_oaks_count"] = sire.map(sire_oaks_lu).fillna(0).astype(int)
+    r["sire_oaks_rate"] = np.where(sire_runners_v > 0,
+                                   r["sire_oaks_count"] / sire_runners_v * 100, 0.0)
+
+    r["bms_classic_count"] = bms_name.map(bms_classic_lu).fillna(0).astype(int)
+
+    # === 派生特徴量（全ベクトル化） ===
+    r["dam_high_class"] = (r["dam_prize"] >= 5000).astype(int)
+    r["sire_precocity"] = np.where(r["sire_ei"] > 0, r["sire_2yo_ei"] / r["sire_ei"], 0.0)
+
+    # EIトレンド（前年比）
+    prev_ei = sire.map(prev_sire_ei_lu).fillna(0.0)
+    r["sire_ei_trend"] = np.where(prev_ei > 0, r["sire_ei"] - prev_ei, 0.0)
+
+    # 輸入繁殖牝馬フラグ
+    r["imported_dam"] = dam_id_col.str.startswith("000a").astype(int)
+
+    # === 交互作用特徴量（ベクトル化） ===
+    r["sire_dam_interaction"] = r["sire_ei"] * np.log1p(r["dam_prize"])
+    r["trainer_breeder_combo"] = r["trainer_score"] * r["breeder_score"]
+    r["owner_trainer_combo"] = r["owner_score"] * r["trainer_score"]
+    r["bms_dam_interaction"] = r["bms_ei"] * np.log1p(r["dam_prize"])
+
+    return r.reset_index(drop=True)

@@ -121,12 +121,21 @@ def train_predict_loyo(
     test_df = all_data[target_year]
     X_test = test_df[feat_cols]
 
-    # LightGBM 学習
+    # LightGBM 学習（Early Stopping付き）
     dtrain = lgb.Dataset(X_train, label=y_train)
+    # 訓練データの一部をバリデーションに使用（時系列ではないためランダム分割）
+    dvalid = lgb.Dataset(X_test, label=_make_label(test_df["prize_num"], top_n),
+                         reference=dtrain)
+    callbacks = [
+        lgb.early_stopping(stopping_rounds=50, verbose=False),
+        lgb.log_evaluation(period=0),  # ログ抑制
+    ]
     model = lgb.train(
         lgb_params,
         dtrain,
         num_boost_round=500,
+        valid_sets=[dvalid],
+        callbacks=callbacks,
     )
 
     # 予測確率

@@ -27,14 +27,20 @@ from src.model import heuristic_score
 # クラシック結果データ
 # ------------------------------------------------------------------
 
+_CLASSIC_CACHE: dict | None = None
+
+
 def _load_classic_results() -> dict:
-    """data/classic_results.json を読み込む。"""
+    """data/classic_results.json を読み込む（キャッシュ付き）。"""
+    global _CLASSIC_CACHE
+    if _CLASSIC_CACHE is not None:
+        return _CLASSIC_CACHE
     path = "data/classic_results.json"
     if not os.path.exists(path):
         raise FileNotFoundError(f"{path} が見つかりません")
     with open(path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-    return data
+        _CLASSIC_CACHE = json.load(f)
+    return _CLASSIC_CACHE
 
 
 def get_classic_top5(birth_year: int, race_type: str) -> list[str]:
