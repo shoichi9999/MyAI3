@@ -323,28 +323,30 @@ def evaluate_single(df: pd.DataFrame, params: dict, birth_year: int = None,
 
 def composite_score(metrics: dict, objective: str = "classic",
                     race_type: str = "derby") -> float:
-    """複合スコア（1着馬TOP5入り最優先）。"""
+    """複合スコア（1着馬とTOP5ヒットのバランス改善版）。"""
     d5 = metrics.get(f"top5_{race_type}", 0)
+    d10 = metrics.get(f"top10_{race_type}", 0)
     winner_rank = metrics.get("winner_rank", 9999)
 
-    # 1着馬の段階ボーナス（TOP5入りに集中）
+    # 1着馬の段階ボーナス（バランス改善: 旧1200→500）
     winner_bonus = 0.0
     if winner_rank <= 3:
-        winner_bonus = 1200.0
+        winner_bonus = 500.0
     elif winner_rank <= 5:
-        winner_bonus = 1000.0
+        winner_bonus = 400.0
     elif winner_rank <= 10:
-        winner_bonus = 300.0
-    elif winner_rank <= 15:
-        winner_bonus = 80.0
+        winner_bonus = 200.0
     elif winner_rank <= 20:
-        winner_bonus = 30.0
+        winner_bonus = 80.0
     elif winner_rank <= 30:
+        winner_bonus = 30.0
+    elif winner_rank <= 50:
         winner_bonus = 10.0
 
     return (
-        winner_bonus       # 1着馬の順位が支配的
-        + d5 * 40.0        # TOP5ヒット（主要副次）
+        winner_bonus           # 1着馬の順位
+        + d5 * 100.0           # TOP5ヒット（40→100: 重要度UP）
+        + d10 * 30.0           # TOP10ヒット（新規追加）
     )
 
 
@@ -791,61 +793,91 @@ def _compute_score_vec(d, params):
 
 
 def _fast_cv_score(precomputed, params):
-    """事前計算配列を使った高速CVスコア（1着馬TOP5入り最優先）。"""
-    total_score = 0.0
+    """事前計算配列を使った高速CVスコア（過学習抑制版）。
+
+    改善点:
+    - 1着馬ボーナスとTOP5/TOP10ヒットのバランス改善
+    - 滑らかな順位ボーナス（シグモイド的）で最適化しやすく
+    - 年度間安定性ペナルティ（分散が大きい場合に減点）
+    - L2正則化で極端なパラメータ値を抑制
+    """
+    year_scores = []
     n_years = len(precomputed)
 
     for d in precomputed.values():
         score = _compute_score_vec(d, params)
         n_horses = len(score)
 
-        # TOP5でクラシックTOP5ヒット（主要指標）
+        # TOP5/TOP10でクラシックTOP5ヒット
         d5 = 0
+        d10 = 0
         if d["derby_idx"]:
-            k = min(5, n_horses)
-            pred_top5 = set(np.argpartition(-score, k)[:k])
+            k5 = min(5, n_horses)
+            pred_top5 = set(np.argpartition(-score, k5)[:k5])
             d5 = len(pred_top5 & d["derby_idx"])
+            k10 = min(10, n_horses)
+            pred_top10 = set(np.argpartition(-score, k10)[:k10])
+            d10 = len(pred_top10 & d["derby_idx"])
 
-        # ランク計算（1回のargsortで全ランクを取得）
+        # ランク計算
         ranks = np.argsort(np.argsort(-score)) + 1  # 1-indexed
 
-        # ===== 1着馬の順位が最優先（TOP5入りに集中） =====
+        # ===== 1着馬の順位（滑らかなボーナス） =====
         winner_bonus = 0.0
         widx = d["derby_winner_idx"]
         if widx is not None:
             rank_val = int(ranks[widx])
             pctl = 1.0 - rank_val / n_horses
-            # 連続ボーナス（ランクが高いほど大きい）
-            winner_bonus += pctl * 100.0
-
-            # 段階ボーナス — TOP5入りに集中
+            # 連続ボーナス（パーセンタイル）
+            winner_bonus += pctl * 80.0
+            # 段階ボーナス（TOP5重視だがバランス改善）
             if rank_val <= 3:
-                winner_bonus += 1200.0
+                winner_bonus += 500.0
             elif rank_val <= 5:
-                winner_bonus += 1000.0
+                winner_bonus += 400.0
             elif rank_val <= 10:
-                winner_bonus += 300.0
-            elif rank_val <= 15:
-                winner_bonus += 80.0
+                winner_bonus += 200.0
             elif rank_val <= 20:
-                winner_bonus += 30.0
+                winner_bonus += 80.0
             elif rank_val <= 30:
+                winner_bonus += 30.0
+            elif rank_val <= 50:
                 winner_bonus += 10.0
 
-        # クラシックTOP5全体のランク（副次指標）
+        # クラシックTOP5全体のランク（重要度UP）
         smooth_bonus = 0.0
         if d["derby_idx"]:
             for idx in d["derby_idx"]:
                 pctl = 1.0 - ranks[idx] / n_horses
-                smooth_bonus += pctl * 3.0
+                smooth_bonus += pctl * 20.0  # 3.0→20.0: 全体順位の重要度UP
 
-        total_score += (
-            winner_bonus          # 1着馬の順位が支配的
-            + d5 * 40.0           # TOP5ヒット（主要副次）
-            + smooth_bonus        # ランク平滑化（副次）
+        year_score = (
+            winner_bonus
+            + d5 * 100.0           # TOP5ヒット（40→100: 重要度UP）
+            + d10 * 30.0           # TOP10ヒット（新規追加）
+            + smooth_bonus
         )
+        year_scores.append(year_score)
 
-    return total_score / n_years
+    # 年度平均
+    mean_score = np.mean(year_scores)
+
+    # 年度間安定性ペナルティ（標準偏差が大きいほど減点）
+    if n_years > 1:
+        std_penalty = np.std(year_scores) * 0.15
+        mean_score -= std_penalty
+
+    # L2正則化（極端なパラメータ値を抑制）
+    if _BOUNDS_HI is not None:
+        param_arr = np.asarray(params)
+        # boundsのスパンで正規化してからL2計算
+        l2_penalty = np.sum((param_arr / (_BOUNDS_HI + 1e-8)) ** 2) * 0.3
+        mean_score -= l2_penalty
+
+    return mean_score
+
+# 探索範囲の上限（L2正則化用にグローバルで保持）
+_BOUNDS_HI = None
 
 
 # パラメータ名 → 配列インデックスの対応
@@ -884,43 +916,43 @@ def _random_search_top10(all_data, current_params, best_score, race_type="derby"
     precomputed = _precompute_arrays(all_data, race_type=race_type)
     print("  完了")
 
-    # パラメータの探索範囲（牡馬ダービー特化、b_sex削除）
+    # パラメータの探索範囲（現在の最適値を包含 + マージン）
     bounds = [
-        (0.0, 1.0),    # w_sire_ei (旧0.60→1.0)
-        (0.0, 0.50),   # w_dam_prize (旧0.40→0.50)
-        (0.0, 0.50),   # w_bms_ei (旧0.45→0.50)
-        (0.0, 80.0),   # w_first_crop (旧30→80)
-        (0.0, 1.2),    # w_trainer (旧0.60→1.2)
-        (0.0, 1.2),    # w_owner (旧0.60→1.2)
-        (0.0, 1.2),    # w_breeder (旧0.60→1.2)
-        (0, 40),       # b_early (旧20→40)
-        (0, 25),       # b_parents_young (旧20→25)
-        (0, 25),       # b_dam_bms_gap (旧20→25)
-        (0, 30),       # b_sale_price (旧20→30)
-        (0, 20),       # b_foal_penalty
-        (0, 20),       # b_foal_bonus (旧15→20)
+        (0.0, 1.5),    # w_sire_ei
+        (0.0, 0.50),   # w_dam_prize
+        (0.0, 0.50),   # w_bms_ei
+        (0.0, 150.0),  # w_first_crop (現在値99.9を包含)
+        (0.0, 3.0),    # w_trainer (現在値2.05を包含)
+        (0.0, 1.5),    # w_owner
+        (0.0, 1.5),    # w_breeder
+        (0, 50),       # b_early (現在値38.3を包含)
+        (0, 30),       # b_parents_young
+        (0, 25),       # b_dam_bms_gap
+        (0, 40),       # b_sale_price (現在値30.0を包含)
+        (0, 25),       # b_foal_penalty (現在値19.9を包含)
+        (0, 20),       # b_foal_bonus
         (1, 15),       # dam_breed_base
-        (0, 20),       # dam_breed_cap (旧10→20)
-        (0, 20),       # dam_breed_penalty (旧10→20)
-        (0, 10),       # b_sire_old (旧8→10)
-        (0, 20),       # b_dam_foals_sweet (旧15→20)
-        (0, 25),       # w_sire_dam_inter (旧20→25)
-        (0, 0.20),     # w_trainer_breeder (旧0.05→0.20)
-        (0, 40),       # b_sibling_classic (旧30→40)
-        (0, 8),        # w_sire_classic (旧5→8)
-        (0, 50),       # b_imported_dam (旧20→50)
+        (0, 20),       # dam_breed_cap (現在値14.1を包含)
+        (0, 20),       # dam_breed_penalty
+        (0, 10),       # b_sire_old
+        (0, 30),       # b_dam_foals_sweet (現在値21.1を包含)
+        (0, 25),       # w_sire_dam_inter
+        (0, 0.20),     # w_trainer_breeder
+        (0, 50),       # b_sibling_classic (現在値27.5を包含)
+        (0, 8),        # w_sire_classic
+        (0, 50),       # b_imported_dam (現在値33.8を包含)
         (0.0, 0.60),   # w_sire_win_rate
-        (0.0, 0.40),   # w_bms_win_rate
+        (0.0, 0.60),   # w_bms_win_rate
         (0.0, 0.60),   # w_sire_rank
-        (0.0, 0.50),   # w_sire_progeny_prize [NEW]
-        (0.0, 0.50),   # w_sire_runners [NEW]
-        (0.0, 0.50),   # w_bms_runners [NEW]
+        (0.0, 0.50),   # w_sire_progeny_prize
+        (0.0, 0.50),   # w_sire_runners
+        (0.0, 0.50),   # w_bms_runners
         (0, 100),      # b_dam_progeny_quality
         (0.0, 0.60),   # w_bms_rank
         (0.0, 0.50),   # w_bms_progeny_prize
         (0.0, 20.0),   # w_sire_classic_rate
         (0.0, 0.20),   # w_owner_trainer
-        (0.0, 25.0),   # w_bms_dam_inter
+        (0.0, 30.0),   # w_bms_dam_inter (現在値21.4を包含)
         (0.0, 0.50),   # w_sire_2yo_ei
         (0.0, 0.50),   # w_sire_precocity
         (0.0, 30.0),   # w_sire_ei_trend
@@ -932,6 +964,10 @@ def _random_search_top10(all_data, current_params, best_score, race_type="derby"
     hi = np.array([b[1] for b in bounds])
     span = hi - lo
     n_params = len(lo)
+
+    # L2正則化用のグローバル上限を設定
+    global _BOUNDS_HI
+    _BOUNDS_HI = hi
 
     current_arr = _dict_to_arr(current_params)
     best_arr = current_arr.copy()
@@ -957,9 +993,10 @@ def _random_search_top10(all_data, current_params, best_score, race_type="derby"
     t_start = time.time()
 
     # ================================================================
-    # Phase 1: Differential Evolution（5リスタート）
+    # Phase 1: Differential Evolution（7リスタート）
+    # 注意: scipy DEのpopsizeは実人口 = popsize × n_params なので控えめに
     # ================================================================
-    n_restarts = 5
+    n_restarts = 7
     print(f"\n{'='*60}")
     print(f"  Phase 1: Differential Evolution ({n_restarts}リスタート)")
     print(f"{'='*60}")
@@ -968,16 +1005,17 @@ def _random_search_top10(all_data, current_params, best_score, race_type="derby"
         return -_fast_cv_score(precomputed, np.asarray(x))
 
     de_results = []
-    for i, seed in enumerate([42, 137, 314, 577, 2024]):
+    de_seeds = [42, 137, 314, 577, 2024, 7777, 12345]
+    for i, seed in enumerate(de_seeds[:n_restarts]):
         result = differential_evolution(
             de_objective,
             bounds,
-            maxiter=500,
-            popsize=15,
+            maxiter=400,
+            popsize=8,             # 実人口 = 8 × n_params
             tol=1e-5,
             seed=seed,
             mutation=(0.5, 1.5),
-            recombination=0.7,
+            recombination=0.8,
             polish=False,
             init='latinhypercube',
         )
@@ -995,13 +1033,62 @@ def _random_search_top10(all_data, current_params, best_score, race_type="derby"
     _show_top10(best_arr, "Best")
 
     # ================================================================
-    # Phase 2: DE結果の上位候補を局所探索（上位5 × 50k）
+    # Phase 2: CMA-ES（共分散行列適応進化戦略）
+    # パラメータ間の相関を学習し、DEよりも効率的に探索
+    # ================================================================
+    print(f"\n{'='*60}")
+    print(f"  Phase 2: CMA-ES (3リスタート)")
+    print(f"{'='*60}")
+
+    try:
+        import cma
+
+        # DE上位候補 + 現行パラメータを初期点として使用
+        de_results.sort(key=lambda x: -x[0])
+        cma_starts = [(best_score_fast, best_arr.copy())]
+        for s, a in de_results[:2]:
+            cma_starts.append((s, a.copy()))
+
+        for ci, (start_score, start_arr) in enumerate(cma_starts):
+            # 初期標準偏差: 探索範囲の15%
+            sigma0 = 0.15 * np.mean(span)
+            opts = cma.CMAOptions()
+            opts.set('bounds', [lo.tolist(), hi.tolist()])
+            opts.set('maxfevals', 15000)
+            opts.set('verbose', -1)
+            opts.set('seed', 42 + ci * 100)
+            opts.set('tolfun', 1e-6)
+
+            es = cma.CMAEvolutionStrategy(start_arr.tolist(), sigma0, opts)
+            while not es.stop():
+                solutions = es.ask()
+                fitnesses = [-_fast_cv_score(precomputed, np.asarray(x)) for x in solutions]
+                es.tell(solutions, fitnesses)
+
+            cma_score = -es.result.fbest
+            cma_arr = np.asarray(es.result.xbest)
+            elapsed = time.time() - t_start
+            print(f"  CMA#{ci}: {cma_score:.2f} (nfev={es.result.evaluations}, {elapsed:.0f}s)")
+            _show_top10(cma_arr, f"CMA#{ci}")
+
+            if cma_score > best_score_fast:
+                best_score_fast = cma_score
+                best_arr = cma_arr.copy()
+
+        print(f"\n  Phase 2 完了: best={best_score_fast:.2f} ({time.time()-t_start:.0f}s)")
+        _show_top10(best_arr, "Best")
+
+    except ImportError:
+        print("  cma未インストール — Phase 2スキップ (pip install cma)")
+
+    # ================================================================
+    # Phase 3: DE上位候補の局所探索（上位5 × 50k）
     # ================================================================
     de_results.sort(key=lambda x: -x[0])
     n_top = min(5, len(de_results))
-    n_phase2 = 50000
+    n_phase3 = 50000
     print(f"\n{'='*60}")
-    print(f"  Phase 2: 上位{n_top}候補の局所探索 ({n_top} × {n_phase2:,} = {n_top*n_phase2:,}回)")
+    print(f"  Phase 3: 上位{n_top}候補の局所探索 ({n_top} × {n_phase3:,} = {n_top*n_phase3:,}回)")
     print(f"{'='*60}")
 
     rng = np.random.default_rng(9999)
@@ -1010,7 +1097,7 @@ def _random_search_top10(all_data, current_params, best_score, race_type="derby"
         local_best = cand_score
         local_arr = cand_arr.copy()
 
-        for _ in range(n_phase2):
+        for _ in range(n_phase3):
             delta = rng.uniform(-0.10, 0.10, n_params) * span
             p = np.clip(local_arr + delta, lo, hi)
             s = _fast_cv_score(precomputed, p)
@@ -1023,19 +1110,20 @@ def _random_search_top10(all_data, current_params, best_score, race_type="derby"
             best_score_fast = local_best
             best_arr = local_arr.copy()
 
-    print(f"\n  Phase 2 完了: best={best_score_fast:.2f} ({time.time()-t_start:.0f}s)")
+    print(f"\n  Phase 3 完了: best={best_score_fast:.2f} ({time.time()-t_start:.0f}s)")
     _show_top10(best_arr, "Best")
 
     # ================================================================
-    # Phase 3: 微調整（300k at ±5% → 200k at ±2%）
+    # Phase 4: 微調整（300k at ±5% → 200k at ±2% → 100k at ±1%）
     # ================================================================
     print(f"\n{'='*60}")
-    print(f"  Phase 3: 微調整")
+    print(f"  Phase 4: 微調整")
     print(f"{'='*60}")
 
     for step_size, n_iter, label in [
         (0.05, 300000, "±5%"),
         (0.02, 200000, "±2%"),
+        (0.01, 100000, "±1%"),
     ]:
         improved = 0
         for _ in range(n_iter):
