@@ -180,6 +180,75 @@ def _get_sire_classic_map(max_birth_year: int) -> dict[str, int]:
     return sire_counts
 
 
+# 種牡馬オークス専用クラシック輩出数キャッシュ
+_SIRE_OAKS_CACHE: dict[int, dict[str, int]] = {}
+
+
+def _get_sire_oaks_map(max_birth_year: int) -> dict[str, int]:
+    """種牡馬ごとのオークスTOP5輩出数を返す（リーク防止: max_birth_year以前のみ）。
+
+    ダービーとは異なり、オークスのみの結果を使って
+    種牡馬の牝馬クラシック適性を評価する。
+    """
+    if max_birth_year in _SIRE_OAKS_CACHE:
+        return _SIRE_OAKS_CACHE[max_birth_year]
+
+    sire_counts: dict[str, int] = {}
+    for by_str, horse_ids in _CLASSIC_RESULTS.get("oaks", {}).items():
+        by = int(by_str)
+        if by > max_birth_year:
+            continue
+        csv_path = f"data/horses_{by}.csv"
+        if not os.path.exists(csv_path):
+            continue
+        df = pd.read_csv(csv_path)
+        id_to_sire = dict(zip(
+            df["horse_id"].astype(str), df["sire"].fillna("")
+        ))
+        for hid in horse_ids:
+            sire = id_to_sire.get(str(hid), "")
+            if sire:
+                sire_counts[sire] = sire_counts.get(sire, 0) + 1
+
+    _SIRE_OAKS_CACHE[max_birth_year] = sire_counts
+    return sire_counts
+
+
+# 母父クラシック輩出数キャッシュ
+_BMS_CLASSIC_CACHE: dict[int, dict[str, int]] = {}
+
+
+def _get_bms_classic_map(max_birth_year: int) -> dict[str, int]:
+    """母父ごとのクラシックTOP5輩出数を返す（リーク防止: max_birth_year以前のみ）。
+
+    種牡馬としてではなく、母父（BMS）としてクラシック馬を
+    輩出した実績を評価する。オークス予測に特に有用。
+    """
+    if max_birth_year in _BMS_CLASSIC_CACHE:
+        return _BMS_CLASSIC_CACHE[max_birth_year]
+
+    bms_counts: dict[str, int] = {}
+    for race_key in ["derby", "oaks"]:
+        for by_str, horse_ids in _CLASSIC_RESULTS.get(race_key, {}).items():
+            by = int(by_str)
+            if by > max_birth_year:
+                continue
+            csv_path = f"data/horses_{by}.csv"
+            if not os.path.exists(csv_path):
+                continue
+            df = pd.read_csv(csv_path)
+            id_to_bms = dict(zip(
+                df["horse_id"].astype(str), df["sire_of_dam"].fillna("")
+            ))
+            for hid in horse_ids:
+                bms = id_to_bms.get(str(hid), "")
+                if bms:
+                    bms_counts[bms] = bms_counts.get(bms, 0) + 1
+
+    _BMS_CLASSIC_CACHE[max_birth_year] = bms_counts
+    return bms_counts
+
+
 def get_sire_2yo_ei(sire_name: str, leading_year: int = None) -> float:
     """種牡馬の2歳EI（2歳産駒限定のアーニングインデックス）を返す。
 
@@ -616,6 +685,19 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None,
         sire_runners_val = row["sire_runners"]
         sire_cc = row["sire_classic_count"]
         row["sire_classic_rate"] = (sire_cc / sire_runners_val * 100) if sire_runners_val > 0 else 0.0
+
+        # --- 種牡馬のオークス専用クラシック輩出数（リーク防止済み） ---
+        sire_oaks_map = _get_sire_oaks_map(classic_cutoff)
+        row["sire_oaks_count"] = sire_oaks_map.get(sire_name, 0)
+        row["sire_oaks_rate"] = (row["sire_oaks_count"] / sire_runners_val * 100) if sire_runners_val > 0 else 0.0
+
+        # --- 母父のクラシック輩出数（リーク防止済み） ---
+        bms_classic_map = _get_bms_classic_map(classic_cutoff)
+        bms_name = horse.get("sire_of_dam", "")
+        row["bms_classic_count"] = bms_classic_map.get(bms_name, 0)
+
+        # --- 母馬の高クラスフラグ（賞金5000万以上 ≈ 重賞勝ち馬レベル） ---
+        row["dam_high_class"] = 1 if row["dam_prize"] >= 5000 else 0
 
         # --- 種牡馬の早熟性指標 ---
         sire_2yo_ei = row["sire_2yo_ei"]

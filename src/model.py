@@ -257,4 +257,16 @@ def heuristic_score(df: pd.DataFrame, race_type: str = "derby") -> pd.Series:
         if cap > 0:
             score += (inter.clip(upper=cap) / cap) * W.get("w_bms_dam_inter", 0.0)
 
+    # 種牡馬オークスクラシック率（牝馬クラシック特化の適性指標）
+    if "sire_oaks_rate" in df.columns:
+        score += df["sire_oaks_rate"].fillna(0) * W.get("w_sire_oaks_rate", 0.0)
+
+    # 母父クラシック輩出数（BMSとしてのクラシック産駒生産力）
+    if "bms_classic_count" in df.columns:
+        score += df["bms_classic_count"].fillna(0) * W.get("w_bms_classic", 0.0)
+
+    # 母馬高クラスフラグ（重賞勝ち馬レベルの母馬ボーナス）
+    if "dam_high_class" in df.columns:
+        score += df["dam_high_class"].fillna(0) * W.get("b_dam_high_class", 0.0)
+
     return score

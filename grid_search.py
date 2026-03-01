@@ -216,6 +216,18 @@ def parameterized_score(df: pd.DataFrame, params: dict) -> pd.Series:
         if cap > 0:
             score += (inter.clip(upper=cap) / cap) * params.get("w_bms_dam_inter", 0)
 
+    # 種牡馬オークスクラシック率
+    if "sire_oaks_rate" in df.columns:
+        score += df["sire_oaks_rate"].fillna(0) * params.get("w_sire_oaks_rate", 0)
+
+    # 母父クラシック輩出数
+    if "bms_classic_count" in df.columns:
+        score += df["bms_classic_count"].fillna(0) * params.get("w_bms_classic", 0)
+
+    # 母馬高クラスフラグ
+    if "dam_high_class" in df.columns:
+        score += df["dam_high_class"].fillna(0) * params.get("b_dam_high_class", 0)
+
     # 種牡馬2歳EI（早熟性の直接指標）
     if "sire_2yo_ei" in df.columns:
         ei_2yo = df["sire_2yo_ei"].fillna(0)
@@ -430,6 +442,9 @@ def grid_search(years, objective="balanced", race_type="derby"):
         "w_sire_2yo_ei": _w.get("w_sire_2yo_ei", 0.0),
         "w_sire_precocity": _w.get("w_sire_precocity", 0.0),
         "w_sire_ei_trend": _w.get("w_sire_ei_trend", 0.0),
+        "w_sire_oaks_rate": _w.get("w_sire_oaks_rate", 0.0),
+        "w_bms_classic": _w.get("w_bms_classic", 0.0),
+        "b_dam_high_class": _w.get("b_dam_high_class", 0.0),
     }
 
     current_cv = cv_score(all_data, current_params, race_type=race_type)
@@ -699,6 +714,12 @@ def _precompute_arrays(all_data, race_type="derby"):
             d["sire_precocity_norm"] = np.zeros(n)
         # 種牡馬EIトレンド（生値を使用 — 正負の方向性が重要）
         d["sire_ei_trend"] = df["sire_ei_trend"].fillna(0).values if "sire_ei_trend" in df.columns else np.zeros(n)
+        # 種牡馬オークスクラシック率
+        d["sire_oaks_rate"] = df["sire_oaks_rate"].fillna(0).values if "sire_oaks_rate" in df.columns else np.zeros(n)
+        # 母父クラシック輩出数
+        d["bms_classic_count"] = df["bms_classic_count"].fillna(0).values if "bms_classic_count" in df.columns else np.zeros(n)
+        # 母馬高クラスフラグ
+        d["dam_high_class"] = df["dam_high_class"].fillna(0).values if "dam_high_class" in df.columns else np.zeros(n)
         # クラシック結果データ（レースタイプに応じて切替）
         horse_ids = df["horse_id"].astype(str).values
         classic_top5 = _get_classic_ids(year, race_type)
@@ -763,6 +784,9 @@ def _compute_score_vec(d, params):
     score += d["sire_2yo_ei_norm"] * params[35]        # w_sire_2yo_ei
     score += d["sire_precocity_norm"] * params[36]     # w_sire_precocity
     score += d["sire_ei_trend"] * params[37]           # w_sire_ei_trend
+    score += d["sire_oaks_rate"] * params[38]          # w_sire_oaks_rate
+    score += d["bms_classic_count"] * params[39]       # w_bms_classic
+    score += d["dam_high_class"] * params[40]          # b_dam_high_class
     return score
 
 
@@ -840,6 +864,7 @@ _PARAM_KEYS = [
     "w_bms_rank", "w_bms_progeny_prize", "w_sire_classic_rate",
     "w_owner_trainer", "w_bms_dam_inter",
     "w_sire_2yo_ei", "w_sire_precocity", "w_sire_ei_trend",
+    "w_sire_oaks_rate", "w_bms_classic", "b_dam_high_class",
 ]
 
 def _dict_to_arr(params):
@@ -899,6 +924,9 @@ def _random_search_top10(all_data, current_params, best_score, race_type="derby"
         (0.0, 0.50),   # w_sire_2yo_ei
         (0.0, 0.50),   # w_sire_precocity
         (0.0, 30.0),   # w_sire_ei_trend
+        (0.0, 20.0),   # w_sire_oaks_rate
+        (0.0, 15.0),   # w_bms_classic
+        (0.0, 50.0),   # b_dam_high_class
     ]
     lo = np.array([b[0] for b in bounds])
     hi = np.array([b[1] for b in bounds])
