@@ -133,11 +133,15 @@ def _get_classic_ids_up_to(max_birth_year: int) -> set:
     POGドラフト(birth_year+2年春)時点で結果が確定しているのは
     birth_year-2 世代以前（= Y+2年より前のレース結果）。
     呼び出し側で適切な max_birth_year を渡すこと。
+
+    ダービー・オークス両方を含めることで、兄姉・母の産駒品質の
+    評価精度を向上させる。
     """
     ids = set()
-    for by_str, horse_ids in _CLASSIC_RESULTS.get("derby", {}).items():
-        if int(by_str) <= max_birth_year:
-            ids.update(horse_ids)
+    for race_key in ["derby", "oaks"]:
+        for by_str, horse_ids in _CLASSIC_RESULTS.get(race_key, {}).items():
+            if int(by_str) <= max_birth_year:
+                ids.update(horse_ids)
     return ids
 
 
@@ -146,26 +150,31 @@ _SIRE_CLASSIC_CACHE: dict[int, dict[str, int]] = {}
 
 
 def _get_sire_classic_map(max_birth_year: int) -> dict[str, int]:
-    """種牡馬ごとのクラシックTOP5輩出数を返す（リーク防止: max_birth_year以前のみ）。"""
+    """種牡馬ごとのクラシックTOP5輩出数を返す（リーク防止: max_birth_year以前のみ）。
+
+    ダービー・オークス両方の結果を含めることで、種牡馬のクラシック適性を
+    より正確に評価する。
+    """
     if max_birth_year in _SIRE_CLASSIC_CACHE:
         return _SIRE_CLASSIC_CACHE[max_birth_year]
 
     sire_counts: dict[str, int] = {}
-    for by_str, horse_ids in _CLASSIC_RESULTS.get("derby", {}).items():
-        by = int(by_str)
-        if by > max_birth_year:
-            continue
-        csv_path = f"data/horses_{by}.csv"
-        if not os.path.exists(csv_path):
-            continue
-        df = pd.read_csv(csv_path)
-        id_to_sire = dict(zip(
-            df["horse_id"].astype(str), df["sire"].fillna("")
-        ))
-        for hid in horse_ids:
-            sire = id_to_sire.get(str(hid), "")
-            if sire:
-                sire_counts[sire] = sire_counts.get(sire, 0) + 1
+    for race_key in ["derby", "oaks"]:
+        for by_str, horse_ids in _CLASSIC_RESULTS.get(race_key, {}).items():
+            by = int(by_str)
+            if by > max_birth_year:
+                continue
+            csv_path = f"data/horses_{by}.csv"
+            if not os.path.exists(csv_path):
+                continue
+            df = pd.read_csv(csv_path)
+            id_to_sire = dict(zip(
+                df["horse_id"].astype(str), df["sire"].fillna("")
+            ))
+            for hid in horse_ids:
+                sire = id_to_sire.get(str(hid), "")
+                if sire:
+                    sire_counts[sire] = sire_counts.get(sire, 0) + 1
 
     _SIRE_CLASSIC_CACHE[max_birth_year] = sire_counts
     return sire_counts
@@ -607,6 +616,19 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None,
         sire_runners_val = row["sire_runners"]
         sire_cc = row["sire_classic_count"]
         row["sire_classic_rate"] = (sire_cc / sire_runners_val * 100) if sire_runners_val > 0 else 0.0
+
+        # --- 種牡馬の早熟性指標 ---
+        sire_2yo_ei = row["sire_2yo_ei"]
+        sire_ei_val = row["sire_ei"]
+        # 早熟性比率: 2歳EIが全体EIに対して高いほど産駒が早期に活躍
+        row["sire_precocity"] = (sire_2yo_ei / sire_ei_val) if sire_ei_val > 0 else 0.0
+
+        # --- 種牡馬EIトレンド（前年比変化） ---
+        # EIが上昇中の種牡馬 → 産駒の質が向上傾向にある
+        sire_name = horse.get("sire", "")
+        prev_year = leading_year - 1
+        prev_ei = get_sire_ei(sire_name, prev_year)
+        row["sire_ei_trend"] = (sire_ei_val - prev_ei) if prev_ei > 0 else 0.0
 
         # --- 輸入繁殖牝馬フラグ（dam_id が "000a" で始まる = 海外産馬） ---
         dam_id_str = str(horse.get("dam_id", "")) if pd.notna(horse.get("dam_id")) else ""
