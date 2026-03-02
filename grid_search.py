@@ -228,20 +228,6 @@ def parameterized_score(df: pd.DataFrame, params: dict) -> pd.Series:
     if "dam_high_class" in df.columns:
         score += df["dam_high_class"].fillna(0) * params.get("b_dam_high_class", 0)
 
-    # 種牡馬2歳EI（早熟性の直接指標）
-    if "sire_2yo_ei" in df.columns:
-        ei_2yo = df["sire_2yo_ei"].fillna(0)
-        cap = ei_2yo.quantile(0.99)
-        if cap > 0:
-            score += (ei_2yo.clip(upper=cap) / cap) * 100 * params.get("w_sire_2yo_ei", 0)
-
-    # 種牡馬の早熟性比率（2歳EI/全体EI）
-    if "sire_precocity" in df.columns:
-        prec = df["sire_precocity"].fillna(0)
-        cap = prec.quantile(0.99)
-        if cap > 0:
-            score += (prec.clip(upper=cap) / cap) * 100 * params.get("w_sire_precocity", 0)
-
     # 種牡馬EIトレンド（上昇 = 加点）
     if "sire_ei_trend" in df.columns:
         trend = df["sire_ei_trend"].fillna(0)
@@ -441,8 +427,6 @@ def grid_search(years, objective="balanced", race_type="derby"):
         "w_sire_classic_rate": _w.get("w_sire_classic_rate", 0.0),
         "w_owner_trainer": _w.get("w_owner_trainer", 0.0),
         "w_bms_dam_inter": _w.get("w_bms_dam_inter", 0.0),
-        "w_sire_2yo_ei": _w.get("w_sire_2yo_ei", 0.0),
-        "w_sire_precocity": _w.get("w_sire_precocity", 0.0),
         "w_sire_ei_trend": _w.get("w_sire_ei_trend", 0.0),
         "w_sire_oaks_rate": _w.get("w_sire_oaks_rate", 0.0),
         "w_bms_classic": _w.get("w_bms_classic", 0.0),
@@ -700,20 +684,6 @@ def _precompute_arrays(all_data, race_type="derby"):
             d["bms_dam_inter_norm"] = (np.clip(inter, 0, cap) / cap) if cap > 0 else np.zeros(n)
         else:
             d["bms_dam_inter_norm"] = np.zeros(n)
-        # 種牡馬2歳EI（正規化済み）
-        if "sire_2yo_ei" in df.columns:
-            ei_2yo = df["sire_2yo_ei"].fillna(0).values
-            cap = np.percentile(ei_2yo, 99)
-            d["sire_2yo_ei_norm"] = (np.clip(ei_2yo, 0, cap) / cap * 100) if cap > 0 else np.zeros(n)
-        else:
-            d["sire_2yo_ei_norm"] = np.zeros(n)
-        # 種牡馬早熟性比率（正規化済み）
-        if "sire_precocity" in df.columns:
-            prec = df["sire_precocity"].fillna(0).values
-            cap = np.percentile(prec, 99)
-            d["sire_precocity_norm"] = (np.clip(prec, 0, cap) / cap * 100) if cap > 0 else np.zeros(n)
-        else:
-            d["sire_precocity_norm"] = np.zeros(n)
         # 種牡馬EIトレンド（生値を使用 — 正負の方向性が重要）
         d["sire_ei_trend"] = df["sire_ei_trend"].fillna(0).values if "sire_ei_trend" in df.columns else np.zeros(n)
         # 種牡馬オークスクラシック率
@@ -783,12 +753,10 @@ def _compute_score_vec(d, params):
     score += d["sire_classic_rate"] * params[32]       # w_sire_classic_rate
     score += d["owner_trainer_excess"] * params[33]    # w_owner_trainer
     score += d["bms_dam_inter_norm"] * params[34]      # w_bms_dam_inter
-    score += d["sire_2yo_ei_norm"] * params[35]        # w_sire_2yo_ei
-    score += d["sire_precocity_norm"] * params[36]     # w_sire_precocity
-    score += d["sire_ei_trend"] * params[37]           # w_sire_ei_trend
-    score += d["sire_oaks_rate"] * params[38]          # w_sire_oaks_rate
-    score += d["bms_classic_count"] * params[39]       # w_bms_classic
-    score += d["dam_high_class"] * params[40]          # b_dam_high_class
+    score += d["sire_ei_trend"] * params[35]           # w_sire_ei_trend
+    score += d["sire_oaks_rate"] * params[36]          # w_sire_oaks_rate
+    score += d["bms_classic_count"] * params[37]       # w_bms_classic
+    score += d["dam_high_class"] * params[38]          # b_dam_high_class
     return score
 
 
@@ -895,7 +863,7 @@ _PARAM_KEYS = [
     "b_dam_progeny_quality",
     "w_bms_rank", "w_bms_progeny_prize", "w_sire_classic_rate",
     "w_owner_trainer", "w_bms_dam_inter",
-    "w_sire_2yo_ei", "w_sire_precocity", "w_sire_ei_trend",
+    "w_sire_ei_trend",
     "w_sire_oaks_rate", "w_bms_classic", "b_dam_high_class",
 ]
 
@@ -953,8 +921,6 @@ def _random_search_top10(all_data, current_params, best_score, race_type="derby"
         (0.0, 20.0),   # w_sire_classic_rate
         (0.0, 0.20),   # w_owner_trainer
         (0.0, 30.0),   # w_bms_dam_inter (現在値21.4を包含)
-        (0.0, 0.50),   # w_sire_2yo_ei
-        (0.0, 0.50),   # w_sire_precocity
         (0.0, 30.0),   # w_sire_ei_trend
         (0.0, 20.0),   # w_sire_oaks_rate
         (0.0, 15.0),   # w_bms_classic

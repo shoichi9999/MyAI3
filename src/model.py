@@ -231,20 +231,6 @@ def heuristic_score(df: pd.DataFrame, race_type: str = "derby") -> pd.Series:
         combo = df["owner_trainer_combo"].fillna(2500)
         score += np.maximum(0, combo - 2500) * W.get("w_owner_trainer", 0.0)
 
-    # 種牡馬2歳EI（早熟性の直接指標、99パーセンタイル正規化）
-    if "sire_2yo_ei" in df.columns:
-        ei_2yo = df["sire_2yo_ei"].fillna(0)
-        cap = ei_2yo.quantile(0.99)
-        if cap > 0:
-            score += (ei_2yo.clip(upper=cap) / cap) * 100 * W.get("w_sire_2yo_ei", 0.0)
-
-    # 種牡馬の早熟性比率（2歳EI/全体EI — 比率が高いほど早期活躍型）
-    if "sire_precocity" in df.columns:
-        prec = df["sire_precocity"].fillna(0)
-        cap = prec.quantile(0.99)
-        if cap > 0:
-            score += (prec.clip(upper=cap) / cap) * 100 * W.get("w_sire_precocity", 0.0)
-
     # 種牡馬EIトレンド（上昇 = 加点、下降 = 減点）
     if "sire_ei_trend" in df.columns:
         trend = df["sire_ei_trend"].fillna(0)

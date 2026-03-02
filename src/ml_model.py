@@ -15,7 +15,6 @@ import lightgbm as lgb
 FEATURE_COLS = [
     "sire_ei",
     "bms_ei",
-    "sire_2yo_ei",
     "dam_prize",
     "sire_prize",
     "trainer_score",

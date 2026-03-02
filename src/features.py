@@ -214,23 +214,6 @@ def _get_bms_classic_map(max_birth_year: int) -> dict[str, int]:
     return _build_classic_map(max_birth_year, "sire_of_dam", ("derby", "oaks"))
 
 
-def get_sire_2yo_ei(sire_name: str, leading_year: int = None) -> float:
-    """種牡馬の2歳EI（2歳産駒限定のアーニングインデックス）を返す。
-
-    data/sire_2yo_leading_{year}.json が存在する場合のみ有効。
-    """
-    if not sire_name:
-        return 0.0
-    if leading_year is not None:
-        data = _load_leading("sire_2yo_leading", leading_year).get(sire_name, {})
-    else:
-        data = _load_json("data/sire_2yo_leading_2024.json").get(sire_name, {})
-    try:
-        return float(data.get("ei", 0) or 0)
-    except (ValueError, TypeError):
-        return 0.0
-
-
 def get_sire_runners(sire_name: str, leading_year: int = None) -> int:
     """種牡馬の産駒出走頭数を返す。"""
     if not sire_name:
@@ -544,7 +527,6 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None,
     # --- データの事前ロード ---
     sire_ld = _load_leading("sire_leading", leading_year)
     bms_ld = _load_leading("bms_leading", leading_year)
-    sire_2yo_ld = _load_leading("sire_2yo_leading", leading_year)
     prev_sire_ld = _load_leading("sire_leading", leading_year - 1)
     bd_cache = _load_birth_dates(birth_year)
     pa_cache = _load_parent_ages(birth_year)
@@ -553,7 +535,6 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None,
     # --- ルックアップSeries構築（ハッシュベース高速マッピング） ---
     sire_ei_lu = _leading_lookup_series(sire_ld, "ei")
     bms_ei_lu = _leading_lookup_series(bms_ld, "ei")
-    sire_2yo_ei_lu = _leading_lookup_series(sire_2yo_ld, "ei")
     sire_wr_lu = _leading_lookup_series(sire_ld, "win_rate")
     bms_wr_lu = _leading_lookup_series(bms_ld, "win_rate")
     sire_runners_lu = _leading_lookup_series_int(sire_ld, "runners")
@@ -578,7 +559,6 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None,
     # === 産駒成績ベースの血統スコア（ベクトル化マッピング） ===
     r["sire_ei"] = sire.map(sire_ei_lu).fillna(0.0)
     r["bms_ei"] = bms_name.map(bms_ei_lu).fillna(0.0)
-    r["sire_2yo_ei"] = sire.map(sire_2yo_ei_lu).fillna(0.0)
     r["sire_win_rate"] = sire.map(sire_wr_lu).fillna(0.0)
     r["bms_win_rate"] = bms_name.map(bms_wr_lu).fillna(0.0)
     r["sire_runners"] = sire.map(sire_runners_lu).fillna(0).astype(int)
@@ -753,7 +733,6 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None,
 
     # === 派生特徴量（全ベクトル化） ===
     r["dam_high_class"] = (r["dam_prize"] >= 5000).astype(int)
-    r["sire_precocity"] = np.where(r["sire_ei"] > 0, r["sire_2yo_ei"] / r["sire_ei"], 0.0)
 
     # EIトレンド（前年比）
     prev_ei = sire.map(prev_sire_ei_lu).fillna(0.0)

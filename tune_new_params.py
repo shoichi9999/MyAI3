@@ -42,7 +42,7 @@ _w = _load_weights(race_type)
 current_params = {k: _w.get(k, 0.0) for k in _PARAM_KEYS}
 # 新パラメータのデフォルト
 for k in ["w_bms_rank", "w_bms_progeny_prize", "w_sire_classic_rate",
-          "w_owner_trainer", "w_bms_dam_inter", "w_sire_2yo_ei", "w_sire_precocity",
+          "w_owner_trainer", "w_bms_dam_inter",
           "w_sire_ei_trend"]:
     current_params.setdefault(k, 0.0)
 
@@ -63,7 +63,7 @@ print(f"現行スコア(高速): {current_fast:.2f}")
 
 # ---- 新パラメータのインデックス ----
 NEW_KEYS = ["w_bms_rank", "w_bms_progeny_prize", "w_sire_classic_rate",
-            "w_owner_trainer", "w_bms_dam_inter", "w_sire_2yo_ei", "w_sire_precocity",
+            "w_owner_trainer", "w_bms_dam_inter",
             "w_sire_ei_trend"]
 new_indices = [_PARAM_KEYS.index(k) for k in NEW_KEYS]
 print(f"新パラメータ: {NEW_KEYS} (indices: {new_indices})")
@@ -75,8 +75,6 @@ new_bounds = {
     "w_sire_classic_rate": (0.0, 20.0),
     "w_owner_trainer": (0.0, 0.20),
     "w_bms_dam_inter": (0.0, 25.0),
-    "w_sire_2yo_ei": (0.0, 0.50),
-    "w_sire_precocity": (0.0, 0.50),
     "w_sire_ei_trend": (0.0, 30.0),
 }
 
