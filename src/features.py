@@ -81,8 +81,6 @@ SIRE_PRIZES = _load_json("data/sire_prizes.json")
 DAM_FOALS = _load_json("data/dam_foals.json")
 # 生年月日キャッシュ（世代別）
 BIRTH_DATES_CACHE = {}
-# 親年齢キャッシュ（世代別）
-PARENT_AGES_CACHE = {}
 # 追加特徴量キャッシュ（セリ価格・産駒番号、世代別）
 EXTRA_FEATURES_CACHE = {}
 
@@ -92,13 +90,6 @@ def _load_birth_dates(birth_year: int) -> dict:
     if birth_year not in BIRTH_DATES_CACHE:
         BIRTH_DATES_CACHE[birth_year] = _load_json(f"data/birth_dates_{birth_year}.json")
     return BIRTH_DATES_CACHE[birth_year]
-
-
-def _load_parent_ages(birth_year: int) -> dict:
-    """親年齢キャッシュを読み込む。"""
-    if birth_year not in PARENT_AGES_CACHE:
-        PARENT_AGES_CACHE[birth_year] = _load_json(f"data/parent_ages_{birth_year}.json")
-    return PARENT_AGES_CACHE[birth_year]
 
 
 def _load_extra_features(birth_year: int) -> dict:
@@ -432,50 +423,14 @@ def _birth_year_from_id(horse_id: str) -> int | None:
     return None
 
 
-# 親の (CSVカラム名, JSONキャッシュのbirth_yearキー, JSONキャッシュのidキー)
+# 親キー → CSVカラム名
 _PARENT_MAP = {
-    "sire": ("sire_birth_year", "sire_birth_year", "sire_id"),
-    "dam":  ("dam_birth_year",  "dam_birth_year",  "dam_id"),
-    "bms":  ("bms_birth_year",  "dam_sire_birth_year", "bms_id"),
+    "sire": ("sire_birth_year",),
+    "dam":  ("dam_birth_year",),
+    "bms":  ("bms_birth_year",),
 }
 
 
-def get_parent_age(horse_row, birth_year: int, parent: str = "sire") -> float | None:
-    """親の産駒時年齢を返す。取得できない場合はNone。
-
-    優先順:
-      1. CSVカラム (sire_birth_year 等) から直接計算
-      2. JSONキャッシュ (parent_ages_{year}.json) からフォールバック
-    """
-    csv_col, cache_by_key, cache_id_key = _PARENT_MAP.get(
-        parent, (f"{parent}_birth_year", f"{parent}_birth_year", None)
-    )
-
-    # 1. CSVカラムから（DataFrameの行に含まれている場合）
-    parent_by = horse_row.get(csv_col)
-    if pd.notna(parent_by) and parent_by:
-        try:
-            return birth_year - int(parent_by)
-        except (ValueError, TypeError):
-            pass
-
-    # 2. JSONキャッシュからフォールバック
-    hid = str(horse_row.get("horse_id", ""))
-    pa_cache = _load_parent_ages(birth_year)
-    data = pa_cache.get(hid, {})
-
-    by = data.get(cache_by_key)
-    if by:
-        return birth_year - by
-
-    if cache_id_key:
-        parent_id = data.get(cache_id_key)
-        if parent_id:
-            parent_by = _birth_year_from_id(parent_id)
-            if parent_by:
-                return birth_year - parent_by
-
-    return None
 
 
 def _leading_lookup_series(ld_dict: dict, field: str) -> pd.Series:
@@ -529,7 +484,6 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None,
     bms_ld = _load_leading("bms_leading", leading_year)
     prev_sire_ld = _load_leading("sire_leading", leading_year - 1)
     bd_cache = _load_birth_dates(birth_year)
-    pa_cache = _load_parent_ages(birth_year)
     ex_cache = _load_extra_features(birth_year)
 
     # --- ルックアップSeries構築（ハッシュベース高速マッピング） ---
@@ -593,32 +547,14 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None,
         return 3
     r["birth_month"] = hids.map(_parse_birth_month)
 
-    # === 親年齢（CSV優先 → JSONキャッシュフォールバック） ===
+    # === 親年齢（CSVカラムから計算） ===
     def _calc_parent_ages_vec(parent_key):
-        csv_col, cache_by_key, cache_id_key = _PARENT_MAP.get(
-            parent_key, (f"{parent_key}_birth_year", f"{parent_key}_birth_year", None)
-        )
-        # 1. CSVカラムから計算
+        csv_col = _PARENT_MAP[parent_key][0]
         ages = pd.Series(np.nan, index=src.index)
         if csv_col in src.columns:
             parent_by = pd.to_numeric(src[csv_col], errors="coerce")
             valid = parent_by.notna()
             ages[valid] = birth_year - parent_by[valid]
-        # 2. JSONキャッシュからフォールバック（NaN残りのみ）
-        missing = ages.isna()
-        if missing.any():
-            for idx in src.index[missing]:
-                hid_str = str(src.at[idx, "horse_id"])
-                data = pa_cache.get(hid_str, {})
-                by = data.get(cache_by_key)
-                if by:
-                    ages.at[idx] = birth_year - by
-                elif cache_id_key:
-                    parent_id = data.get(cache_id_key)
-                    if parent_id:
-                        parent_by_val = _birth_year_from_id(parent_id)
-                        if parent_by_val:
-                            ages.at[idx] = birth_year - parent_by_val
         return ages
 
     r["sire_age"] = _calc_parent_ages_vec("sire")
