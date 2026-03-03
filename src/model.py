@@ -255,4 +255,32 @@ def heuristic_score(df: pd.DataFrame, race_type: str = "derby") -> pd.Series:
     if "dam_high_class" in df.columns:
         score += df["dam_high_class"].fillna(0) * W.get("b_dam_high_class", 0.0)
 
+    # 種牡馬ダービー率
+    if "sire_derby_rate" in df.columns:
+        score += df["sire_derby_rate"].fillna(0) * W.get("w_sire_derby_rate", 0.0)
+    # 母父オークス率
+    if "bms_oaks_rate" in df.columns:
+        score += df["bms_oaks_rate"].fillna(0) * W.get("w_bms_oaks_rate", 0.0)
+    # 母父ダービー率
+    if "bms_derby_rate" in df.columns:
+        score += df["bms_derby_rate"].fillna(0) * W.get("w_bms_derby_rate", 0.0)
+    # 母馬クラシック実績
+    if "dam_classic" in df.columns:
+        score += df["dam_classic"].fillna(0) * W.get("b_dam_classic", 0.0)
+    # 種牡馬平均賞金（対数正規化）
+    if "sire_mean_prize" in df.columns:
+        mp = np.log1p(df["sire_mean_prize"].fillna(0))
+        cap = mp.quantile(0.99)
+        if cap > 0:
+            score += (mp.clip(upper=cap) / cap) * 100 * W.get("w_sire_mean_prize", 0.0)
+    # 輸入繁殖牝馬 × 種牡馬EI交互作用
+    if "imported_sire_inter" in df.columns:
+        score += df["imported_sire_inter"].fillna(0) * W.get("w_imported_sire", 0.0)
+    # 輸入繁殖牝馬 × 調教師スコア交互作用
+    if "imported_trainer_inter" in df.columns:
+        score += df["imported_trainer_inter"].fillna(0) * W.get("w_imported_trainer", 0.0)
+    # 輸入繁殖牝馬 × 馬主スコア交互作用
+    if "imported_owner_inter" in df.columns:
+        score += df["imported_owner_inter"].fillna(0) * W.get("w_imported_owner", 0.0)
+
     return score

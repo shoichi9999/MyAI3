@@ -205,6 +205,30 @@ def _get_bms_classic_map(max_birth_year: int) -> dict[str, int]:
     return _build_classic_map(max_birth_year, "sire_of_dam", ("derby", "oaks"))
 
 
+def _get_sire_derby_map(max_birth_year: int) -> dict[str, int]:
+    """種牡馬ごとのダービーTOP5輩出数を返す（ダービーのみ）。"""
+    return _build_classic_map(max_birth_year, "sire", ("derby",))
+
+
+def _get_bms_oaks_map(max_birth_year: int) -> dict[str, int]:
+    """母父ごとのオークスTOP5輩出数を返す（オークスのみ）。"""
+    return _build_classic_map(max_birth_year, "sire_of_dam", ("oaks",))
+
+
+def _get_bms_derby_map(max_birth_year: int) -> dict[str, int]:
+    """母父ごとのダービーTOP5輩出数を返す（ダービーのみ）。"""
+    return _build_classic_map(max_birth_year, "sire_of_dam", ("derby",))
+
+
+def _get_dam_classic_ids(max_birth_year: int) -> set:
+    """母馬がオークスTOP5だったかの判定用ID set。"""
+    ids = set()
+    for by_str, horse_ids in _CLASSIC_RESULTS.get("oaks", {}).items():
+        if int(by_str) <= max_birth_year:
+            ids.update(str(hid) for hid in horse_ids)
+    return ids
+
+
 def get_sire_runners(sire_name: str, leading_year: int = None) -> int:
     """種牡馬の産駒出走頭数を返す。"""
     if not sire_name:
@@ -665,7 +689,37 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None,
     r["sire_oaks_rate"] = np.where(sire_runners_v > 0,
                                    r["sire_oaks_count"] / sire_runners_v * 100, 0.0)
 
+    # 種牡馬ダービー率
+    sire_derby_map = _get_sire_derby_map(classic_cutoff)
+    sire_derby_lu = pd.Series(sire_derby_map)
+    r["sire_derby_count"] = sire.map(sire_derby_lu).fillna(0).astype(int)
+    r["sire_derby_rate"] = np.where(sire_runners_v > 0,
+                                    r["sire_derby_count"] / sire_runners_v * 100, 0.0)
+
     r["bms_classic_count"] = bms_name.map(bms_classic_lu).fillna(0).astype(int)
+    bms_runners_v = r["bms_runners"]
+
+    # 母父オークス率
+    bms_oaks_map = _get_bms_oaks_map(classic_cutoff)
+    bms_oaks_lu = pd.Series(bms_oaks_map)
+    r["bms_oaks_count"] = bms_name.map(bms_oaks_lu).fillna(0).astype(int)
+    r["bms_oaks_rate"] = np.where(bms_runners_v > 0,
+                                  r["bms_oaks_count"] / bms_runners_v * 100, 0.0)
+
+    # 母父ダービー率
+    bms_derby_map = _get_bms_derby_map(classic_cutoff)
+    bms_derby_lu = pd.Series(bms_derby_map)
+    r["bms_derby_count"] = bms_name.map(bms_derby_lu).fillna(0).astype(int)
+    r["bms_derby_rate"] = np.where(bms_runners_v > 0,
+                                   r["bms_derby_count"] / bms_runners_v * 100, 0.0)
+
+    # 母馬クラシック実績（母馬がオークスTOP5だったか）
+    dam_classic_ids = _get_dam_classic_ids(classic_cutoff)
+    r["dam_classic"] = dam_id_col.isin(dam_classic_ids).astype(int)
+
+    # 種牡馬平均賞金（産駒あたり賞金 = 質の指標）
+    r["sire_mean_prize"] = np.where(sire_runners_v > 0,
+                                    r["sire_progeny_prize"] / sire_runners_v, 0.0)
 
     # === 派生特徴量（全ベクトル化） ===
     r["dam_high_class"] = (r["dam_prize"] >= 5000).astype(int)
@@ -676,6 +730,11 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None,
 
     # 輸入繁殖牝馬フラグ
     r["imported_dam"] = dam_id_col.str.startswith("000a").astype(int)
+
+    # 輸入繁殖牝馬の評価補正（外国産母馬はdam_prize=0, bms_ei≈0で減点される問題を緩和）
+    r["imported_sire_inter"] = r["imported_dam"] * r["sire_ei"]
+    r["imported_trainer_inter"] = r["imported_dam"] * (r["trainer_score"] - 50) / 50
+    r["imported_owner_inter"] = r["imported_dam"] * (r["owner_score"] - 50) / 50
 
     # === 交互作用特徴量（ベクトル化） ===
     r["sire_dam_interaction"] = r["sire_ei"] * np.log1p(r["dam_prize"])

@@ -38,5 +38,13 @@
   "w_sire_oaks_rate": 3.6248198802490896,
   "w_bms_classic": 0.10821946504878965,
   "b_dam_high_class": 0.5958636751779482,
+  "w_sire_derby_rate": 0.0,
+  "w_bms_oaks_rate": 0.0,
+  "w_bms_derby_rate": 0.0,
+  "b_dam_classic": 0.0,
+  "w_sire_mean_prize": 0.0,
+  "w_imported_sire": 0.0,
+  "w_imported_trainer": 0.0,
+  "w_imported_owner": 0.0,
   "_comment": "グリッドサーチ自動更新"
 }
