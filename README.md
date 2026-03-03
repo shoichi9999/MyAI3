@@ -70,6 +70,7 @@ grid_search.py                  DE+CMA-ES最適化（重みパラメータ探索
 tune_new_params.py              新パラメータ高速チューニング
 fetch_dam_prizes.py             母馬獲得賞金の一括取得
 fetch_sire_prizes.py            種牡馬賞金の取得
+fetch_leading.py                種牡馬/BMSリーディング取得（年度別）
 fetch_all_years.py              全年度データの一括取得
 run_dam_pipeline.py             母馬データパイプライン
 
@@ -79,7 +80,7 @@ scripts/
 
 src/
   scraper.py    netkeiba.comスクレイピング（馬一覧 + 親ID/生年）
-  features.py   特徴量生成（56特徴量: EI・勝率・ランク・産駒数・母馬賞金・人的要素・交互作用・外国産母馬補正等）
+  features.py   特徴量生成（54特徴量: EI・勝率・ランク・産駒数・母馬賞金・人的要素・交互作用・外国産母馬補正等）
   model.py      ヒューリスティックスコア算出（重みはweights.jsonから読込、47パラメータ）
   ml_model.py   LightGBM予測モデル（LOYO-CV + スタッキング + アンサンブル）
   predictor.py  収集→予測パイプライン
@@ -98,6 +99,7 @@ data/
   pog_top5_YYYY.csv             ダービー予測TOP5出力
   pog_top5_oaks_YYYY.csv        オークス予測TOP5出力
   pog_top30_YYYY.csv            ダービー予測TOP30出力
+  pog_top30_oaks_YYYY.csv       オークス予測TOP30出力
   config/
     weights.json                ダービー用スコアリング重み（最適化済み、47パラメータ）
     weights_oaks.json           オークス用スコアリング重み（最適化済み、47パラメータ）
