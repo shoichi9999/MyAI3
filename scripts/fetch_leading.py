@@ -66,24 +66,43 @@ def fetch_leading_page(pid: str, year: int, page: int = 1) -> list[dict]:
         return []
 
     # ヘッダー行からEI列のインデックスを特定
+    # colspan を考慮して、ヘッダーのtd/th位置を実際のデータ列位置にマッピング
     header_row = rows[0]
-    headers = [th.get_text(strip=True) for th in header_row.find_all(["th", "td"])]
+    header_cells = header_row.find_all(["th", "td"])
 
-    # EI列を探す（"EI" or "ＥＩ" など）
+    # colspanを展開してヘッダー名→実データ列インデックスのマッピングを構築
+    col_pos = 0  # 実際のtd列位置
     ei_idx = None
     prize_idx = None
     win_rate_idx = None
-    for i, h in enumerate(headers):
-        h_normalized = h.replace("Ｅ", "E").replace("Ｉ", "I")
-        if h_normalized == "EI" or "アーニング" in h:
-            ei_idx = i
-        if "賞金" in h and prize_idx is None:
-            prize_idx = i
-        if "勝率" in h or "勝馬率" in h:
-            win_rate_idx = i
+    runners_idx = None
+    winners_idx = None
+    for cell in header_cells:
+        text = cell.get_text(strip=True)
+        colspan = int(cell.get("colspan", 1))
+        text_normalized = text.replace("Ｅ", "E").replace("Ｉ", "I")
+        if text_normalized == "EI" or "アーニング" in text:
+            ei_idx = col_pos
+        if "賞金" in text and prize_idx is None:
+            prize_idx = col_pos
+        if "勝率" in text or "勝馬率" in text:
+            win_rate_idx = col_pos
+        if "出走頭数" in text and runners_idx is None:
+            runners_idx = col_pos
+        if "勝馬頭数" in text and winners_idx is None:
+            winners_idx = col_pos
+        col_pos += colspan
+
+    # サブヘッダー行（2行目）をスキップするため、データ行の開始を特定
+    data_start = 1
+    if len(rows) > 2:
+        # 2行目がサブヘッダー（thのみ）の場合はスキップ
+        second_row_cells = rows[1].find_all("td")
+        if not second_row_cells:
+            data_start = 2
 
     results = []
-    for row in rows[1:]:
+    for row in rows[data_start:]:
         cols = row.find_all("td")
         if len(cols) < 4:
             continue
@@ -92,7 +111,7 @@ def fetch_leading_page(pid: str, year: int, page: int = 1) -> list[dict]:
         rank_text = cols[0].get_text(strip=True)
         rank = int(rank_text) if rank_text.isdigit() else 0
 
-        # 種牡馬名（リンクテキスト）
+        # 種牡馬名（リンクテキスト）とhorse_id
         name_tag = cols[1].find("a")
         if not name_tag:
             continue
@@ -100,31 +119,45 @@ def fetch_leading_page(pid: str, year: int, page: int = 1) -> list[dict]:
         if not name:
             continue
 
-        entry = {"rank": rank}
+        # horse_idをリンクURLから抽出
+        horse_id = ""
+        href = name_tag.get("href", "")
+        id_match = re.search(r"/horse/(?:sire/)?(\w+)", href)
+        if id_match:
+            horse_id = id_match.group(1)
 
-        # 産駒賞金
-        if prize_idx is not None and prize_idx < len(cols):
-            entry["progeny_prize"] = _parse_number(cols[prize_idx].get_text())
-        else:
-            # フォールバック: 賞金は通常後半にある
-            for i in range(len(cols) - 1, 3, -1):
-                val = _parse_number(cols[i].get_text())
-                if val > 100:  # 賞金は通常100万以上
-                    entry["progeny_prize"] = val
-                    break
-            else:
-                entry["progeny_prize"] = 0.0
+        entry = {"horse_id": horse_id, "rank": rank}
+
+        # 出走頭数（runners）
+        if runners_idx is not None and runners_idx < len(cols):
+            entry["runners"] = int(_parse_number(cols[runners_idx].get_text()))
+
+        # 勝馬頭数（winners）
+        if winners_idx is not None and winners_idx < len(cols):
+            entry["winners"] = int(_parse_number(cols[winners_idx].get_text()))
+
+        # 勝馬率（win_rate）
+        if win_rate_idx is not None and win_rate_idx < len(cols):
+            wr_text = cols[win_rate_idx].get_text(strip=True)
+            entry["win_rate"] = _parse_number(wr_text)
 
         # EI
         if ei_idx is not None and ei_idx < len(cols):
             ei_text = cols[ei_idx].get_text(strip=True)
-            entry["ei"] = ei_text if ei_text else "0.00"
+            entry["ei"] = _parse_number(ei_text)
         else:
-            entry["ei"] = "0.00"
+            entry["ei"] = 0.0
 
-        # 勝率（sire_leadingのみ）
-        if win_rate_idx is not None and win_rate_idx < len(cols):
-            entry["win_rate"] = cols[win_rate_idx].get_text(strip=True)
+        # 産駒賞金（progeny_prize）
+        if prize_idx is not None and prize_idx < len(cols):
+            entry["progeny_prize"] = _parse_number(cols[prize_idx].get_text())
+        else:
+            entry["progeny_prize"] = 0.0
+
+        # 代表馬（最終列）
+        rep_tag = cols[-1].find("a")
+        if rep_tag:
+            entry["representative"] = rep_tag.get_text(strip=True)
 
         results.append((name, entry))
 
