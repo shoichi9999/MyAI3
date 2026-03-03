@@ -358,13 +358,29 @@ def composite_score(metrics: dict, objective: str = "classic",
     )
 
 
+def _year_weights(years) -> dict:
+    """直近年度ほど高い重みを返す（最古0.7〜最新1.0の線形傾斜）。"""
+    sorted_years = sorted(years)
+    n = len(sorted_years)
+    if n <= 1:
+        return {y: 1.0 for y in sorted_years}
+    return {
+        y: 0.7 + 0.3 * i / (n - 1)
+        for i, y in enumerate(sorted_years)
+    }
+
+
 def cv_score(all_data: dict, params: dict, race_type: str = "derby") -> float:
-    """全年度の composite_score 平均を返す。"""
-    scores = []
+    """全年度の composite_score 加重平均を返す（直近年度重視）。"""
+    yw = _year_weights(all_data.keys())
+    weighted_scores = []
+    weights = []
     for year, df in all_data.items():
         m = evaluate_single(df, params, birth_year=year, race_type=race_type)
-        scores.append(composite_score(m, race_type=race_type))
-    return np.mean(scores)
+        w = yw[year]
+        weighted_scores.append(composite_score(m, race_type=race_type) * w)
+        weights.append(w)
+    return sum(weighted_scores) / sum(weights)
 
 
 # ------------------------------------------------------------------
@@ -819,18 +835,23 @@ def _compute_score_vec(d, params):
 
 
 def _fast_cv_score(precomputed, params):
-    """事前計算配列を使った高速CVスコア（v4: 1着TOP5カウント最優先）。
+    """事前計算配列を使った高速CVスコア（v5: 直近年度重視 + 1着TOP5カウント最優先）。
 
     設計思想:
     - 1着馬がTOP5に入るかどうか = 最優先（フラットボーナス2000）
     - 5年TOP5入り > 4年TOP5入り が常に成立
     - TOP3は小さな追加ボーナス
     - 逆順位は微小な勾配信号のみ（最適化の方向感）
+    - 直近年度ほど高い重み（最古0.7〜最新1.0）
     """
     year_scores = []
+    year_weights = []
     n_years = len(precomputed)
 
-    for d in precomputed.values():
+    # 年度重みを計算
+    yw = _year_weights(precomputed.keys())
+
+    for year, d in precomputed.items():
         score = _compute_score_vec(d, params)
         n_horses = len(score)
 
@@ -876,11 +897,17 @@ def _fast_cv_score(precomputed, params):
             + smooth_bonus
         )
         year_scores.append(year_score)
+        year_weights.append(yw[year])
 
-    mean_score = np.mean(year_scores)
+    # 加重平均（直近年度重視）
+    year_scores = np.array(year_scores)
+    year_weights = np.array(year_weights)
+    mean_score = np.sum(year_scores * year_weights) / np.sum(year_weights)
 
     if n_years > 1:
-        std_penalty = np.std(year_scores) * 0.08
+        # 加重標準偏差
+        wvar = np.sum(year_weights * (year_scores - mean_score) ** 2) / np.sum(year_weights)
+        std_penalty = np.sqrt(wvar) * 0.08
         mean_score -= std_penalty
 
     if _BOUNDS_HI is not None:
