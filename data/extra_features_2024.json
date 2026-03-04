@@ -3880,7 +3880,7 @@
     "foal_number": 7
   },
   "2024107425": {
-    "sale_price": null,
+    "sale_price": 968.0,
     "dam_id": "2015105303",
     "foal_number": 4
   },
@@ -4790,7 +4790,7 @@
     "foal_number": 9
   },
   "2024107169": {
-    "sale_price": null,
+    "sale_price": 5720.0,
     "dam_id": "2017104629",
     "foal_number": 1
   },
@@ -6985,7 +6985,7 @@
     "foal_number": 4
   },
   "2024106504": {
-    "sale_price": null,
+    "sale_price": 3300.0,
     "dam_id": "2017105252",
     "foal_number": 1
   },
@@ -7485,7 +7485,7 @@
     "foal_number": 11
   },
   "2024106305": {
-    "sale_price": null,
+    "sale_price": 4840.0,
     "dam_id": "2016104698",
     "foal_number": 1
   },
@@ -7620,7 +7620,7 @@
     "foal_number": 7
   },
   "2024106248": {
-    "sale_price": null,
+    "sale_price": 8360.0,
     "dam_id": "2017105315",
     "foal_number": 2
   },
@@ -8230,7 +8230,7 @@
     "foal_number": 5
   },
   "2024106054": {
-    "sale_price": null,
+    "sale_price": 2970.0,
     "dam_id": "2016105256",
     "foal_number": 2
   },
@@ -8745,7 +8745,7 @@
     "foal_number": 3
   },
   "2024105924": {
-    "sale_price": null,
+    "sale_price": 5170.0,
     "dam_id": "2013105487",
     "foal_number": 4
   },
@@ -14480,7 +14480,7 @@
     "foal_number": 2
   },
   "2024104724": {
-    "sale_price": null,
+    "sale_price": 1760.0,
     "dam_id": "2009103889",
     "foal_number": 8
   },
@@ -16470,7 +16470,7 @@
     "foal_number": 6
   },
   "2024104326": {
-    "sale_price": null,
+    "sale_price": 2090.0,
     "dam_id": "2010102652",
     "foal_number": 10
   },
@@ -17440,7 +17440,7 @@
     "foal_number": 3
   },
   "2024104128": {
-    "sale_price": null,
+    "sale_price": 3850.0,
     "dam_id": "2012103628",
     "foal_number": 5
   },
@@ -19710,7 +19710,7 @@
     "foal_number": 5
   },
   "2024103672": {
-    "sale_price": null,
+    "sale_price": 5720.0,
     "dam_id": "2015100978",
     "foal_number": 2
   },
@@ -35490,7 +35490,7 @@
     "foal_number": 2
   },
   "2024100486": {
-    "sale_price": null,
+    "sale_price": 440.0,
     "dam_id": "2013103250",
     "foal_number": 3
   },
@@ -37932,6 +37932,11 @@
   "2024107259": {
     "sale_price": 1100.0,
     "dam_id": "2018104139",
+    "foal_number": null
+  },
+  "2024106949": {
+    "sale_price": 1980.0,
+    "dam_id": "2016105802",
     "foal_number": null
   }
 }

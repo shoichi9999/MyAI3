@@ -337,19 +337,17 @@ def evaluate_single(df: pd.DataFrame, params: dict, birth_year: int = None,
 
 def composite_score(metrics: dict, objective: str = "classic",
                     race_type: str = "derby") -> float:
-    """複合スコア（v4: 1着TOP5カウント最優先）。"""
+    """複合スコア（v6: 連続関数 — rank 2→31の犠牲を防止）。"""
+    import math
     d5 = metrics.get(f"top5_{race_type}", 0)
     d10 = metrics.get(f"top10_{race_type}", 0)
     winner_rank = metrics.get("winner_rank", 9999)
 
-    winner_bonus = 0.0
+    # 連続的な報酬: log(1 + 100/rank) で滑らかに減衰
+    winner_bonus = 400.0 * math.log1p(100.0 / max(winner_rank, 1))
+    # TOP5入りの小ボーナス（フラット2000ではなく控えめに）
     if winner_rank <= 5:
-        winner_bonus += 2000.0
-    if winner_rank <= 3:
-        winner_bonus += 100.0
-    winner_bonus += 20.0 / max(winner_rank, 1)
-    if winner_rank > 5:
-        winner_bonus += max(0, 50 - winner_rank) * 0.5
+        winner_bonus += 200.0
 
     return (
         winner_bonus
@@ -835,13 +833,12 @@ def _compute_score_vec(d, params):
 
 
 def _fast_cv_score(precomputed, params):
-    """事前計算配列を使った高速CVスコア（v5: 直近年度重視 + 1着TOP5カウント最優先）。
+    """事前計算配列を使った高速CVスコア（v6: 連続関数 + 安定性重視）。
 
     設計思想:
-    - 1着馬がTOP5に入るかどうか = 最優先（フラットボーナス2000）
-    - 5年TOP5入り > 4年TOP5入り が常に成立
-    - TOP3は小さな追加ボーナス
-    - 逆順位は微小な勾配信号のみ（最適化の方向感）
+    - 1着馬の順位に連続報酬: 400*log(1+100/rank) — rank 2→31の犠牲を防止
+    - TOP5入りの小ボーナス(+200) — フラット2000→200に大幅縮小
+    - std_penalty強化(0.08→0.25) — 年度間バランスを維持
     - 直近年度ほど高い重み（最古0.7〜最新1.0）
     """
     year_scores = []
@@ -868,18 +865,16 @@ def _fast_cv_score(precomputed, params):
         # ランク計算
         ranks = np.argsort(np.argsort(-score)) + 1  # 1-indexed
 
-        # ===== 1着馬の順位（TOP5入りカウント優先） =====
+        # ===== 1着馬の順位（v6: 連続関数） =====
         winner_bonus = 0.0
         widx = d["derby_winner_idx"]
         if widx is not None:
             rank_val = int(ranks[widx])
+            # 連続的な報酬: log(1 + 100/rank) で滑らかに減衰
+            winner_bonus = 400.0 * np.log1p(100.0 / rank_val)
+            # TOP5入りの小ボーナス
             if rank_val <= 5:
-                winner_bonus += 2000.0
-            if rank_val <= 3:
-                winner_bonus += 100.0
-            winner_bonus += 20.0 / rank_val
-            if rank_val > 5:
-                winner_bonus += max(0, 50 - rank_val) * 0.5
+                winner_bonus += 200.0
 
         # クラシックTOP5全体の滑らかなボーナス
         smooth_bonus = 0.0
@@ -907,7 +902,7 @@ def _fast_cv_score(precomputed, params):
     if n_years > 1:
         # 加重標準偏差
         wvar = np.sum(year_weights * (year_scores - mean_score) ** 2) / np.sum(year_weights)
-        std_penalty = np.sqrt(wvar) * 0.08
+        std_penalty = np.sqrt(wvar) * 0.25
         mean_score -= std_penalty
 
     if _BOUNDS_HI is not None:
