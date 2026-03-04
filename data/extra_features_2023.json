@@ -2575,7 +2575,7 @@
     "foal_number": 3
   },
   "2023105332": {
-    "sale_price": null,
+    "sale_price": 23100.0,
     "dam_id": "2015105023",
     "foal_number": 3
   },
@@ -2665,7 +2665,7 @@
     "foal_number": 4
   },
   "2023105223": {
-    "sale_price": null,
+    "sale_price": 2310.0,
     "dam_id": "2014105290",
     "foal_number": 4
   },
@@ -3245,7 +3245,7 @@
     "foal_number": 3
   },
   "2023106978": {
-    "sale_price": null,
+    "sale_price": 3300.0,
     "dam_id": "2016104460",
     "foal_number": 2
   },
@@ -3435,7 +3435,7 @@
     "foal_number": 5
   },
   "2023107287": {
-    "sale_price": null,
+    "sale_price": 30800.0,
     "dam_id": "2007103233",
     "foal_number": 11
   },
@@ -3610,7 +3610,7 @@
     "foal_number": 2
   },
   "2023105380": {
-    "sale_price": null,
+    "sale_price": 9240.0,
     "dam_id": "2008100544",
     "foal_number": 8
   },
@@ -3645,7 +3645,7 @@
     "foal_number": 2
   },
   "2023105356": {
-    "sale_price": null,
+    "sale_price": 3410.0,
     "dam_id": "000a01d973",
     "foal_number": 1
   },
@@ -4110,7 +4110,7 @@
     "foal_number": 7
   },
   "2023107267": {
-    "sale_price": null,
+    "sale_price": 7260.0,
     "dam_id": "000a01bfb7",
     "foal_number": 1
   },
@@ -4410,7 +4410,7 @@
     "foal_number": 11
   },
   "2023104303": {
-    "sale_price": null,
+    "sale_price": 4290.0,
     "dam_id": "2018105341",
     "foal_number": 1
   },
@@ -4540,7 +4540,7 @@
     "foal_number": 3
   },
   "2023103717": {
-    "sale_price": null,
+    "sale_price": 2860.0,
     "dam_id": "2013110091",
     "foal_number": 4
   },
@@ -4570,7 +4570,7 @@
     "foal_number": 7
   },
   "2023104450": {
-    "sale_price": null,
+    "sale_price": 2970.0,
     "dam_id": "2014106061",
     "foal_number": 2
   },
@@ -5285,7 +5285,7 @@
     "foal_number": 1
   },
   "2023106960": {
-    "sale_price": null,
+    "sale_price": 6380.0,
     "dam_id": "2014106184",
     "foal_number": 5
   },
@@ -5420,7 +5420,7 @@
     "foal_number": 5
   },
   "2023105394": {
-    "sale_price": null,
+    "sale_price": 2750.0,
     "dam_id": "2015104929",
     "foal_number": 4
   },
@@ -5435,7 +5435,7 @@
     "foal_number": 11
   },
   "2023105334": {
-    "sale_price": null,
+    "sale_price": 10340.0,
     "dam_id": "2015104932",
     "foal_number": 2
   },
@@ -6245,7 +6245,7 @@
     "foal_number": 4
   },
   "2023101375": {
-    "sale_price": null,
+    "sale_price": 4730.0,
     "dam_id": "2010104054",
     "foal_number": 7
   },
@@ -6315,7 +6315,7 @@
     "foal_number": 4
   },
   "2023106968": {
-    "sale_price": null,
+    "sale_price": 792.0,
     "dam_id": "2003102952",
     "foal_number": 12
   },
@@ -6405,7 +6405,7 @@
     "foal_number": 2
   },
   "2023103986": {
-    "sale_price": null,
+    "sale_price": 2310.0,
     "dam_id": "2008102705",
     "foal_number": 7
   },
@@ -6990,12 +6990,12 @@
     "foal_number": 5
   },
   "2023103467": {
-    "sale_price": null,
+    "sale_price": 7260.0,
     "dam_id": "2017104809",
     "foal_number": 1
   },
   "2023102845": {
-    "sale_price": null,
+    "sale_price": 2310.0,
     "dam_id": "2012104690",
     "foal_number": 4
   },
@@ -7640,7 +7640,7 @@
     "foal_number": 1
   },
   "2023105257": {
-    "sale_price": null,
+    "sale_price": 3850.0,
     "dam_id": "2013105707",
     "foal_number": 2
   },
@@ -7680,7 +7680,7 @@
     "foal_number": 2
   },
   "2023103458": {
-    "sale_price": null,
+    "sale_price": 3300.0,
     "dam_id": "2011104252",
     "foal_number": 4
   },
@@ -8235,7 +8235,7 @@
     "foal_number": 5
   },
   "2023105294": {
-    "sale_price": null,
+    "sale_price": 6600.0,
     "dam_id": "2009105993",
     "foal_number": 7
   },
@@ -9200,7 +9200,7 @@
     "foal_number": 13
   },
   "2023100288": {
-    "sale_price": null,
+    "sale_price": 6600.0,
     "dam_id": "2012101554",
     "foal_number": 7
   },
@@ -9315,7 +9315,7 @@
     "foal_number": 8
   },
   "2023105236": {
-    "sale_price": null,
+    "sale_price": 9900.0,
     "dam_id": "000a01593e",
     "foal_number": 3
   },
@@ -9670,7 +9670,7 @@
     "foal_number": 1
   },
   "2023105283": {
-    "sale_price": null,
+    "sale_price": 2310.0,
     "dam_id": "2009106254",
     "foal_number": 7
   },
@@ -9725,7 +9725,7 @@
     "foal_number": 1
   },
   "2023103906": {
-    "sale_price": null,
+    "sale_price": 4730.0,
     "dam_id": "2007102572",
     "foal_number": 6
   },
@@ -10580,7 +10580,7 @@
     "foal_number": 2
   },
   "2023102031": {
-    "sale_price": null,
+    "sale_price": 550.0,
     "dam_id": "2016104540",
     "foal_number": 1
   },
@@ -11385,7 +11385,7 @@
     "foal_number": 2
   },
   "2023106086": {
-    "sale_price": null,
+    "sale_price": 2530.0,
     "dam_id": "2010103426",
     "foal_number": 4
   },
@@ -12060,7 +12060,7 @@
     "foal_number": 4
   },
   "2023101894": {
-    "sale_price": null,
+    "sale_price": 2200.0,
     "dam_id": "2017104344",
     "foal_number": 1
   },
@@ -12310,7 +12310,7 @@
     "foal_number": 2
   },
   "2023105331": {
-    "sale_price": null,
+    "sale_price": 5940.0,
     "dam_id": "2005102620",
     "foal_number": 9
   },
@@ -13185,7 +13185,7 @@
     "foal_number": 5
   },
   "2023105403": {
-    "sale_price": null,
+    "sale_price": 20900.0,
     "dam_id": "2010106120",
     "foal_number": 7
   },
@@ -15420,7 +15420,7 @@
     "foal_number": 4
   },
   "2023103429": {
-    "sale_price": null,
+    "sale_price": 2420.0,
     "dam_id": "2016105051",
     "foal_number": 1
   },
@@ -16010,7 +16010,7 @@
     "foal_number": 9
   },
   "2023103548": {
-    "sale_price": null,
+    "sale_price": 5720.0,
     "dam_id": "2011104475",
     "foal_number": 3
   },
@@ -16385,7 +16385,7 @@
     "foal_number": 5
   },
   "2023102630": {
-    "sale_price": null,
+    "sale_price": 2200.0,
     "dam_id": "2011110001",
     "foal_number": 5
   },
@@ -17280,7 +17280,7 @@
     "foal_number": 7
   },
   "2023104913": {
-    "sale_price": null,
+    "sale_price": 1430.0,
     "dam_id": "2011102954",
     "foal_number": 6
   },
@@ -17620,7 +17620,7 @@
     "foal_number": 4
   },
   "2023100428": {
-    "sale_price": null,
+    "sale_price": 3630.0,
     "dam_id": "2007103220",
     "foal_number": 10
   },
@@ -18085,7 +18085,7 @@
     "foal_number": 3
   },
   "2023103332": {
-    "sale_price": null,
+    "sale_price": 5390.0,
     "dam_id": "000a01b0f7",
     "foal_number": 4
   },
@@ -18740,7 +18740,7 @@
     "foal_number": 2
   },
   "2023105376": {
-    "sale_price": null,
+    "sale_price": 2970.0,
     "dam_id": "2013104489",
     "foal_number": 4
   },
@@ -20210,7 +20210,7 @@
     "foal_number": 5
   },
   "2023102624": {
-    "sale_price": null,
+    "sale_price": 275.0,
     "dam_id": "2015102214",
     "foal_number": 1
   },
@@ -22040,7 +22040,7 @@
     "foal_number": 11
   },
   "2023107263": {
-    "sale_price": null,
+    "sale_price": 5060.0,
     "dam_id": "2016104633",
     "foal_number": 1
   },
@@ -22325,7 +22325,7 @@
     "foal_number": 9
   },
   "2023106996": {
-    "sale_price": null,
+    "sale_price": 4400.0,
     "dam_id": "2004102857",
     "foal_number": 13
   },
@@ -22450,7 +22450,7 @@
     "foal_number": 2
   },
   "2023106896": {
-    "sale_price": null,
+    "sale_price": 9020.0,
     "dam_id": "000a01a8dc",
     "foal_number": 3
   },
@@ -24365,7 +24365,7 @@
     "foal_number": 5
   },
   "2023106112": {
-    "sale_price": null,
+    "sale_price": 2970.0,
     "dam_id": "2014105799",
     "foal_number": 3
   },
@@ -24995,7 +24995,7 @@
     "foal_number": 1
   },
   "2023105869": {
-    "sale_price": null,
+    "sale_price": 8800.0,
     "dam_id": "2013101434",
     "foal_number": 3
   },
@@ -25245,7 +25245,7 @@
     "foal_number": 3
   },
   "2023105777": {
-    "sale_price": null,
+    "sale_price": 1980.0,
     "dam_id": "000a01da23",
     "foal_number": 3
   },
@@ -26295,7 +26295,7 @@
     "foal_number": 7
   },
   "2023105361": {
-    "sale_price": null,
+    "sale_price": 3740.0,
     "dam_id": "2015110022",
     "foal_number": 1
   },
@@ -26375,7 +26375,7 @@
     "foal_number": 4
   },
   "2023105305": {
-    "sale_price": null,
+    "sale_price": 20900.0,
     "dam_id": "000a012e7c",
     "foal_number": 7
   },
@@ -26385,12 +26385,12 @@
     "foal_number": 5
   },
   "2023105302": {
-    "sale_price": null,
+    "sale_price": 3410.0,
     "dam_id": "000a013915",
     "foal_number": 5
   },
   "2023105299": {
-    "sale_price": null,
+    "sale_price": 16500.0,
     "dam_id": "000a01be88",
     "foal_number": 2
   },
@@ -26405,7 +26405,7 @@
     "foal_number": 8
   },
   "2023105293": {
-    "sale_price": null,
+    "sale_price": 3850.0,
     "dam_id": "2014105846",
     "foal_number": 1
   },
@@ -26485,7 +26485,7 @@
     "foal_number": 11
   },
   "2023105222": {
-    "sale_price": null,
+    "sale_price": 2310.0,
     "dam_id": "2013105408",
     "foal_number": 4
   },
@@ -28380,7 +28380,7 @@
     "foal_number": 10
   },
   "2023104434": {
-    "sale_price": null,
+    "sale_price": 319.0,
     "dam_id": "2014101150",
     "foal_number": 3
   },
@@ -29615,7 +29615,7 @@
     "foal_number": 9
   },
   "2023103919": {
-    "sale_price": null,
+    "sale_price": 1705.0,
     "dam_id": "2018101406",
     "foal_number": 1
   },
@@ -29630,7 +29630,7 @@
     "foal_number": 1
   },
   "2023103911": {
-    "sale_price": null,
+    "sale_price": 3190.0,
     "dam_id": "2018105563",
     "foal_number": 2
   },
@@ -30000,7 +30000,7 @@
     "foal_number": 2
   },
   "2023103688": {
-    "sale_price": null,
+    "sale_price": 2970.0,
     "dam_id": "2018105426",
     "foal_number": 1
   },
@@ -30290,7 +30290,7 @@
     "foal_number": 13
   },
   "2023103539": {
-    "sale_price": null,
+    "sale_price": 10120.0,
     "dam_id": "2005102392",
     "foal_number": 8
   },
@@ -30345,7 +30345,7 @@
     "foal_number": 11
   },
   "2023103497": {
-    "sale_price": null,
+    "sale_price": 10560.0,
     "dam_id": "2016106064",
     "foal_number": 1
   },
@@ -30570,7 +30570,7 @@
     "foal_number": 4
   },
   "2023103385": {
-    "sale_price": null,
+    "sale_price": 2530.0,
     "dam_id": "2004103215",
     "foal_number": 10
   },
@@ -33265,7 +33265,7 @@
     "foal_number": 8
   },
   "2023102222": {
-    "sale_price": null,
+    "sale_price": 4290.0,
     "dam_id": "000a01389d",
     "foal_number": 6
   },
@@ -33645,7 +33645,7 @@
     "foal_number": 9
   },
   "2023102084": {
-    "sale_price": null,
+    "sale_price": 4620.0,
     "dam_id": "2016101927",
     "foal_number": 2
   },
@@ -35395,7 +35395,7 @@
     "foal_number": 3
   },
   "2023101395": {
-    "sale_price": null,
+    "sale_price": 3300.0,
     "dam_id": "000a01bec0",
     "foal_number": 2
   },
@@ -36725,7 +36725,7 @@
     "foal_number": 6
   },
   "2023100823": {
-    "sale_price": null,
+    "sale_price": 3410.0,
     "dam_id": "2014105806",
     "foal_number": 2
   },
@@ -37625,7 +37625,7 @@
     "foal_number": 2
   },
   "2023100459": {
-    "sale_price": null,
+    "sale_price": 1155.0,
     "dam_id": "2010110129",
     "foal_number": 5
   },
@@ -38305,7 +38305,7 @@
     "foal_number": 7
   },
   "2023100144": {
-    "sale_price": null,
+    "sale_price": 2970.0,
     "dam_id": "2012104059",
     "foal_number": 7
   },
@@ -38638,5 +38638,20 @@
     "sale_price": null,
     "dam_id": "2014105965",
     "foal_number": 3
+  },
+  "2023101735": {
+    "sale_price": 3850.0,
+    "dam_id": "2010102087",
+    "foal_number": null
+  },
+  "2023103901": {
+    "sale_price": null,
+    "dam_id": "2014106138",
+    "foal_number": null
+  },
+  "2023103730": {
+    "sale_price": null,
+    "dam_id": "2010104515",
+    "foal_number": null
   }
 }
