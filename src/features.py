@@ -735,6 +735,12 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None,
     r["imported_sire_inter"] = r["imported_dam"] * r["sire_ei"]
     r["imported_trainer_inter"] = r["imported_dam"] * (r["trainer_score"] - 50) / 50
     r["imported_owner_inter"] = r["imported_dam"] * (r["owner_score"] - 50) / 50
+    # 外国産母馬 × 母父EI（dam_prizeの代替として母父品質を直接評価）
+    r["imported_bms_inter"] = r["imported_dam"] * r["bms_ei"]
+    # 外国産母馬 × 父EI × 母父EI（失われたsire_dam_interactionの代替）
+    r["imported_sire_bms_inter"] = r["imported_dam"] * r["sire_ei"] * r["bms_ei"]
+    # アウトブリードボーナス（外国産母馬 × 日本種牡馬 = 異系交配の優位性）
+    r["outcross_imported"] = r["imported_dam"].values
 
     # === 交互作用特徴量（ベクトル化） ===
     r["sire_dam_interaction"] = r["sire_ei"] * np.log1p(r["dam_prize"])

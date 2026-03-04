@@ -260,6 +260,15 @@ def parameterized_score(df: pd.DataFrame, params: dict) -> pd.Series:
     # 外国産母馬 × 馬主スコア交互作用
     if "imported_owner_inter" in df.columns:
         score += df["imported_owner_inter"].fillna(0) * params.get("w_imported_owner", 0)
+    # 外国産母馬 × 母父EI
+    if "imported_bms_inter" in df.columns:
+        score += df["imported_bms_inter"].fillna(0) * params.get("w_imported_bms", 0)
+    # 外国産母馬 × 父EI × 母父EI
+    if "imported_sire_bms_inter" in df.columns:
+        score += df["imported_sire_bms_inter"].fillna(0) * params.get("w_imported_sire_bms", 0)
+    # アウトブリードボーナス
+    if "outcross_imported" in df.columns:
+        score += df["outcross_imported"].fillna(0) * params.get("b_outcross_imported", 0)
 
     return score
 
@@ -477,6 +486,9 @@ def grid_search(years, objective="balanced", race_type="derby"):
         "w_imported_sire": _w.get("w_imported_sire", 0.0),
         "w_imported_trainer": _w.get("w_imported_trainer", 0.0),
         "w_imported_owner": _w.get("w_imported_owner", 0.0),
+        "w_imported_bms": _w.get("w_imported_bms", 0.0),
+        "w_imported_sire_bms": _w.get("w_imported_sire_bms", 0.0),
+        "b_outcross_imported": _w.get("b_outcross_imported", 0.0),
     }
 
     current_cv = cv_score(all_data, current_params, race_type=race_type)
@@ -671,6 +683,12 @@ def _precompute_arrays(all_data, race_type="derby"):
         d["imported_sire_inter"] = df["imported_sire_inter"].fillna(0).values if "imported_sire_inter" in df.columns else np.zeros(n)
         d["imported_trainer_inter"] = df["imported_trainer_inter"].fillna(0).values if "imported_trainer_inter" in df.columns else np.zeros(n)
         d["imported_owner_inter"] = df["imported_owner_inter"].fillna(0).values if "imported_owner_inter" in df.columns else np.zeros(n)
+        # 外国産母馬 × 母父EI
+        d["imported_bms_inter"] = df["imported_bms_inter"].fillna(0).values if "imported_bms_inter" in df.columns else np.zeros(n)
+        # 外国産母馬 × 父EI × 母父EI
+        d["imported_sire_bms_inter"] = df["imported_sire_bms_inter"].fillna(0).values if "imported_sire_bms_inter" in df.columns else np.zeros(n)
+        # アウトブリードボーナス
+        d["outcross_imported"] = df["outcross_imported"].fillna(0).values if "outcross_imported" in df.columns else np.zeros(n)
         # 種牡馬産駒総賞金（対数正規化）
         if "sire_progeny_prize" in df.columns:
             pp = np.log1p(df["sire_progeny_prize"].fillna(0).values)
@@ -829,6 +847,9 @@ def _compute_score_vec(d, params):
     score += d["imported_sire_inter"] * params[44]     # w_imported_sire
     score += d["imported_trainer_inter"] * params[45]  # w_imported_trainer
     score += d["imported_owner_inter"] * params[46]    # w_imported_owner
+    score += d["imported_bms_inter"] * params[47]      # w_imported_bms
+    score += d["imported_sire_bms_inter"] * params[48] # w_imported_sire_bms
+    score += d["outcross_imported"] * params[49]       # b_outcross_imported
     return score
 
 
@@ -938,6 +959,7 @@ _PARAM_KEYS = [
     "b_dam_classic", "w_sire_mean_prize",
     # 外国産母馬補正
     "w_imported_sire", "w_imported_trainer", "w_imported_owner",
+    "w_imported_bms", "w_imported_sire_bms", "b_outcross_imported",
 ]
 
 def _dict_to_arr(params):
@@ -1008,6 +1030,9 @@ def _random_search_top10(all_data, current_params, best_score, race_type="derby"
         (0.0, 30.0),   # w_imported_sire
         (0.0, 30.0),   # w_imported_trainer
         (0.0, 30.0),   # w_imported_owner
+        (0.0, 30.0),   # w_imported_bms (母父EI代替)
+        (0.0, 30.0),   # w_imported_sire_bms (父×母父交互作用代替)
+        (0.0, 50.0),   # b_outcross_imported (アウトブリードボーナス)
     ]
     lo = np.array([b[0] for b in bounds])
     hi = np.array([b[1] for b in bounds])

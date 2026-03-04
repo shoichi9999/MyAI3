@@ -46,5 +46,8 @@
   "w_imported_sire": 2.759382622228645,
   "w_imported_trainer": 3.780740439081612,
   "w_imported_owner": 14.615915307733164,
+  "w_imported_bms": 0.0,
+  "w_imported_sire_bms": 0.0,
+  "b_outcross_imported": 0.0,
   "_comment": "グリッドサーチ自動更新"
 }

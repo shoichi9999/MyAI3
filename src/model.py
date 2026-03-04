@@ -282,5 +282,14 @@ def heuristic_score(df: pd.DataFrame, race_type: str = "derby") -> pd.Series:
     # 輸入繁殖牝馬 × 馬主スコア交互作用
     if "imported_owner_inter" in df.columns:
         score += df["imported_owner_inter"].fillna(0) * W.get("w_imported_owner", 0.0)
+    # 外国産母馬 × 母父EI（母父品質で母系を代替評価）
+    if "imported_bms_inter" in df.columns:
+        score += df["imported_bms_inter"].fillna(0) * W.get("w_imported_bms", 0.0)
+    # 外国産母馬 × 父EI × 母父EI（sire_dam_interactionの代替）
+    if "imported_sire_bms_inter" in df.columns:
+        score += df["imported_sire_bms_inter"].fillna(0) * W.get("w_imported_sire_bms", 0.0)
+    # アウトブリードボーナス（異系交配の優位性）
+    if "outcross_imported" in df.columns:
+        score += df["outcross_imported"].fillna(0) * W.get("b_outcross_imported", 0.0)
 
     return score
