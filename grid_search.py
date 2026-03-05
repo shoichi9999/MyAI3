@@ -42,6 +42,22 @@ class _FlushFile:
 sys.stdout = _FlushFile(sys.stdout)
 sys.stderr = _FlushFile(sys.stderr)
 
+# ------------------------------------------------------------------
+# nohup実行ガード: nohupなしでの実行を禁止する
+# nohupはSIGHUPをSIG_IGNに設定する。これを確認することで
+# nohup経由かどうかを判定できる。
+# ------------------------------------------------------------------
+_original_sighup = signal.getsignal(signal.SIGHUP)
+if _original_sighup != signal.SIG_IGN:
+    print("=" * 60, file=sys.stderr)
+    print("ERROR: grid_search.py を nohup なしで実行しないでください。", file=sys.stderr)
+    print("nohup でバックグラウンド実行してください:", file=sys.stderr)
+    print("", file=sys.stderr)
+    print("  nohup python grid_search.py --race derby > logs/grid_derby.log 2>&1 &", file=sys.stderr)
+    print("  nohup python grid_search.py --race oaks > logs/grid_oaks.log 2>&1 &", file=sys.stderr)
+    print("=" * 60, file=sys.stderr)
+    sys.exit(1)
+
 
 def _signal_handler(signum, frame):
     sig_name = signal.Signals(signum).name
