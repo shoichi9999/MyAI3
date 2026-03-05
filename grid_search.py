@@ -13,11 +13,48 @@ import argparse
 import itertools
 import json
 import os
+import signal
+import sys
+import traceback
 
 import numpy as np
 import pandas as pd
 
 from src.features import build_feature_matrix
+
+
+# ------------------------------------------------------------------
+# stdout強制フラッシュ & シグナルハンドリング（nohup実行時の診断用）
+# ------------------------------------------------------------------
+
+# nohup時にログがバッファリングされて見えない問題を防ぐ
+class _FlushFile:
+    def __init__(self, f):
+        self.f = f
+    def write(self, x):
+        self.f.write(x)
+        self.f.flush()
+    def flush(self):
+        self.f.flush()
+    def __getattr__(self, name):
+        return getattr(self.f, name)
+
+sys.stdout = _FlushFile(sys.stdout)
+sys.stderr = _FlushFile(sys.stderr)
+
+
+def _signal_handler(signum, frame):
+    sig_name = signal.Signals(signum).name
+    print(f"\n[SIGNAL] {sig_name} (signum={signum}) を受信しました", file=sys.stderr)
+    print(f"[SIGNAL] スタックトレース:", file=sys.stderr)
+    traceback.print_stack(frame, file=sys.stderr)
+    sys.exit(128 + signum)
+
+for _sig in (signal.SIGTERM, signal.SIGHUP, signal.SIGINT):
+    try:
+        signal.signal(_sig, _signal_handler)
+    except (OSError, ValueError):
+        pass
 
 
 # ------------------------------------------------------------------
@@ -1075,24 +1112,43 @@ def _random_search_top10(all_data, current_params, best_score, race_type="derby"
     print(f"  Phase 1: Differential Evolution ({n_restarts}リスタート)")
     print(f"{'='*60}")
 
+    _de_call_count = 0
+    _de_start = time.time()
+
     def de_objective(x):
         return -_fast_cv_score(precomputed, np.asarray(x))
+
+    def de_callback(xk, convergence):
+        nonlocal _de_call_count
+        _de_call_count += 1
+        if _de_call_count % 50 == 0:
+            elapsed = time.time() - _de_start
+            print(f"    [進捗] DE generation {_de_call_count}, convergence={convergence:.4f}, {elapsed:.0f}s")
 
     de_results = []
     de_seeds = [42, 137, 314, 577, 2024, 7777, 12345]
     for i, seed in enumerate(de_seeds[:n_restarts]):
-        result = differential_evolution(
-            de_objective,
-            bounds,
-            maxiter=400,
-            popsize=8,             # 実人口 = 8 × n_params
-            tol=1e-5,
-            seed=seed,
-            mutation=(0.5, 1.5),
-            recombination=0.8,
-            polish=False,
-            init='latinhypercube',
-        )
+        _de_call_count = 0
+        _de_start = time.time()
+        print(f"  DE#{i} (seed={seed}) 開始...")
+        try:
+            result = differential_evolution(
+                de_objective,
+                bounds,
+                maxiter=400,
+                popsize=8,             # 実人口 = 8 × n_params
+                tol=1e-5,
+                seed=seed,
+                mutation=(0.5, 1.5),
+                recombination=0.8,
+                polish=False,
+                init='latinhypercube',
+                callback=de_callback,
+            )
+        except Exception as e:
+            print(f"  [ERROR] DE#{i} で例外発生: {type(e).__name__}: {e}")
+            traceback.print_exc()
+            continue
         score = -result.fun
         de_results.append((score, result.x.copy()))
         elapsed = time.time() - t_start
@@ -1133,11 +1189,21 @@ def _random_search_top10(all_data, current_params, best_score, race_type="derby"
             opts.set('seed', 42 + ci * 100)
             opts.set('tolfun', 1e-6)
 
+            print(f"  CMA#{ci} 開始 (初期スコア={start_score:.2f})...")
             es = cma.CMAEvolutionStrategy(start_arr.tolist(), sigma0, opts)
-            while not es.stop():
-                solutions = es.ask()
-                fitnesses = [-_fast_cv_score(precomputed, np.asarray(x)) for x in solutions]
-                es.tell(solutions, fitnesses)
+            cma_gen = 0
+            try:
+                while not es.stop():
+                    solutions = es.ask()
+                    fitnesses = [-_fast_cv_score(precomputed, np.asarray(x)) for x in solutions]
+                    es.tell(solutions, fitnesses)
+                    cma_gen += 1
+                    if cma_gen % 100 == 0:
+                        print(f"    [進捗] CMA#{ci} gen {cma_gen}, best={-es.result.fbest:.2f}, {time.time()-t_start:.0f}s")
+            except Exception as e:
+                print(f"  [ERROR] CMA#{ci} で例外発生: {type(e).__name__}: {e}")
+                traceback.print_exc()
+                continue
 
             cma_score = -es.result.fbest
             cma_arr = np.asarray(es.result.xbest)
@@ -1170,14 +1236,21 @@ def _random_search_top10(all_data, current_params, best_score, race_type="derby"
         cand_score, cand_arr = de_results[ci]
         local_best = cand_score
         local_arr = cand_arr.copy()
+        print(f"  Cand {ci} 局所探索開始 (初期={cand_score:.2f})...")
 
-        for _ in range(n_phase3):
-            delta = rng.uniform(-0.10, 0.10, n_params) * span
-            p = np.clip(local_arr + delta, lo, hi)
-            s = _fast_cv_score(precomputed, p)
-            if s > local_best:
-                local_best = s
-                local_arr = p.copy()
+        try:
+            for j in range(n_phase3):
+                delta = rng.uniform(-0.10, 0.10, n_params) * span
+                p = np.clip(local_arr + delta, lo, hi)
+                s = _fast_cv_score(precomputed, p)
+                if s > local_best:
+                    local_best = s
+                    local_arr = p.copy()
+                if (j + 1) % 10000 == 0:
+                    print(f"    [進捗] Cand {ci}: {j+1}/{n_phase3}, best={local_best:.2f}, {time.time()-t_start:.0f}s")
+        except Exception as e:
+            print(f"  [ERROR] Phase 3 Cand {ci} で例外発生: {type(e).__name__}: {e}")
+            traceback.print_exc()
 
         _show_top10(local_arr, f"Cand {ci}: score={local_best:.2f}")
         if local_best > best_score_fast:
@@ -1200,14 +1273,21 @@ def _random_search_top10(all_data, current_params, best_score, race_type="derby"
         (0.01, 100000, "±1%"),
     ]:
         improved = 0
-        for _ in range(n_iter):
-            delta = rng.uniform(-step_size, step_size, n_params) * span
-            p = np.clip(best_arr + delta, lo, hi)
-            s = _fast_cv_score(precomputed, p)
-            if s > best_score_fast:
-                best_score_fast = s
-                best_arr = p.copy()
-                improved += 1
+        print(f"  {label} 開始 ({n_iter:,}回)...")
+        try:
+            for j in range(n_iter):
+                delta = rng.uniform(-step_size, step_size, n_params) * span
+                p = np.clip(best_arr + delta, lo, hi)
+                s = _fast_cv_score(precomputed, p)
+                if s > best_score_fast:
+                    best_score_fast = s
+                    best_arr = p.copy()
+                    improved += 1
+                if (j + 1) % 50000 == 0:
+                    print(f"    [進捗] {label}: {j+1}/{n_iter}, best={best_score_fast:.2f}, 改善{improved}回, {time.time()-t_start:.0f}s")
+        except Exception as e:
+            print(f"  [ERROR] Phase 4 {label} で例外発生: {type(e).__name__}: {e}")
+            traceback.print_exc()
         elapsed = time.time() - t_start
         print(f"  {label}: {best_score_fast:.2f} (改善{improved}回, {elapsed:.0f}s)")
 
@@ -1391,4 +1471,11 @@ if __name__ == "__main__":
                         help="対象レース: derby(ダービー・牡馬) / oaks(オークス・牝馬)")
     args = parser.parse_args()
 
-    best = grid_search(args.years, objective=args.objective, race_type=args.race)
+    try:
+        best = grid_search(args.years, objective=args.objective, race_type=args.race)
+    except SystemExit:
+        raise
+    except Exception as e:
+        print(f"\n[FATAL] 未処理の例外で終了: {type(e).__name__}: {e}", file=sys.stderr)
+        traceback.print_exc(file=sys.stderr)
+        sys.exit(1)
