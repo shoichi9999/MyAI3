@@ -11,3 +11,9 @@
   nohup python grid_search.py --race oaks > logs/grid_oaks.log 2>&1 &
   ```
 - ログ確認: `tail -f logs/grid_derby.log`
+
+### grid_search.py 実行時の注意
+- **パイプ (`| head` 等) を絶対に使わない**: パイプ先が閉じるとSIGPIPEでプロセスが即死する
+  - NG: `python grid_search.py --race oaks 2>&1 | head -40`
+  - OK: `nohup python grid_search.py --race oaks > logs/grid_oaks.log 2>&1 &`
+- Bashツールの出力確認は `tail` でログファイルを読むこと
