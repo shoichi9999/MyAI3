@@ -398,7 +398,6 @@ def composite_score(metrics: dict, objective: str = "classic",
     return (
         winner_bonus
         + d5 * 80.0
-        + d10 * 25.0
     )
 
 
@@ -544,8 +543,8 @@ def grid_search(years, objective="balanced", race_type="derby", resume=False):
     best_score = current_cv
     best_params = dict(current_params)
 
-    if objective == "top10":
-        # TOP10最適化: 全パラメータ同時ランダム探索（局所最適回避）
+    if objective in ("top10", "top5"):
+        # TOP5最適化: 全パラメータ同時ランダム探索（局所最適回避）
         best_params, best_score = _random_search_top10(all_data, current_params, best_score, race_type=race_type, resume=resume)
     else:
         # balanced: 従来の段階的グリッドサーチ
@@ -946,7 +945,6 @@ def _fast_cv_score(precomputed, params):
         year_score = (
             winner_bonus
             + d5 * 80.0
-            + d10 * 25.0
             + smooth_bonus
         )
         year_scores.append(year_score)
@@ -1641,9 +1639,9 @@ if __name__ == "__main__":
     parser.add_argument("--years", nargs="+", type=int,
                         default=[2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022],
                         help="使用する年度リスト（生年）")
-    parser.add_argument("--objective", choices=["classic", "top10"],
-                        default="top10",
-                        help="最適化目的: classic(バランス) / top10(ヒット数最大化)")
+    parser.add_argument("--objective", choices=["classic", "top5"],
+                        default="top5",
+                        help="最適化目的: classic(バランス) / top5(TOP5ヒット数最大化)")
     parser.add_argument("--race", choices=["derby", "oaks"],
                         default="derby",
                         help="対象レース: derby(ダービー・牡馬) / oaks(オークス・牝馬)")
