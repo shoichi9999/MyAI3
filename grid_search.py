@@ -449,7 +449,7 @@ def load_year(year: int, race_type: str = "derby") -> pd.DataFrame | None:
 # グリッドサーチ
 # ------------------------------------------------------------------
 
-def grid_search(years, objective="balanced", race_type="derby"):
+def grid_search(years, objective="balanced", race_type="derby", resume=False):
     global _OBJECTIVE, _RACE_TYPE
     _OBJECTIVE = objective
     _RACE_TYPE = race_type
@@ -546,7 +546,7 @@ def grid_search(years, objective="balanced", race_type="derby"):
 
     if objective == "top10":
         # TOP10最適化: 全パラメータ同時ランダム探索（局所最適回避）
-        best_params, best_score = _random_search_top10(all_data, current_params, best_score, race_type=race_type)
+        best_params, best_score = _random_search_top10(all_data, current_params, best_score, race_type=race_type, resume=resume)
     else:
         # balanced: 従来の段階的グリッドサーチ
         best_params, best_score = _staged_grid_search(all_data, dict(current_params), best_score, race_type=race_type)
@@ -1006,7 +1006,55 @@ def _arr_to_dict(arr):
     return {k: float(v) for k, v in zip(_PARAM_KEYS, arr)}
 
 
-def _random_search_top10(all_data, current_params, best_score, race_type="derby"):
+def _checkpoint_path(race_type):
+    """チェックポイントファイルのパスを返す。"""
+    return f"logs/grid_{race_type}_checkpoint.json"
+
+
+def _save_checkpoint(race_type, data):
+    """チェックポイントを保存する。"""
+    import json as _json
+    path = _checkpoint_path(race_type)
+    # numpy配列をリストに変換
+    save_data = {}
+    for k, v in data.items():
+        if isinstance(v, np.ndarray):
+            save_data[k] = v.tolist()
+        elif isinstance(v, list) and len(v) > 0 and isinstance(v[0], tuple):
+            # de_results: [(score, arr), ...]
+            save_data[k] = [(s, a.tolist() if isinstance(a, np.ndarray) else a) for s, a in v]
+        else:
+            save_data[k] = v
+    with open(path, "w", encoding="utf-8") as f:
+        _json.dump(save_data, f, ensure_ascii=False, indent=2)
+    print(f"  [checkpoint] 保存: {path} (phase={data.get('phase')}, step={data.get('step')})")
+
+
+def _load_checkpoint(race_type):
+    """チェックポイントを読み込む。なければNoneを返す。"""
+    import json as _json
+    path = _checkpoint_path(race_type)
+    if not os.path.exists(path):
+        return None
+    with open(path, "r", encoding="utf-8") as f:
+        data = _json.load(f)
+    # リストをnumpy配列に復元
+    if "best_arr" in data and isinstance(data["best_arr"], list):
+        data["best_arr"] = np.array(data["best_arr"])
+    if "de_results" in data and isinstance(data["de_results"], list):
+        data["de_results"] = [(s, np.array(a)) for s, a in data["de_results"]]
+    return data
+
+
+def _clear_checkpoint(race_type):
+    """チェックポイントファイルを削除する。"""
+    path = _checkpoint_path(race_type)
+    if os.path.exists(path):
+        os.remove(path)
+        print(f"  [checkpoint] 削除: {path}")
+
+
+def _random_search_top10(all_data, current_params, best_score, race_type="derby", resume=False):
     """scipy Differential Evolution + ランダム局所探索（TOP10最大化）。"""
     import time
     from scipy.optimize import differential_evolution
@@ -1103,193 +1151,320 @@ def _random_search_top10(all_data, current_params, best_score, race_type="derby"
 
     t_start = time.time()
 
+    # チェックポイントからの復元
+    ckpt = _load_checkpoint(race_type) if resume else None
+    de_results = []
+    skip_phase1 = False
+    skip_phase2 = False
+    skip_phase3 = False
+    skip_phase4 = False
+    de_start_idx = 0
+
+    if ckpt:
+        phase = ckpt.get("phase", "")
+        step = ckpt.get("step", 0)
+        if "best_arr" in ckpt:
+            best_arr = ckpt["best_arr"]
+            best_score_fast = ckpt.get("best_score_fast", best_score_fast)
+        if "de_results" in ckpt:
+            de_results = ckpt["de_results"]
+        print(f"\n  [checkpoint] 復元: phase={phase}, step={step}, best={best_score_fast:.2f}")
+
+        if phase == "phase1":
+            de_start_idx = step  # DE#step から再開
+        elif phase == "phase1_done":
+            skip_phase1 = True
+        elif phase == "phase2_done":
+            skip_phase1 = True
+            skip_phase2 = True
+        elif phase == "phase3":
+            skip_phase1 = True
+            skip_phase2 = True
+            # phase3はstepの候補から再開（step=完了済み候補数）
+        elif phase == "phase3_done":
+            skip_phase1 = True
+            skip_phase2 = True
+            skip_phase3 = True
+        elif phase == "phase4":
+            skip_phase1 = True
+            skip_phase2 = True
+            skip_phase3 = True
+            # phase4はstepのステージから再開（0=±5%, 1=±2%, 2=±1%）
+
     # ================================================================
     # Phase 1: Differential Evolution（7リスタート）
     # 注意: scipy DEのpopsizeは実人口 = popsize × n_params なので控えめに
     # ================================================================
     n_restarts = 7
-    print(f"\n{'='*60}")
-    print(f"  Phase 1: Differential Evolution ({n_restarts}リスタート)")
-    print(f"{'='*60}")
+    if not skip_phase1:
+        print(f"\n{'='*60}")
+        if de_start_idx > 0:
+            print(f"  Phase 1: Differential Evolution (DE#{de_start_idx}から再開, 全{n_restarts}リスタート)")
+        else:
+            print(f"  Phase 1: Differential Evolution ({n_restarts}リスタート)")
+        print(f"{'='*60}")
 
-    _de_call_count = 0
-    _de_start = time.time()
-
-    def de_objective(x):
-        return -_fast_cv_score(precomputed, np.asarray(x))
-
-    def de_callback(xk, convergence):
-        nonlocal _de_call_count
-        _de_call_count += 1
-        if _de_call_count % 50 == 0:
-            elapsed = time.time() - _de_start
-            print(f"    [進捗] DE generation {_de_call_count}, convergence={convergence:.4f}, {elapsed:.0f}s")
-
-    de_results = []
-    de_seeds = [42, 137, 314, 577, 2024, 7777, 12345]
-    for i, seed in enumerate(de_seeds[:n_restarts]):
         _de_call_count = 0
         _de_start = time.time()
-        print(f"  DE#{i} (seed={seed}) 開始...")
-        try:
-            result = differential_evolution(
-                de_objective,
-                bounds,
-                maxiter=400,
-                popsize=8,             # 実人口 = 8 × n_params
-                tol=1e-5,
-                seed=seed,
-                mutation=(0.5, 1.5),
-                recombination=0.8,
-                polish=False,
-                init='latinhypercube',
-                callback=de_callback,
-            )
-        except Exception as e:
-            print(f"  [ERROR] DE#{i} で例外発生: {type(e).__name__}: {e}")
-            traceback.print_exc()
-            continue
-        score = -result.fun
-        de_results.append((score, result.x.copy()))
-        elapsed = time.time() - t_start
-        print(f"  DE#{i} (seed={seed}): {score:.2f} ({elapsed:.0f}s, nfev={result.nfev})")
-        _show_top10(result.x, f"  DE#{i}")
 
-        if score > best_score_fast:
-            best_score_fast = score
-            best_arr = result.x.copy()
+        def de_objective(x):
+            return -_fast_cv_score(precomputed, np.asarray(x))
 
-    print(f"\n  Phase 1 完了: best={best_score_fast:.2f} ({time.time()-t_start:.0f}s)")
-    _show_top10(best_arr, "Best")
+        def de_callback(xk, convergence):
+            nonlocal _de_call_count
+            _de_call_count += 1
+            if _de_call_count % 50 == 0:
+                elapsed = time.time() - _de_start
+                print(f"    [進捗] DE generation {_de_call_count}, convergence={convergence:.4f}, {elapsed:.0f}s")
+
+        de_seeds = [42, 137, 314, 577, 2024, 7777, 12345]
+        for i, seed in enumerate(de_seeds[:n_restarts]):
+            if i < de_start_idx:
+                continue  # チェックポイントで完了済み
+            _de_call_count = 0
+            _de_start = time.time()
+            print(f"  DE#{i} (seed={seed}) 開始...")
+            try:
+                result = differential_evolution(
+                    de_objective,
+                    bounds,
+                    maxiter=400,
+                    popsize=8,             # 実人口 = 8 × n_params
+                    tol=1e-5,
+                    seed=seed,
+                    mutation=(0.5, 1.5),
+                    recombination=0.8,
+                    polish=False,
+                    init='latinhypercube',
+                    callback=de_callback,
+                )
+            except Exception as e:
+                print(f"  [ERROR] DE#{i} で例外発生: {type(e).__name__}: {e}")
+                traceback.print_exc()
+                continue
+            score = -result.fun
+            de_results.append((score, result.x.copy()))
+            elapsed = time.time() - t_start
+            print(f"  DE#{i} (seed={seed}): {score:.2f} ({elapsed:.0f}s, nfev={result.nfev})")
+            _show_top10(result.x, f"  DE#{i}")
+
+            if score > best_score_fast:
+                best_score_fast = score
+                best_arr = result.x.copy()
+
+            # チェックポイント保存（DE1つ完了ごと）
+            _save_checkpoint(race_type, {
+                "phase": "phase1",
+                "step": i + 1,
+                "best_arr": best_arr,
+                "best_score_fast": best_score_fast,
+                "de_results": de_results,
+            })
+
+        print(f"\n  Phase 1 完了: best={best_score_fast:.2f} ({time.time()-t_start:.0f}s)")
+        _show_top10(best_arr, "Best")
+        _save_checkpoint(race_type, {
+            "phase": "phase1_done",
+            "step": 0,
+            "best_arr": best_arr,
+            "best_score_fast": best_score_fast,
+            "de_results": de_results,
+        })
 
     # ================================================================
     # Phase 2: CMA-ES（共分散行列適応進化戦略）
     # パラメータ間の相関を学習し、DEよりも効率的に探索
     # ================================================================
-    print(f"\n{'='*60}")
-    print(f"  Phase 2: CMA-ES (3リスタート)")
-    print(f"{'='*60}")
+    if not skip_phase2:
+        print(f"\n{'='*60}")
+        print(f"  Phase 2: CMA-ES (3リスタート)")
+        print(f"{'='*60}")
 
-    try:
-        import cma
+        try:
+            import cma
 
-        # DE上位候補 + 現行パラメータを初期点として使用
-        de_results.sort(key=lambda x: -x[0])
-        cma_starts = [(best_score_fast, best_arr.copy())]
-        for s, a in de_results[:2]:
-            cma_starts.append((s, a.copy()))
+            # DE上位候補 + 現行パラメータを初期点として使用
+            de_results.sort(key=lambda x: -x[0])
+            cma_starts = [(best_score_fast, best_arr.copy())]
+            for s, a in de_results[:2]:
+                cma_starts.append((s, a.copy()))
 
-        for ci, (start_score, start_arr) in enumerate(cma_starts):
-            # 初期標準偏差: 探索範囲の15%
-            sigma0 = 0.15 * np.mean(span)
-            opts = cma.CMAOptions()
-            opts.set('bounds', [lo.tolist(), hi.tolist()])
-            opts.set('maxfevals', 15000)
-            opts.set('verbose', -1)
-            opts.set('seed', 42 + ci * 100)
-            opts.set('tolfun', 1e-6)
+            for ci, (start_score, start_arr) in enumerate(cma_starts):
+                # 初期標準偏差: 探索範囲の15%
+                sigma0 = 0.15 * np.mean(span)
+                opts = cma.CMAOptions()
+                opts.set('bounds', [lo.tolist(), hi.tolist()])
+                opts.set('maxfevals', 15000)
+                opts.set('verbose', -1)
+                opts.set('seed', 42 + ci * 100)
+                opts.set('tolfun', 1e-6)
 
-            print(f"  CMA#{ci} 開始 (初期スコア={start_score:.2f})...")
-            es = cma.CMAEvolutionStrategy(start_arr.tolist(), sigma0, opts)
-            cma_gen = 0
-            try:
-                while not es.stop():
-                    solutions = es.ask()
-                    fitnesses = [-_fast_cv_score(precomputed, np.asarray(x)) for x in solutions]
-                    es.tell(solutions, fitnesses)
-                    cma_gen += 1
-                    if cma_gen % 100 == 0:
-                        print(f"    [進捗] CMA#{ci} gen {cma_gen}, best={-es.result.fbest:.2f}, {time.time()-t_start:.0f}s")
-            except Exception as e:
-                print(f"  [ERROR] CMA#{ci} で例外発生: {type(e).__name__}: {e}")
-                traceback.print_exc()
-                continue
+                print(f"  CMA#{ci} 開始 (初期スコア={start_score:.2f})...")
+                es = cma.CMAEvolutionStrategy(start_arr.tolist(), sigma0, opts)
+                cma_gen = 0
+                try:
+                    while not es.stop():
+                        solutions = es.ask()
+                        fitnesses = [-_fast_cv_score(precomputed, np.asarray(x)) for x in solutions]
+                        es.tell(solutions, fitnesses)
+                        cma_gen += 1
+                        if cma_gen % 100 == 0:
+                            print(f"    [進捗] CMA#{ci} gen {cma_gen}, best={-es.result.fbest:.2f}, {time.time()-t_start:.0f}s")
+                except Exception as e:
+                    print(f"  [ERROR] CMA#{ci} で例外発生: {type(e).__name__}: {e}")
+                    traceback.print_exc()
+                    continue
 
-            cma_score = -es.result.fbest
-            cma_arr = np.asarray(es.result.xbest)
-            elapsed = time.time() - t_start
-            print(f"  CMA#{ci}: {cma_score:.2f} (nfev={es.result.evaluations}, {elapsed:.0f}s)")
-            _show_top10(cma_arr, f"CMA#{ci}")
+                cma_score = -es.result.fbest
+                cma_arr = np.asarray(es.result.xbest)
+                elapsed = time.time() - t_start
+                print(f"  CMA#{ci}: {cma_score:.2f} (nfev={es.result.evaluations}, {elapsed:.0f}s)")
+                _show_top10(cma_arr, f"CMA#{ci}")
 
-            if cma_score > best_score_fast:
-                best_score_fast = cma_score
-                best_arr = cma_arr.copy()
+                if cma_score > best_score_fast:
+                    best_score_fast = cma_score
+                    best_arr = cma_arr.copy()
 
-        print(f"\n  Phase 2 完了: best={best_score_fast:.2f} ({time.time()-t_start:.0f}s)")
-        _show_top10(best_arr, "Best")
+            print(f"\n  Phase 2 完了: best={best_score_fast:.2f} ({time.time()-t_start:.0f}s)")
+            _show_top10(best_arr, "Best")
 
-    except ImportError:
-        print("  cma未インストール — Phase 2スキップ (pip install cma)")
+        except ImportError:
+            print("  cma未インストール — Phase 2スキップ (pip install cma)")
+
+        _save_checkpoint(race_type, {
+            "phase": "phase2_done",
+            "step": 0,
+            "best_arr": best_arr,
+            "best_score_fast": best_score_fast,
+            "de_results": de_results,
+        })
 
     # ================================================================
     # Phase 3: DE上位候補の局所探索（上位5 × 50k）
     # ================================================================
-    de_results.sort(key=lambda x: -x[0])
-    n_top = min(5, len(de_results))
-    n_phase3 = 50000
-    print(f"\n{'='*60}")
-    print(f"  Phase 3: 上位{n_top}候補の局所探索 ({n_top} × {n_phase3:,} = {n_top*n_phase3:,}回)")
-    print(f"{'='*60}")
+    phase3_start_idx = 0
+    if skip_phase3:
+        pass  # Phase 3全体をスキップ
+    else:
+        if ckpt and ckpt.get("phase") == "phase3":
+            phase3_start_idx = ckpt.get("step", 0)
 
-    rng = np.random.default_rng(9999)
-    for ci in range(n_top):
-        cand_score, cand_arr = de_results[ci]
-        local_best = cand_score
-        local_arr = cand_arr.copy()
-        print(f"  Cand {ci} 局所探索開始 (初期={cand_score:.2f})...")
+        de_results.sort(key=lambda x: -x[0])
+        n_top = min(5, len(de_results))
+        n_phase3 = 50000
+        print(f"\n{'='*60}")
+        if phase3_start_idx > 0:
+            print(f"  Phase 3: 上位{n_top}候補の局所探索 (Cand {phase3_start_idx}から再開)")
+        else:
+            print(f"  Phase 3: 上位{n_top}候補の局所探索 ({n_top} × {n_phase3:,} = {n_top*n_phase3:,}回)")
+        print(f"{'='*60}")
 
-        try:
-            for j in range(n_phase3):
-                delta = rng.uniform(-0.10, 0.10, n_params) * span
-                p = np.clip(local_arr + delta, lo, hi)
-                s = _fast_cv_score(precomputed, p)
-                if s > local_best:
-                    local_best = s
-                    local_arr = p.copy()
-                if (j + 1) % 10000 == 0:
-                    print(f"    [進捗] Cand {ci}: {j+1}/{n_phase3}, best={local_best:.2f}, {time.time()-t_start:.0f}s")
-        except Exception as e:
-            print(f"  [ERROR] Phase 3 Cand {ci} で例外発生: {type(e).__name__}: {e}")
-            traceback.print_exc()
+        rng = np.random.default_rng(9999)
+        for ci in range(n_top):
+            if ci < phase3_start_idx:
+                # スキップ済み候補のRNG状態を進める
+                for j in range(n_phase3):
+                    rng.uniform(-0.10, 0.10, n_params)
+                continue
+            cand_score, cand_arr = de_results[ci]
+            local_best = cand_score
+            local_arr = cand_arr.copy()
+            print(f"  Cand {ci} 局所探索開始 (初期={cand_score:.2f})...")
 
-        _show_top10(local_arr, f"Cand {ci}: score={local_best:.2f}")
-        if local_best > best_score_fast:
-            best_score_fast = local_best
-            best_arr = local_arr.copy()
+            try:
+                for j in range(n_phase3):
+                    delta = rng.uniform(-0.10, 0.10, n_params) * span
+                    p = np.clip(local_arr + delta, lo, hi)
+                    s = _fast_cv_score(precomputed, p)
+                    if s > local_best:
+                        local_best = s
+                        local_arr = p.copy()
+                    if (j + 1) % 10000 == 0:
+                        print(f"    [進捗] Cand {ci}: {j+1}/{n_phase3}, best={local_best:.2f}, {time.time()-t_start:.0f}s")
+            except Exception as e:
+                print(f"  [ERROR] Phase 3 Cand {ci} で例外発生: {type(e).__name__}: {e}")
+                traceback.print_exc()
 
-    print(f"\n  Phase 3 完了: best={best_score_fast:.2f} ({time.time()-t_start:.0f}s)")
-    _show_top10(best_arr, "Best")
+            _show_top10(local_arr, f"Cand {ci}: score={local_best:.2f}")
+            if local_best > best_score_fast:
+                best_score_fast = local_best
+                best_arr = local_arr.copy()
+
+            # チェックポイント保存（候補1つ完了ごと）
+            _save_checkpoint(race_type, {
+                "phase": "phase3",
+                "step": ci + 1,
+                "best_arr": best_arr,
+                "best_score_fast": best_score_fast,
+                "de_results": de_results,
+            })
+
+        print(f"\n  Phase 3 完了: best={best_score_fast:.2f} ({time.time()-t_start:.0f}s)")
+        _show_top10(best_arr, "Best")
+        _save_checkpoint(race_type, {
+            "phase": "phase3_done",
+            "step": 0,
+            "best_arr": best_arr,
+            "best_score_fast": best_score_fast,
+            "de_results": de_results,
+        })
 
     # ================================================================
     # Phase 4: 微調整（300k at ±5% → 200k at ±2% → 100k at ±1%）
     # ================================================================
-    print(f"\n{'='*60}")
-    print(f"  Phase 4: 微調整")
-    print(f"{'='*60}")
+    phase4_start_idx = 0
+    if skip_phase4:
+        pass
+    else:
+        if ckpt and ckpt.get("phase") == "phase4":
+            phase4_start_idx = ckpt.get("step", 0)
 
-    for step_size, n_iter, label in [
-        (0.05, 300000, "±5%"),
-        (0.02, 200000, "±2%"),
-        (0.01, 100000, "±1%"),
-    ]:
-        improved = 0
-        print(f"  {label} 開始 ({n_iter:,}回)...")
-        try:
-            for j in range(n_iter):
-                delta = rng.uniform(-step_size, step_size, n_params) * span
-                p = np.clip(best_arr + delta, lo, hi)
-                s = _fast_cv_score(precomputed, p)
-                if s > best_score_fast:
-                    best_score_fast = s
-                    best_arr = p.copy()
-                    improved += 1
-                if (j + 1) % 50000 == 0:
-                    print(f"    [進捗] {label}: {j+1}/{n_iter}, best={best_score_fast:.2f}, 改善{improved}回, {time.time()-t_start:.0f}s")
-        except Exception as e:
-            print(f"  [ERROR] Phase 4 {label} で例外発生: {type(e).__name__}: {e}")
-            traceback.print_exc()
-        elapsed = time.time() - t_start
-        print(f"  {label}: {best_score_fast:.2f} (改善{improved}回, {elapsed:.0f}s)")
+        print(f"\n{'='*60}")
+        print(f"  Phase 4: 微調整")
+        print(f"{'='*60}")
+
+        # Phase 3でrngが使われているので、skip_phase3時はrngを初期化し直す
+        if skip_phase3:
+            rng = np.random.default_rng(9999)
+
+        phase4_stages = [
+            (0.05, 300000, "±5%"),
+            (0.02, 200000, "±2%"),
+            (0.01, 100000, "±1%"),
+        ]
+        for si, (step_size, n_iter, label) in enumerate(phase4_stages):
+            if si < phase4_start_idx:
+                # スキップ済みステージのRNG状態を進める
+                for j in range(n_iter):
+                    rng.uniform(-step_size, step_size, n_params)
+                continue
+            improved = 0
+            print(f"  {label} 開始 ({n_iter:,}回)...")
+            try:
+                for j in range(n_iter):
+                    delta = rng.uniform(-step_size, step_size, n_params) * span
+                    p = np.clip(best_arr + delta, lo, hi)
+                    s = _fast_cv_score(precomputed, p)
+                    if s > best_score_fast:
+                        best_score_fast = s
+                        best_arr = p.copy()
+                        improved += 1
+                    if (j + 1) % 50000 == 0:
+                        print(f"    [進捗] {label}: {j+1}/{n_iter}, best={best_score_fast:.2f}, 改善{improved}回, {time.time()-t_start:.0f}s")
+            except Exception as e:
+                print(f"  [ERROR] Phase 4 {label} で例外発生: {type(e).__name__}: {e}")
+                traceback.print_exc()
+            elapsed = time.time() - t_start
+            print(f"  {label}: {best_score_fast:.2f} (改善{improved}回, {elapsed:.0f}s)")
+
+            # チェックポイント保存（ステージ完了ごと）
+            _save_checkpoint(race_type, {
+                "phase": "phase4",
+                "step": si + 1,
+                "best_arr": best_arr,
+                "best_score_fast": best_score_fast,
+                "de_results": de_results,
+            })
 
     _show_top10(best_arr, "Final")
 
@@ -1298,6 +1473,9 @@ def _random_search_top10(all_data, current_params, best_score, race_type="derby"
     best_score = cv_score(all_data, best_params, race_type=race_type)
     print(f"\n  検算(元スコア関数): {best_score:.2f}")
     print(f"  総所要時間: {time.time()-t_start:.0f}秒")
+
+    # 完了したらチェックポイントを削除
+    _clear_checkpoint(race_type)
 
     return best_params, best_score
 
@@ -1469,10 +1647,12 @@ if __name__ == "__main__":
     parser.add_argument("--race", choices=["derby", "oaks"],
                         default="derby",
                         help="対象レース: derby(ダービー・牡馬) / oaks(オークス・牝馬)")
+    parser.add_argument("--resume", action="store_true",
+                        help="チェックポイントから再開する")
     args = parser.parse_args()
 
     try:
-        best = grid_search(args.years, objective=args.objective, race_type=args.race)
+        best = grid_search(args.years, objective=args.objective, race_type=args.race, resume=args.resume)
     except SystemExit:
         raise
     except Exception as e:
