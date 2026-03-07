@@ -17,6 +17,88 @@ import numpy as np
 import pandas as pd
 
 
+# === 父系統カテゴリマッピング ===
+# 主要4系統をバイナリ特徴量として生成。デビュー前に既知の情報。
+# 系統に含まれない種牡馬はすべて0（ベースカテゴリ扱い）。
+
+SIRE_LINE_MAP = {
+    # ディープインパクト系（ディープ直仔が種牡馬として活躍）
+    "ディープインパクト": "deep",
+    "キズナ": "deep",
+    "エピファネイア": "deep",
+    "リアルスティール": "deep",
+    "マカヒキ": "deep",
+    "サトノダイヤモンド": "deep",
+    "シルバーステート": "deep",
+    "ミッキーアイル": "deep",
+    "アルアイン": "deep",
+    "ダノンプレミアム": "deep",
+    "フィエールマン": "deep",
+    "コントレイル": "deep",
+    "シャフリヤール": "deep",
+    "ワグネリアン": "deep",
+    "ディープボンド": "deep",
+    "ダノンキングリー": "deep",
+    "ロジャーバローズ": "deep",
+    "グローリーヴェイズ": "deep",
+    "ディープブリランテ": "deep",
+    "スピルバーグ": "deep",
+    "トーセンラー": "deep",
+    "ラストドラフト": "deep",
+    "サトノアラジン": "deep",
+    "ヴィルシーナ": "deep",
+    "ショウナンアデラ": "deep",
+    "ミッキークイーン": "deep",
+    "イスラボニータ": "deep",
+
+    # キングカメハメハ系（キンカメ直仔が種牡馬として活躍）
+    "キングカメハメハ": "kingk",
+    "ロードカナロア": "kingk",
+    "ドゥラメンテ": "kingk",
+    "ルーラーシップ": "kingk",
+    "レイデオロ": "kingk",
+    "ホッコータルマエ": "kingk",
+    "リオンディーズ": "kingk",
+    "サートゥルナーリア": "kingk",
+    "タイトルホルダー": "kingk",
+    "ベルシャザール": "kingk",
+    "ラブリーデイ": "kingk",
+    "ミッキースワロー": "kingk",
+
+    # ハーツクライ系
+    "ハーツクライ": "hearts",
+    "ジャスタウェイ": "hearts",
+    "スワーヴリチャード": "hearts",
+    "シュヴァルグラン": "hearts",
+    "ウインバリアシオン": "hearts",
+    "ドウデュース": "hearts",
+    "サリオス": "hearts",
+    "ヨシダ": "hearts",
+    "リスグラシュー": "hearts",
+    "ワンアンドオンリー": "hearts",
+
+    # ステイゴールド系
+    "ステイゴールド": "stayg",
+    "オルフェーヴル": "stayg",
+    "ゴールドシップ": "stayg",
+    "ナカヤマフェスタ": "stayg",
+    "ドリームジャーニー": "stayg",
+    "サトノクラウン": "stayg",
+    "フェノーメノ": "stayg",
+    "ウインブライト": "stayg",
+    "インディチャンプ": "stayg",
+}
+
+SIRE_LINE_CATEGORIES = ["deep", "kingk", "hearts", "stayg"]
+
+
+def get_sire_line(sire_name: str) -> str:
+    """種牡馬名から系統カテゴリを返す。未知の種牡馬は空文字。"""
+    if not sire_name:
+        return ""
+    return SIRE_LINE_MAP.get(sire_name, "")
+
+
 # === リーディングデータ（産駒成績ベース） ===
 
 def _load_json(path: str) -> dict:
@@ -741,6 +823,11 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None,
     r["imported_sire_bms_inter"] = r["imported_dam"] * r["sire_ei"] * r["bms_ei"]
     # アウトブリードボーナス（外国産母馬 × 日本種牡馬 = 異系交配の優位性）
     r["outcross_imported"] = r["imported_dam"].values
+
+    # === 父系統カテゴリ（バイナリ特徴量） ===
+    sire_lines = sire.map(get_sire_line).fillna("")
+    for cat in SIRE_LINE_CATEGORIES:
+        r[f"sire_line_{cat}"] = (sire_lines == cat).astype(int)
 
     # === 交互作用特徴量（ベクトル化） ===
     r["sire_dam_interaction"] = r["sire_ei"] * np.log1p(r["dam_prize"])

@@ -292,4 +292,10 @@ def heuristic_score(df: pd.DataFrame, race_type: str = "derby") -> pd.Series:
     if "outcross_imported" in df.columns:
         score += df["outcross_imported"].fillna(0) * W.get("b_outcross_imported", 0.0)
 
+    # 父系統カテゴリボーナス
+    for cat in ["deep", "kingk", "hearts", "stayg"]:
+        col = f"sire_line_{cat}"
+        if col in df.columns:
+            score += df[col].fillna(0) * W.get(f"w_sire_line_{cat}", 0.0)
+
     return score
