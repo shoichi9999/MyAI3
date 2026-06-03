@@ -171,7 +171,7 @@ def main():
     args = parser.parse_args()
 
     if args.all:
-        years = list(range(2015, 2023))
+        years = list(range(2015, 2024))
     elif args.year:
         years = [args.year]
     else:

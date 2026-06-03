@@ -30,6 +30,113 @@ def _load_json(path: str) -> dict:
 # 年度別リーディングキャッシュ
 _LEADING_CACHE: dict[tuple[str, int], dict] = {}
 
+
+# === 血統理論：父Stayer × 母父Miler フィルタ ===
+# Why: 日本ダービー(2400m)で「父=ステイヤー型(中長距離G1実績)」かつ「母父=マイラー型(マイル〜中距離スピード)」の
+# 配合が好走しやすいというPOG/血統理論。「父スタミナ×母系スピード」の古典的バランス。
+STAYERS_SET = frozenset([
+    # 純粋なステイヤー（長距離G1=菊花賞・天皇賞春・有馬記念・JC・宝塚・凱旋門賞 で実績、
+    # またはステイヤー血統と広く認知される）
+    "キタサンブラック",     # 菊・天春・有馬・JC・宝塚
+    "ハーツクライ",         # 有馬・ドバイシーマC
+    "ゴールドシップ",       # 天春・宝塚・有馬・菊
+    "ステイゴールド",       # 香港ヴァーズ・ドバイSC
+    "ディープインパクト",   # 菊・天春・有馬・JC・宝塚
+    "エピファネイア",       # 菊・JC
+    "ワールドプレミア",     # 菊・天春
+    "ゴールドアクター",     # 有馬
+    "マンハッタンカフェ",   # 菊・天春・有馬
+    "オルフェーヴル",       # 菊・有馬・宝塚・凱旋門賞2着
+    "タイトルホルダー",     # 菊・天春・宝塚
+    "フィエールマン",       # 菊・天春
+    "ブラストワンピース",   # 有馬
+    "ナカヤマフェスタ",     # 宝塚・凱旋門賞2着
+    "コントレイル",         # 菊・ダービー・皐月（三冠）
+    "イクイノックス",       # JC・有馬・ドバイSC・天皇賞秋
+    "メイショウサムソン",   # 天春・天秋・皐月・ダービー
+    "オウケンブルースリ",   # 菊
+])
+MILERS_SET = frozenset([
+    # 国内
+    "ダイワメジャー", "ロードカナロア", "アドマイヤマーズ", "モーリス", "クロフネ",
+    "フジキセキ", "アグネスタキオン", "ダンスインザダーク", "サクラバクシンオー",
+    "グラスワンダー", "ブラックタイド", "アグネスデジタル", "ノヴェリスト",
+    "キンシャサノキセキ", "ミッキーアイル", "キングカメハメハ", "キングマンボ",
+    "シンボリクリスエス", "タイキシャトル", "フレンチデピュティ", "ブライアンズタイム",
+    "ハービンジャー", "リアルスティール", "リアルインパクト", "スクリーンヒーロー",
+    "メイショウボーラー", "ヘニーヒューズ", "ジャングルポケット",
+    # 海外マイル/中距離G1系
+    "Frankel", "Dubawi", "Galileo", "War Front", "Tapit", "Curlin", "Speightstown",
+    "Hard Spun", "Smart Strike", "Distorted Humor", "Storm Cat", "Kingmambo",
+    "Mr. Prospector", "Nureyev", "Northern Dancer", "Sadler's Wells", "Danehill",
+    "More Than Ready", "Medaglia d'Oro", "Bernardini", "Pulpit", "Lemon Drop Kid",
+    "Giant's Causeway", "Awesome Again", "A.P. Indy", "Fastnet Rock", "Snitzel",
+    "Redoute's Choice", "Encosta de Lago", "Rock of Gibraltar", "Invincible Spirit",
+    "Oasis Dream", "Pivotal", "Dansili", "Iffraaj", "Kodiac", "Lope De Vega",
+    "No Nay Never", "New Approach", "Sea The Stars", "Shamardal", "Singspiel",
+    "Exceed And Excel", "Laoban", "Street Cry", "Empire Maker",
+    "Unbridled's Song", "Forestry", "Quality Road", "Into Mischief", "Uncle Mo",
+    "Honor Code", "Constitution", "American Pharoah", "Justify",
+    # オークス1着馬の母父（実証ベース追加）
+    "サンデーサイレンス",   # アーモンドアイ母父
+    "ロージズインメイ",     # ユーバーレーベン母父
+    "All American",         # リバティアイランド母父
+    # 過去ダービー1着馬の母父（実証ベース追加）
+    "Librettist", "Essence of Dubai", "Vindication", "Congrats", "Cape Cross",
+    # 加えて主要な欧米マイラー系種牡馬
+    "Storm Bird", "Bel Esprit", "Tale of the Cat", "Distant View",
+    "Seeking the Gold", "Gone West", "Carson City", "Mr. Greeley",
+    "Roberto", "Hail to Reason", "Bold Ruler", "Raise a Native",
+    "Halo", "Lyphard", "Vice Regent", "Vaguely Noble",
+    "Caerleon", "Sharpen Up", "Habitat", "Nasrullah",
+    "Nashua", "Bold Bidder", "Northern Taste", "Caro",
+    "Riverman", "Cox's Ridge", "Topsider", "Storm Bird",
+    "Rahy", "Singletary", "Pleasant Tap", "Maria's Mon",
+    "Officer", "Stravinsky", "Rock Hard Ten", "Tiznow",
+    "Awesome Again", "Macho Uno", "Hennessy", "Old Trieste",
+    "Coronado's Quest", "Petionville", "Mt. Livermore",
+    "Spend a Buck", "Slew o' Gold", "Capote", "Easy Goer",
+    "Phone Trick", "Dixieland Band", "Saint Ballado", "Salt Lake",
+])
+
+# 中距離G1馬（ダービー2400m/オークス2400mで産駒実績ある中距離G1勝ち種牡馬）
+# Why: オークスでは父スタミナ要件が緩く、中距離型の父でも勝てる。
+# 「父中距離以上 × 母父スピード」のオークス理論の左辺に使用。
+MID_DIST_SET = frozenset([
+    "ドゥラメンテ",         # 皐月・ダービー
+    "ハービンジャー",       # キングジョージ&クイーンエリザベス（欧2400m G1）
+    "ジャスタウェイ",       # 天秋・安田・ドバイDF
+    "ルーラーシップ",       # キングジョージ&クイーンエリザベスC
+    "レイデオロ",           # ダービー・天秋
+    "サートゥルナーリア",   # 皐月・ホープフル
+    "スワーヴリチャード",   # 大阪杯・JC
+    "ヴィクトワールピサ",   # 皐月・有馬・ドバイWC
+    "ネオユニヴァース",     # 皐月・ダービー
+    "ダノンキングリー",     # 中距離G1
+    "シュヴァルグラン",     # JC
+    "ステイゴールド",       # 香港ヴァーズ・ドバイSC（一応中距離寄り）
+    "ジャングルポケット",   # JC・ダービー
+])
+
+# スプリンター系種牡馬（短距離G1勝ち、もしくは短距離血統として広く認知される）
+SPRINTERS_SET = frozenset([
+    # 国内
+    "サクラバクシンオー",   # スプリンターズS連覇
+    "ロードカナロア",       # 高松宮・スプリンターズ・香港スプリント
+    "ダノンスマッシュ",     # 高松宮・香港スプリント
+    "レッドファルクス",     # スプリンターズS連覇
+    "ダノンレジェンド",     # 東京盃
+    "マイネルラヴ",         # スプリンターズS
+    "アドマイヤコジーン",   # 安田・短距離G1
+    "ヘンリーバローズ",
+    "スウェプトオーヴァーボード",  # スプリンターズS
+    "プリサイスエンド",
+    # 海外スプリンター
+    "Danzig", "Storm Cat", "Mr. Greeley", "Tale of the Cat",
+    "Forestry", "Speightstown", "Spinning World", "Distorted Humor",
+    "More Than Ready",
+])
+
 # デフォルト（最新）のリーディングデータ — 予測時に使用
 _DEFAULT_LEADING_YEAR = 2024
 SIRE_LEADING = _load_json("data/sire_leading_2024.json")
@@ -742,11 +849,16 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None,
 
     r["sire_classic_count"] = sire.map(sire_classic_lu).fillna(0).astype(int)
     sire_runners_v = r["sire_runners"]
-    r["sire_classic_rate"] = np.where(sire_runners_v > 0,
+    # 信頼度補正: 産駒数 < RATE_MIN_RUNNERS の種牡馬は率を 0（情報なし扱い）にする。
+    # Why: Siyouni等の少産駒種牡馬で「1/4=25%」を真の能力と見なすのも、
+    #      全体平均に引き戻すのも、どちらも妥当性に欠ける。"わからない" を素直に
+    #      中立(0)として扱い、他項目（父EI・ランク・配合理論）で評価する。
+    RATE_MIN_RUNNERS = 20
+    r["sire_classic_rate"] = np.where(sire_runners_v >= RATE_MIN_RUNNERS,
                                       r["sire_classic_count"] / sire_runners_v * 100, 0.0)
 
     r["sire_oaks_count"] = sire.map(sire_oaks_lu).fillna(0).astype(int)
-    r["sire_oaks_rate"] = np.where(sire_runners_v > 0,
+    r["sire_oaks_rate"] = np.where(sire_runners_v >= RATE_MIN_RUNNERS,
                                    r["sire_oaks_count"] / sire_runners_v * 100, 0.0)
 
     r["bms_classic_count"] = bms_name.map(bms_classic_lu).fillna(0).astype(int)
@@ -767,5 +879,18 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None,
     r["trainer_breeder_combo"] = r["trainer_score"] * r["breeder_score"]
     r["owner_trainer_combo"] = r["owner_score"] * r["trainer_score"]
     r["bms_dam_interaction"] = r["bms_ei"] * np.log1p(r["dam_prize"])
+
+    # === 父Stayer × 母父Miler 配合フラグ（血統理論ベース） ===
+    r["sire_is_stayer"] = sire.isin(STAYERS_SET).astype(int).values
+    r["sire_is_mid_dist"] = sire.isin(MID_DIST_SET).astype(int).values
+    r["bms_is_miler"] = bms_name.isin(MILERS_SET).astype(int).values
+    r["bms_is_sprinter"] = bms_name.isin(SPRINTERS_SET).astype(int).values
+    # ダービー用: 父Stayer × 母父Miler
+    r["stayer_x_miler"] = (r["sire_is_stayer"] & r["bms_is_miler"]).astype(int)
+    # オークス用: 父中距離以上 (Stayer+MidDist) × 母父スピード (Miler+Sprinter)
+    sire_mid_or_up = (r["sire_is_stayer"] | r["sire_is_mid_dist"]).astype(int)
+    bms_speed = (r["bms_is_miler"] | r["bms_is_sprinter"]).astype(int)
+    r["bms_is_speed"] = bms_speed
+    r["mid_x_speed"] = (sire_mid_or_up & bms_speed).astype(int)
 
     return r.reset_index(drop=True)

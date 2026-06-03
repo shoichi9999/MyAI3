@@ -26,7 +26,7 @@ from src.model import heuristic_score
 from src.ml_model import train_predict_loyo, ensemble_score
 
 
-YEARS = [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022]
+YEARS = [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023]
 
 
 def _load_classic_results() -> dict:

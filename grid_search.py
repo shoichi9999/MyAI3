@@ -247,6 +247,12 @@ def parameterized_score(df: pd.DataFrame, params: dict) -> pd.Series:
         trend = df["sire_ei_trend"].fillna(0)
         score += trend * params.get("w_sire_ei_trend", 0)
 
+    # 血統理論項（B3）
+    if "stayer_x_miler" in df.columns:
+        score += df["stayer_x_miler"].fillna(0) * params.get("w_stayer_miler", 0)
+    if "mid_x_speed" in df.columns:
+        score += df["mid_x_speed"].fillna(0) * params.get("w_mid_x_speed", 0)
+
     return score
 
 
@@ -289,7 +295,7 @@ def _get_derby_winner_id(birth_year: int) -> str | None:
 
 def evaluate_single(df: pd.DataFrame, params: dict, birth_year: int = None,
                     race_type: str = "derby") -> dict:
-    """1年度のデータで指定レースの予測を評価する。"""
+    """1年度のデータで指定レースの予測を評価する。B2拡張: 補助レースも評価。"""
     scores = parameterized_score(df, params).values
     horse_ids = df["horse_id"].astype(str).values
 
@@ -300,6 +306,7 @@ def evaluate_single(df: pd.DataFrame, params: dict, birth_year: int = None,
     classic_winner_id = _get_classic_winner_id(birth_year, race_type)
 
     results = {}
+    all_ranks = np.argsort(np.argsort(-scores)) + 1
 
     # 予測TOP N にTOP5が何頭入るか
     for n in [5, 10, 15, 20, 30]:
@@ -309,7 +316,6 @@ def evaluate_single(df: pd.DataFrame, params: dict, birth_year: int = None,
 
     # 1着馬の予測順位
     if classic_winner_id:
-        all_ranks = np.argsort(np.argsort(-scores)) + 1
         idx = np.where(horse_ids == classic_winner_id)[0]
         if len(idx) > 0:
             results["winner_rank"] = int(all_ranks[idx[0]])
@@ -318,36 +324,78 @@ def evaluate_single(df: pd.DataFrame, params: dict, birth_year: int = None,
     else:
         results["winner_rank"] = len(horse_ids)
 
+    # B2: 補助レース評価
+    aux_races = (["satsuki", "kikuka", "nhkmile", "asahi_fs", "hopeful"]
+                 if race_type == "derby"
+                 else ["sakura", "syuka", "nhkmile", "asahi_fs", "hopeful"])
+    for aux in aux_races:
+        aux_top5 = _get_classic_ids(birth_year, aux)
+        if not aux_top5:
+            continue
+        pred_top5_idx = np.argsort(-scores)[:5]
+        pred_top5_ids = set(horse_ids[pred_top5_idx])
+        results[f"top5_{aux}"] = len(pred_top5_ids & aux_top5)
+        aux_winner_id = _get_classic_winner_id(birth_year, aux)
+        if aux_winner_id:
+            idx = np.where(horse_ids == aux_winner_id)[0]
+            if len(idx) > 0:
+                results[f"{aux}_winner_rank"] = int(all_ranks[idx[0]])
+
     return results
 
 
 def composite_score(metrics: dict, objective: str = "classic",
                     race_type: str = "derby") -> float:
-    """複合スコア（1着馬とTOP5ヒットのバランス改善版）。"""
+    """複合スコア（1着馬特化版 = A1）。
+
+    Why: TOP5予測で1着馬を当てることが最優先目的。
+    rank==1 を 2000、TOP3=1500、TOP5=800 とし、TOP5/TOP10ヒットは副次的。
+    """
     d5 = metrics.get(f"top5_{race_type}", 0)
     d10 = metrics.get(f"top10_{race_type}", 0)
     winner_rank = metrics.get("winner_rank", 9999)
 
-    # 1着馬の段階ボーナス（バランス改善: 旧1200→500）
+    # 1着馬の段階ボーナス（1着特化）
     winner_bonus = 0.0
-    if winner_rank <= 3:
-        winner_bonus = 500.0
+    if winner_rank == 1:
+        winner_bonus = 2000.0
+    elif winner_rank <= 3:
+        winner_bonus = 1500.0
     elif winner_rank <= 5:
-        winner_bonus = 400.0
+        winner_bonus = 800.0
     elif winner_rank <= 10:
-        winner_bonus = 200.0
+        winner_bonus = 300.0
     elif winner_rank <= 20:
         winner_bonus = 80.0
-    elif winner_rank <= 30:
-        winner_bonus = 30.0
     elif winner_rank <= 50:
-        winner_bonus = 10.0
+        winner_bonus = 20.0
 
-    return (
-        winner_bonus           # 1着馬の順位
-        + d5 * 100.0           # TOP5ヒット（40→100: 重要度UP）
-        + d10 * 30.0           # TOP10ヒット（新規追加）
+    main_score = (
+        winner_bonus           # 1着馬の順位（最大2000）
+        + d5 * 30.0            # TOP5ヒット（副次: max 150）
+        + d10 * 10.0           # TOP10ヒット（副次: max 50）
     )
+
+    # B2: 補助レース項（0.2倍重み）
+    aux_races = (["satsuki", "kikuka", "nhkmile", "asahi_fs", "hopeful"]
+                 if race_type == "derby"
+                 else ["sakura", "syuka", "nhkmile", "asahi_fs", "hopeful"])
+    aux_score = 0.0
+    for aux in aux_races:
+        r_a = metrics.get(f"{aux}_winner_rank")
+        if r_a is None:
+            continue
+        wb = 0.0
+        if r_a == 1: wb = 2000.0
+        elif r_a <= 3: wb = 1500.0
+        elif r_a <= 5: wb = 800.0
+        elif r_a <= 10: wb = 300.0
+        elif r_a <= 20: wb = 80.0
+        elif r_a <= 50: wb = 20.0
+        d5_a = metrics.get(f"top5_{aux}", 0)
+        aux_score += (wb + d5_a * 30.0) * 0.2
+
+    return main_score + aux_score
 
 
 def cv_score(all_data: dict, params: dict, race_type: str = "derby") -> float:
@@ -737,6 +785,28 @@ def _precompute_arrays(all_data, race_type="derby"):
             if len(idxs) > 0:
                 d["derby_winner_idx"] = idxs[0]
 
+        # B2: 補助レース（メインに合わせて性別フィルタ済みデータに対し idx 計算）
+        aux_races = (["satsuki", "kikuka", "nhkmile", "asahi_fs", "hopeful"]
+                     if race_type == "derby"
+                     else ["sakura", "syuka", "nhkmile", "asahi_fs", "hopeful"])
+        d["aux"] = {}
+        for aux in aux_races:
+            aux_top5 = _get_classic_ids(year, aux)
+            if not aux_top5:
+                continue
+            aux_idx = set(i for i, hid in enumerate(horse_ids) if hid in aux_top5)
+            aux_winner_id = _get_classic_winner_id(year, aux)
+            aux_w_idx = None
+            if aux_winner_id:
+                idxs = np.where(horse_ids == aux_winner_id)[0]
+                if len(idxs) > 0:
+                    aux_w_idx = idxs[0]
+            d["aux"][aux] = {"idx": aux_idx, "winner_idx": aux_w_idx}
+
+        # 血統理論フラグ
+        d["stayer_x_miler"] = df["stayer_x_miler"].fillna(0).values if "stayer_x_miler" in df.columns else np.zeros(n)
+        d["mid_x_speed"] = df["mid_x_speed"].fillna(0).values if "mid_x_speed" in df.columns else np.zeros(n)
+
         precomputed[year] = d
     return precomputed
 
@@ -789,6 +859,8 @@ def _compute_score_vec(d, params):
     score += d["sire_oaks_rate"] * params[38]          # w_sire_oaks_rate
     score += d["bms_classic_count"] * params[39]       # w_bms_classic
     score += d["dam_high_class"] * params[40]          # b_dam_high_class
+    score += d["stayer_x_miler"] * params[41]          # w_stayer_miler (B3)
+    score += d["mid_x_speed"] * params[42]             # w_mid_x_speed (B3)
     return score
 
 
@@ -822,41 +894,65 @@ def _fast_cv_score(precomputed, params):
         # ランク計算
         ranks = np.argsort(np.argsort(-score)) + 1  # 1-indexed
 
-        # ===== 1着馬の順位（滑らかなボーナス） =====
+        # ===== 1着馬の順位（A1: 1着特化）=====
         winner_bonus = 0.0
         widx = d["derby_winner_idx"]
         if widx is not None:
             rank_val = int(ranks[widx])
             pctl = 1.0 - rank_val / n_horses
-            # 連続ボーナス（パーセンタイル）
-            winner_bonus += pctl * 80.0
-            # 段階ボーナス（TOP5重視だがバランス改善）
-            if rank_val <= 3:
-                winner_bonus += 500.0
+            winner_bonus += pctl * 200.0   # 連続ボーナス強化
+            if rank_val == 1:
+                winner_bonus += 2000.0
+            elif rank_val <= 3:
+                winner_bonus += 1500.0
             elif rank_val <= 5:
-                winner_bonus += 400.0
+                winner_bonus += 800.0
             elif rank_val <= 10:
-                winner_bonus += 200.0
+                winner_bonus += 300.0
             elif rank_val <= 20:
                 winner_bonus += 80.0
-            elif rank_val <= 30:
-                winner_bonus += 30.0
             elif rank_val <= 50:
-                winner_bonus += 10.0
+                winner_bonus += 20.0
 
-        # クラシックTOP5全体のランク（重要度UP）
+        # クラシックTOP5全体のランク（副次）
         smooth_bonus = 0.0
         if d["derby_idx"]:
             for idx in d["derby_idx"]:
                 pctl = 1.0 - ranks[idx] / n_horses
-                smooth_bonus += pctl * 20.0  # 3.0→20.0: 全体順位の重要度UP
+                smooth_bonus += pctl * 8.0   # 20→8: 副次化
 
         year_score = (
             winner_bonus
-            + d5 * 100.0           # TOP5ヒット（40→100: 重要度UP）
-            + d10 * 30.0           # TOP10ヒット（新規追加）
+            + d5 * 30.0            # TOP5ヒット（副次）
+            + d10 * 10.0           # TOP10ヒット（副次）
             + smooth_bonus
         )
+
+        # B2: 補助レース項（メインの 0.2倍重み、winner_idがsex_filterに無ければスキップ）
+        aux_bonus = 0.0
+        if d.get("aux"):
+            for aux_name, aux_data in d["aux"].items():
+                widx_aux = aux_data["winner_idx"]
+                if widx_aux is None:
+                    continue
+                rank_aux = int(ranks[widx_aux])
+                pctl_a = 1.0 - rank_aux / n_horses
+                wb = pctl_a * 200.0
+                if rank_aux == 1: wb += 2000.0
+                elif rank_aux <= 3: wb += 1500.0
+                elif rank_aux <= 5: wb += 800.0
+                elif rank_aux <= 10: wb += 300.0
+                elif rank_aux <= 20: wb += 80.0
+                elif rank_aux <= 50: wb += 20.0
+                # 補助TOP5ヒット
+                aux_idx = aux_data["idx"]
+                d5_aux = 0
+                if aux_idx:
+                    k5 = min(5, n_horses)
+                    pred_top5_a = set(np.argpartition(-score, k5)[:k5])
+                    d5_aux = len(pred_top5_a & aux_idx)
+                aux_bonus += (wb + d5_aux * 30.0) * 0.2
+        year_score += aux_bonus
         year_scores.append(year_score)
 
     # 年度平均
@@ -897,6 +993,7 @@ _PARAM_KEYS = [
     "w_owner_trainer", "w_bms_dam_inter",
     "w_sire_2yo_ei", "w_sire_precocity", "w_sire_ei_trend",
     "w_sire_oaks_rate", "w_bms_classic", "b_dam_high_class",
+    "w_stayer_miler", "w_mid_x_speed",
 ]
 
 def _dict_to_arr(params):
@@ -1307,7 +1404,7 @@ def _staged_grid_search(all_data, best_params, best_score, race_type="derby"):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="グリッドサーチ（重み最適化）")
     parser.add_argument("--years", nargs="+", type=int,
-                        default=[2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022],
+                        default=[2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023],
                         help="使用する年度リスト（生年）")
     parser.add_argument("--objective", choices=["classic", "top10"],
                         default="top10",

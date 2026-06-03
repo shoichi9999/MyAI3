@@ -31,7 +31,7 @@ race_label = "ダービー" if race_type == "derby" else "オークス"
 # ---- データ読み込み ----
 print(f"=== データ読み込み ({race_label}) ===")
 all_data = {}
-for y in range(2015, 2023):
+for y in range(2015, 2024):
     df = load_year(y, race_type=race_type)
     if df is not None:
         all_data[y] = df
@@ -64,7 +64,8 @@ print(f"現行スコア(高速): {current_fast:.2f}")
 # ---- 新パラメータのインデックス ----
 NEW_KEYS = ["w_bms_rank", "w_bms_progeny_prize", "w_sire_classic_rate",
             "w_owner_trainer", "w_bms_dam_inter", "w_sire_2yo_ei", "w_sire_precocity",
-            "w_sire_ei_trend"]
+            "w_sire_ei_trend",
+            "w_stayer_miler", "w_mid_x_speed"]
 new_indices = [_PARAM_KEYS.index(k) for k in NEW_KEYS]
 print(f"新パラメータ: {NEW_KEYS} (indices: {new_indices})")
 
@@ -78,6 +79,8 @@ new_bounds = {
     "w_sire_2yo_ei": (0.0, 0.50),
     "w_sire_precocity": (0.0, 0.50),
     "w_sire_ei_trend": (0.0, 30.0),
+    "w_stayer_miler": (0.0, 150.0),
+    "w_mid_x_speed": (0.0, 100.0),
 }
 
 # ---- Phase 1: 全既存パラメータも含めた探索 ----

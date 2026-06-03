@@ -269,4 +269,12 @@ def heuristic_score(df: pd.DataFrame, race_type: str = "derby") -> pd.Series:
     if "dam_high_class" in df.columns:
         score += df["dam_high_class"].fillna(0) * W.get("b_dam_high_class", 0.0)
 
+    # 父Stayer × 母父Miler 配合ボーナス（ダービー向け血統理論）
+    if "stayer_x_miler" in df.columns:
+        score += df["stayer_x_miler"].fillna(0) * W.get("w_stayer_miler", 0.0)
+
+    # 父中距離以上 × 母父スピード ボーナス（オークス向け血統理論）
+    if "mid_x_speed" in df.columns:
+        score += df["mid_x_speed"].fillna(0) * W.get("w_mid_x_speed", 0.0)
+
     return score
