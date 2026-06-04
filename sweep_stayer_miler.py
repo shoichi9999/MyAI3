@@ -45,7 +45,7 @@ def eval_year(birth, race_type, w_override):
 print("=== w_stayer_miler スイープ (ダービー 2015-2023) ===\n")
 print(f"{'w':>6} | " + " ".join(f"{y:>5}" for y in range(2015,2024)) + " | TOP1 TOP5_winner avg_rank")
 print("-" * 100)
-for w in [0, 5, 10, 20, 30, 50, 80, 120]:
+for w in [0, 30, 80, 120, 200, 300, 500, 1000, 2000]:
     ranks = []
     in_top5 = 0
     is_top1 = 0

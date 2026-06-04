@@ -273,6 +273,10 @@ def heuristic_score(df: pd.DataFrame, race_type: str = "derby") -> pd.Series:
     if "stayer_x_miler" in df.columns:
         score += df["stayer_x_miler"].fillna(0) * W.get("w_stayer_miler", 0.0)
 
+    # 母馬産地別補正（B+α）— 一律 imported_dam に加えて、産地ごとの実績差を反映
+    if "dam_country_bonus" in df.columns:
+        score += df["dam_country_bonus"].fillna(0)
+
     # 父中距離以上 × 母父スピード ボーナス（オークス向け血統理論）
     if "mid_x_speed" in df.columns:
         score += df["mid_x_speed"].fillna(0) * W.get("w_mid_x_speed", 0.0)

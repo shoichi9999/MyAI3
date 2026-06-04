@@ -35,26 +35,20 @@ _LEADING_CACHE: dict[tuple[str, int], dict] = {}
 # Why: 日本ダービー(2400m)で「父=ステイヤー型(中長距離G1実績)」かつ「母父=マイラー型(マイル〜中距離スピード)」の
 # 配合が好走しやすいというPOG/血統理論。「父スタミナ×母系スピード」の古典的バランス。
 STAYERS_SET = frozenset([
-    # 純粋なステイヤー（長距離G1=菊花賞・天皇賞春・有馬記念・JC・宝塚・凱旋門賞 で実績、
-    # またはステイヤー血統と広く認知される）
-    "キタサンブラック",     # 菊・天春・有馬・JC・宝塚
-    "ハーツクライ",         # 有馬・ドバイシーマC
-    "ゴールドシップ",       # 天春・宝塚・有馬・菊
-    "ステイゴールド",       # 香港ヴァーズ・ドバイSC
-    "ディープインパクト",   # 菊・天春・有馬・JC・宝塚
-    "エピファネイア",       # 菊・JC
-    "ワールドプレミア",     # 菊・天春
-    "ゴールドアクター",     # 有馬
-    "マンハッタンカフェ",   # 菊・天春・有馬
-    "オルフェーヴル",       # 菊・有馬・宝塚・凱旋門賞2着
-    "タイトルホルダー",     # 菊・天春・宝塚
-    "フィエールマン",       # 菊・天春
-    "ブラストワンピース",   # 有馬
-    "ナカヤマフェスタ",     # 宝塚・凱旋門賞2着
-    "コントレイル",         # 菊・ダービー・皐月（三冠）
-    "イクイノックス",       # JC・有馬・ドバイSC・天皇賞秋
-    "メイショウサムソン",   # 天春・天秋・皐月・ダービー
-    "オウケンブルースリ",   # 菊
+    # 本格派ステイヤー（2800m以上G1勝ち、または産駒に3200m級ステイヤーG1馬を多数輩出）
+    "キタサンブラック",     # 菊3000・天春3200
+    "ゴールドシップ",       # 天春3200・菊3000
+    "ディープインパクト",   # 菊3000・天春3200・JC2400・有馬2500
+    "エピファネイア",       # 菊3000・JC2400
+    "ワールドプレミア",     # 菊3000・天春3200
+    "マンハッタンカフェ",   # 菊3000・天春3200・有馬2500
+    "オルフェーヴル",       # 菊3000・凱旋門賞2着
+    "タイトルホルダー",     # 菊3000・天春3200
+    "フィエールマン",       # 菊3000・天春3200
+    "コントレイル",         # 菊3000・三冠馬
+    "メイショウサムソン",   # 天春3200
+    "オウケンブルースリ",   # 菊3000
+    "Monsun",               # 産駒にメルボルンC(3200m)勝ち3頭、ドイツダービー馬輩出
 ])
 MILERS_SET = frozenset([
     # 国内
@@ -65,15 +59,15 @@ MILERS_SET = frozenset([
     "シンボリクリスエス", "タイキシャトル", "フレンチデピュティ", "ブライアンズタイム",
     "ハービンジャー", "リアルスティール", "リアルインパクト", "スクリーンヒーロー",
     "メイショウボーラー", "ヘニーヒューズ", "ジャングルポケット",
-    # 海外マイル/中距離G1系
-    "Frankel", "Dubawi", "Galileo", "War Front", "Tapit", "Curlin", "Speightstown",
+    # 海外マイル/中距離G1系（Galileo, Sea The Stars, Monsun は STAYERS_SET に移動）
+    "Frankel", "Dubawi", "War Front", "Tapit", "Curlin", "Speightstown",
     "Hard Spun", "Smart Strike", "Distorted Humor", "Storm Cat", "Kingmambo",
     "Mr. Prospector", "Nureyev", "Northern Dancer", "Sadler's Wells", "Danehill",
     "More Than Ready", "Medaglia d'Oro", "Bernardini", "Pulpit", "Lemon Drop Kid",
     "Giant's Causeway", "Awesome Again", "A.P. Indy", "Fastnet Rock", "Snitzel",
     "Redoute's Choice", "Encosta de Lago", "Rock of Gibraltar", "Invincible Spirit",
     "Oasis Dream", "Pivotal", "Dansili", "Iffraaj", "Kodiac", "Lope De Vega",
-    "No Nay Never", "New Approach", "Sea The Stars", "Shamardal", "Singspiel",
+    "No Nay Never", "New Approach", "Shamardal", "Singspiel",  # Sea The Stars は STAYERS へ移動
     "Exceed And Excel", "Laoban", "Street Cry", "Empire Maker",
     "Unbridled's Song", "Forestry", "Quality Road", "Into Mischief", "Uncle Mo",
     "Honor Code", "Constitution", "American Pharoah", "Justify",
@@ -83,6 +77,10 @@ MILERS_SET = frozenset([
     "All American",         # リバティアイランド母父
     # 過去ダービー1着馬の母父（実証ベース追加）
     "Librettist", "Essence of Dubai", "Vindication", "Congrats", "Cape Cross",
+    # 欧米マイル〜中距離G1馬（要追加）
+    "Le Havre",     # 仏マイラー、産駒に仏オークス馬・仏ダービー牝馬
+    "Wootton Bassett",  # 欧マイラーG1、産駒に欧G1多数
+    "Intello",      # 仏ダービー馬、マイラー〜中距離
     # 加えて主要な欧米マイラー系種牡馬
     "Storm Bird", "Bel Esprit", "Tale of the Cat", "Distant View",
     "Seeking the Gold", "Gone West", "Carson City", "Mr. Greeley",
@@ -114,9 +112,17 @@ MID_DIST_SET = frozenset([
     "ネオユニヴァース",     # 皐月・ダービー
     "ダノンキングリー",     # 中距離G1
     "シュヴァルグラン",     # JC
-    "ステイゴールド",       # 香港ヴァーズ・ドバイSC（一応中距離寄り）
+    "ステイゴールド",       # 香港V2400・有馬2500
     "ジャングルポケット",   # JC・ダービー
-    "キズナ",               # ダービー・産経大阪杯・凱旋門賞4着、産駒中距離G1多数
+    "キズナ",               # ダービー・産経大阪杯・凱旋門賞4着
+    # 本格派ステイヤーから降格（2400m帯中長距離型）
+    "ハーツクライ",         # 有馬2500・宝塚2200・ドバイシーマ2400
+    "ゴールドアクター",     # 有馬2500
+    "ブラストワンピース",   # 有馬2500
+    "ナカヤマフェスタ",     # 宝塚2200・凱旋門賞2着
+    "イクイノックス",       # JC2400・有馬2500・天秋2000・ドバイSC
+    "Galileo",              # 英ダービー2400・キングジョージ2406
+    "Sea The Stars",        # 凱旋門賞2400・英ダービー2400
 ])
 
 # スプリンター系種牡馬（短距離G1勝ち、もしくは短距離血統として広く認知される）
@@ -136,6 +142,8 @@ SPRINTERS_SET = frozenset([
     "Danzig", "Storm Cat", "Mr. Greeley", "Tale of the Cat",
     "Forestry", "Speightstown", "Spinning World", "Distorted Humor",
     "More Than Ready",
+    "Street Boss",  # 米スプリンターG1、父Street Cry
+    "Sightseeing",  # 米マイラー寄り
 ])
 
 # デフォルト（最新）のリーディングデータ — 予測時に使用
@@ -874,6 +882,16 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None,
 
     # 輸入繁殖牝馬フラグ
     r["imported_dam"] = dam_id_col.str.startswith("000a").astype(int)
+    # 産地別ボーナス（過去9年TOP5実績比率から決定）
+    # Why: 一律加点だと米国産（全体49%、TOP5率35%＝倍率0.71）を過大評価し、
+    # 独・亜（倍率4.15/3.13）を過小評価する。実態に合わせて補正。
+    _COUNTRY_BONUS = {
+        "独": 15, "亜": 12, "豪": 6, "英": 3,
+        "米": 0, "愛": 0, "仏": 0,
+    }
+    _country_map = _load_json("data/dam_countries.json")
+    _country_lu = dam_id_col.map(_country_map)
+    r["dam_country_bonus"] = _country_lu.map(_COUNTRY_BONUS).fillna(0.0).astype(float)
 
     # === 交互作用特徴量（ベクトル化） ===
     r["sire_dam_interaction"] = r["sire_ei"] * np.log1p(r["dam_prize"])
