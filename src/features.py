@@ -149,6 +149,51 @@ SPRINTERS_SET = frozenset([
 # デフォルト（最新）のリーディングデータ — 予測時に使用
 _DEFAULT_LEADING_YEAR = 2024
 SIRE_LEADING = _load_json("data/sire_leading_2024.json")
+
+# 種牡馬の距離適性（自身の競走時G1〜G3勝ち距離から自動判定）
+# horse_id -> "STAYER"/"MID_DIST"/"MILER"/"SPRINTER" or None
+_SIRE_DISTANCE = _load_json("data/sire_distance.json")
+
+# 種牡馬の累計成績データ（重賞勝ち数・平均距離・EI、父用と母父用の両方）
+_SIRE_STATS = _load_json("data/sire_stats.json")
+
+
+def get_distance_category(horse_id: str) -> str | None:
+    """horse_idから距離適性カテゴリを返す。データなしなら None。"""
+    if not horse_id:
+        return None
+    data = _SIRE_DISTANCE.get(str(horse_id))
+    if not data or not data.get("wins"):
+        return None
+    mx = max(data["wins"])
+    if mx >= 2800:
+        return "STAYER"
+    elif mx >= 1800:
+        return "MID_DIST"
+    elif mx >= 1400:
+        return "MILER"
+    else:
+        return "SPRINTER"
+
+
+def get_sire_graded(horse_id: str, role: str = "sire") -> int:
+    """種牡馬の累計重賞勝ち数。role='sire'/'bms'。データなしは 0。"""
+    if not horse_id:
+        return 0
+    data = _SIRE_STATS.get(str(horse_id))
+    if not data or not data.get(role):
+        return 0
+    return int(data[role].get("graded", 0))
+
+
+def get_sire_avg_dist_turf(horse_id: str, role: str = "sire") -> float:
+    """種牡馬の平均距離（芝）。データなしは 0。"""
+    if not horse_id:
+        return 0.0
+    data = _SIRE_STATS.get(str(horse_id))
+    if not data or not data.get(role):
+        return 0.0
+    return float(data[role].get("avg_dist_turf", 0))
 BMS_LEADING = _load_json("data/bms_leading_2024.json")
 
 
@@ -900,10 +945,16 @@ def build_feature_matrix(horses_df: pd.DataFrame, birth_year: int = None,
     r["bms_dam_interaction"] = r["bms_ei"] * np.log1p(r["dam_prize"])
 
     # === 父Stayer × 母父Miler 配合フラグ（血統理論ベース） ===
-    r["sire_is_stayer"] = sire.isin(STAYERS_SET).astype(int).values
-    r["sire_is_mid_dist"] = sire.isin(MID_DIST_SET).astype(int).values
-    r["bms_is_miler"] = bms_name.isin(MILERS_SET).astype(int).values
-    r["bms_is_sprinter"] = bms_name.isin(SPRINTERS_SET).astype(int).values
+    # 手動リスト + 競走時距離適性データ(sire_distance.json) のいずれかでマッチ
+    sire_id_col = src["sire_id"].astype(str).fillna("")
+    bms_id_col = src["bms_id"].astype(str).fillna("") if "bms_id" in src.columns else pd.Series("", index=src.index)
+    sire_dist_cat = sire_id_col.apply(get_distance_category)
+    bms_dist_cat = bms_id_col.apply(get_distance_category)
+    r["sire_is_stayer"] = (sire.isin(STAYERS_SET) | (sire_dist_cat == "STAYER")).astype(int).values
+    r["sire_is_mid_dist"] = (sire.isin(MID_DIST_SET) | (sire_dist_cat == "MID_DIST")).astype(int).values
+    r["bms_is_miler"] = (bms_name.isin(MILERS_SET) | (bms_dist_cat == "MILER")).astype(int).values
+    r["bms_is_sprinter"] = (bms_name.isin(SPRINTERS_SET) | (bms_dist_cat == "SPRINTER")).astype(int).values
+
     # ダービー用: 父Stayer × 母父Miler
     r["stayer_x_miler"] = (r["sire_is_stayer"] & r["bms_is_miler"]).astype(int)
     # オークス用: 父中距離以上 (Stayer+MidDist) × 母父スピード (Miler+Sprinter)
